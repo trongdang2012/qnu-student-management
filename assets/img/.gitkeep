@@ -1,0 +1,8 @@
+<?php
+/**
+ * Tạo ảnh avatar SVG mặc định nội tuyến (không cần file PNG thực sự)
+ * Truy cập: /assets/img/default-avatar.php
+ * Nhưng ở đây ta dùng trực tiếp SVG inline qua data URI trong CSS
+ */
+// File này không cần thiết, chỉ giữ lại cho reference
+?>
