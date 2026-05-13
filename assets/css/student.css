@@ -192,7 +192,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #003d80 0%, #0056B3 50%, #1a7fe8 100%);
+  background: linear-gradient(270deg, #ff0000, #ff7f00, #ffff00, #00ff00, #00ffff, #0000ff, #8b00ff);
+  background-size: 1400% 1400%;
+  animation: rainbow 5s ease infinite;
   padding: 20px;
 }
 .login-box {
@@ -202,7 +204,6 @@
   width: 100%;
   max-width: 440px;
   overflow: hidden;
-  animation: fadeIn .4s ease;
 }
 .login-header {
   background: var(--primary);
