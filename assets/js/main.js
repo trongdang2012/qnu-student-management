@@ -20,24 +20,31 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  // ── Dropdown Menu Click Toggle ──────────────────────────────
-  const dropdownToggles = document.querySelectorAll('.nav-item.dropdown > .nav-link, .navbar-user > .user-avatar, .navbar-user > .user-name');
-  dropdownToggles.forEach(toggle => {
-    toggle.addEventListener('click', function (e) {
+  // ── Dropdown click toggle ────────────────────────────────────
+  // Nav item dropdowns (Cá nhân, Học tập, Trực tuyến)
+  document.querySelectorAll('.nav-item.dropdown > .nav-link').forEach(link => {
+    link.addEventListener('click', function (e) {
       e.preventDefault();
-      const parent = this.closest('.nav-item.dropdown, .navbar-user');
-      const wasOpen = parent.classList.contains('show');
-      
-      // Close all others
+      const item = this.closest('.nav-item.dropdown');
+      const isOpen = item.classList.contains('show');
+      // Đóng tất cả
       document.querySelectorAll('.nav-item.dropdown, .navbar-user').forEach(el => el.classList.remove('show'));
-      
-      if (!wasOpen) {
-        parent.classList.add('show');
-      }
+      if (!isOpen) item.classList.add('show');
     });
   });
 
-  // Close dropdowns when clicking outside
+  // User menu (avatar + tên người dùng)
+  document.querySelectorAll('.navbar-user .user-avatar, .navbar-user .user-name').forEach(el => {
+    el.addEventListener('click', function (e) {
+      e.stopPropagation();
+      const userMenu = this.closest('.navbar-user');
+      const isOpen = userMenu.classList.contains('show');
+      document.querySelectorAll('.nav-item.dropdown, .navbar-user').forEach(el => el.classList.remove('show'));
+      if (!isOpen) userMenu.classList.add('show');
+    });
+  });
+
+  // Click ra ngoài thì đóng tất cả dropdown
   document.addEventListener('click', (e) => {
     if (!e.target.closest('.nav-item.dropdown') && !e.target.closest('.navbar-user')) {
       document.querySelectorAll('.nav-item.dropdown, .navbar-user').forEach(el => el.classList.remove('show'));

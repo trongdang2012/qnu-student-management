@@ -9,49 +9,46 @@ require_once ROOT . '/includes/session.php';
 
 requireStudent();
 $sv = getCurrentStudent();
-if (!$sv) {
-  header('Location: ' . BASE_URL . '/auth/logout.php');
-  exit;
-}
+if (!$sv) { header('Location: ' . BASE_URL . '/auth/logout.php'); exit; }
 
-$db = getDB();
-$sid = (int) $sv['id'];
-$errors = [];
-$success = false;
+$db  = getDB();
+$sid = (int)$sv['id'];
+$errors   = [];
+$success  = false;
 
 // ── Xử lý POST ──────────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-  $email = trim($_POST['email'] ?? '');
-  $sdt = trim($_POST['so_dien_thoai'] ?? '');
+    $email = trim($_POST['email'] ?? '');
+    $sdt   = trim($_POST['so_dien_thoai'] ?? '');
 
-  // Validate
-  if (empty($email)) {
-    $errors['email'] = 'Email không được để trống.';
-  } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-    $errors['email'] = 'Địa chỉ email không hợp lệ.';
-  }
-  if (!empty($sdt) && !preg_match('/^(0|\+84)[0-9]{9,10}$/', $sdt)) {
-    $errors['sdt'] = 'Số điện thoại không hợp lệ (VD: 0912345678).';
-  }
-
-  if (empty($errors)) {
-    $stmt = $db->prepare("UPDATE sinh_vien SET email=?, so_dien_thoai=? WHERE id=?");
-    $stmt->bind_param('ssi', $email, $sdt, $sid);
-    if ($stmt->execute()) {
-      setFlash('success', 'Cập nhật thông tin thành công!');
-      header('Location: ' . BASE_URL . '/student/ca_nhan/cap_nhat.php');
-      exit;
-    } else {
-      $errors['db'] = 'Có lỗi xảy ra khi lưu dữ liệu.';
+    // Validate
+    if (empty($email)) {
+        $errors['email'] = 'Email không được để trống.';
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $errors['email'] = 'Địa chỉ email không hợp lệ.';
     }
-    $stmt->close();
-  }
-  // Nếu lỗi thì giữ lại giá trị người dùng nhập
-  $sv['email'] = $email;
-  $sv['so_dien_thoai'] = $sdt;
+    if (!empty($sdt) && !preg_match('/^(0|\+84)[0-9]{9,10}$/', $sdt)) {
+        $errors['sdt'] = 'Số điện thoại không hợp lệ (VD: 0912345678).';
+    }
+
+    if (empty($errors)) {
+        $stmt = $db->prepare("UPDATE sinh_vien SET email=?, so_dien_thoai=? WHERE id=?");
+        $stmt->bind_param('ssi', $email, $sdt, $sid);
+        if ($stmt->execute()) {
+            setFlash('success', 'Cập nhật thông tin thành công!');
+            header('Location: ' . BASE_URL . '/student/ca_nhan/cap_nhat.php');
+            exit;
+        } else {
+            $errors['db'] = 'Có lỗi xảy ra khi lưu dữ liệu.';
+        }
+        $stmt->close();
+    }
+    // Nếu lỗi thì giữ lại giá trị người dùng nhập
+    $sv['email']         = $email;
+    $sv['so_dien_thoai'] = $sdt;
 }
 
-$page_title = 'Cập nhật thông tin';
+$page_title  = 'Cập nhật thông tin';
 $active_menu = 'ca_nhan';
 require_once ROOT . '/includes/header.php';
 ?>
@@ -70,13 +67,11 @@ require_once ROOT . '/includes/header.php';
         <span>›</span><span>Cập nhật</span>
       </div>
       <h1><i class="fas fa-edit"></i> Cập nhật thông tin</h1>
-      <p>Chỉ có thể chỉnh sửa <strong>Email</strong> và <strong>Số điện thoại</strong>. Thông tin khác liên hệ phòng Đào
-        tạo.</p>
+      <p>Chỉ có thể chỉnh sửa <strong>Email</strong> và <strong>Số điện thoại</strong>. Thông tin khác liên hệ phòng Đào tạo.</p>
     </div>
 
     <!-- Flash -->
-    <?php $flash = getFlash();
-    if ($flash): ?>
+    <?php $flash = getFlash(); if ($flash): ?>
       <div class="alert alert-<?= e($flash['type']) ?>" data-auto-dismiss>
         <i class="fas fa-check-circle"></i> <?= e($flash['msg']) ?>
       </div>
@@ -106,8 +101,7 @@ require_once ROOT . '/includes/header.php';
           <div class="form-row" style="margin-bottom:4px">
             <div class="form-group">
               <label>Ngày sinh</label>
-              <input type="text" class="form-control"
-                value="<?= $sv['ngay_sinh'] ? date('d/m/Y', strtotime($sv['ngay_sinh'])) : '' ?>" disabled>
+              <input type="text" class="form-control" value="<?= $sv['ngay_sinh'] ? date('d/m/Y', strtotime($sv['ngay_sinh'])) : '' ?>" disabled>
             </div>
             <div class="form-group">
               <label>Lớp</label>
@@ -116,18 +110,18 @@ require_once ROOT . '/includes/header.php';
           </div>
 
           <hr style="border:none;border-top:1px dashed var(--border);margin:16px 0">
-          <p class="text-muted mb-16" style="font-size:14px;"><i class="fas fa-pencil-alt"
-              style="color:var(--primary)"></i> Chỉnh sửa các trường bên dưới:</p>
+          <p class="text-muted mb-16" style="font-size:14px;"><i class="fas fa-pencil-alt" style="color:var(--primary)"></i> Chỉnh sửa các trường bên dưới:</p>
 
           <!-- Email -->
           <div class="form-group">
             <label for="email">
               <i class="fas fa-envelope"></i> Email liên hệ <span class="required">*</span>
             </label>
-            <input type="email" id="email" name="email"
-              class="form-control <?= isset($errors['email']) ? 'is-invalid' : '' ?>"
-              value="<?= e($sv['email'] ?? '') ?>" placeholder="example@gmail.com" data-validate="required email"
-              autocomplete="email">
+            <input type="email" id="email" name="email" class="form-control <?= isset($errors['email']) ? 'is-invalid' : '' ?>"
+                   value="<?= e($sv['email'] ?? '') ?>"
+                   placeholder="example@gmail.com"
+                   data-validate="required email"
+                   autocomplete="email">
             <?php if (isset($errors['email'])): ?>
               <span class="form-error" style="display:block"><?= e($errors['email']) ?></span>
             <?php else: ?>
@@ -141,9 +135,11 @@ require_once ROOT . '/includes/header.php';
               <i class="fas fa-phone"></i> Số điện thoại
             </label>
             <input type="tel" id="so_dien_thoai" name="so_dien_thoai"
-              class="form-control <?= isset($errors['sdt']) ? 'is-invalid' : '' ?>"
-              value="<?= e($sv['so_dien_thoai'] ?? '') ?>" placeholder="0912 345 678" data-validate="phone"
-              autocomplete="tel">
+                   class="form-control <?= isset($errors['sdt']) ? 'is-invalid' : '' ?>"
+                   value="<?= e($sv['so_dien_thoai'] ?? '') ?>"
+                   placeholder="0912 345 678"
+                   data-validate="phone"
+                   autocomplete="tel">
             <?php if (isset($errors['sdt'])): ?>
               <span class="form-error" style="display:block"><?= e($errors['sdt']) ?></span>
             <?php else: ?>
