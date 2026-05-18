@@ -8,7 +8,7 @@ $_name = isset($sv) ? e($sv['ho_ten']) : 'Sinh viên';
 $_msv  = isset($sv) ? e($sv['ma_sv'])  : '';
 $_avatar = (isset($sv) && !empty($sv['anh_dai_dien']))
          ? $_base . '/uploads/' . e($sv['anh_dai_dien'])
-         : $_base . '/assets/img/default-avatar.png';
+         : $_base . '/assets/img/default-avatar.svg';
 
 $_menu = $active_menu ?? '';
 ?>

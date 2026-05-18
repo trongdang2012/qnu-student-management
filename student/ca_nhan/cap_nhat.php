@@ -17,9 +17,9 @@ $errors  = [];
 $success = false;
 
 // ── Hằng số upload ────────────────────────────────────────────
-define('UPLOAD_DIR',      ROOT . '/uploads/avatars/');
-define('UPLOAD_MAX_SIZE', 2 * 1024 * 1024); // 2 MB
-define('UPLOAD_ALLOWED',  ['image/jpeg', 'image/png', 'image/gif', 'image/webp']);
+if (!defined('UPLOAD_DIR'))      define('UPLOAD_DIR',      ROOT . '/uploads/avatars/');
+if (!defined('UPLOAD_MAX_SIZE')) define('UPLOAD_MAX_SIZE', 2 * 1024 * 1024); // 2 MB
+if (!defined('UPLOAD_ALLOWED'))  define('UPLOAD_ALLOWED',  ['image/jpeg', 'image/png', 'image/gif', 'image/webp']);
 
 // Tạo thư mục nếu chưa có
 if (!is_dir(UPLOAD_DIR)) {
@@ -104,7 +104,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // ── Avatar hiện tại ────────────────────────────────────────────
 $avatar_url = (!empty($sv['anh_dai_dien']))
     ? BASE_URL . '/uploads/' . e($sv['anh_dai_dien'])
-    : BASE_URL . '/assets/img/default-avatar.png';
+    : BASE_URL . '/assets/img/default-avatar.svg';
 
 $page_title  = 'Cập nhật thông tin';
 $active_menu = 'ca_nhan';

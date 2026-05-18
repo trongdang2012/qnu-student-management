@@ -43,7 +43,7 @@ require_once ROOT . '/includes/header.php';
     <div class="profile-header fade-in">
       <div class="profile-avatar-wrap">
         <img id="avatarPreview"
-             src="<?= (!empty($sv['anh_dai_dien'])) ? BASE_URL.'/uploads/'.e($sv['anh_dai_dien']) : BASE_URL.'/assets/img/default-avatar.png' ?>"
+             src="<?= (!empty($sv['anh_dai_dien'])) ? BASE_URL.'/uploads/'.e($sv['anh_dai_dien']) : BASE_URL.'/assets/img/default-avatar.svg' ?>"
              alt="Ảnh đại diện" class="profile-avatar">
       </div>
       <div class="profile-info">
