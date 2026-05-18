@@ -25,10 +25,12 @@ document.addEventListener('DOMContentLoaded', function () {
   document.querySelectorAll('.nav-item.dropdown > .nav-link').forEach(link => {
     link.addEventListener('click', function (e) {
       e.preventDefault();
+      e.stopPropagation(); // Ngăn event bubble lên document (tránh bị đóng ngay lập tức)
       const item = this.closest('.nav-item.dropdown');
       const isOpen = item.classList.contains('show');
-      // Đóng tất cả
+      // Đóng tất cả trước
       document.querySelectorAll('.nav-item.dropdown, .navbar-user').forEach(el => el.classList.remove('show'));
+      // Nếu chưa mở thì mở, nếu đã mở thì để đóng (toggle)
       if (!isOpen) item.classList.add('show');
     });
   });
