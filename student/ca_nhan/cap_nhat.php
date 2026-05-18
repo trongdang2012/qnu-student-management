@@ -23,7 +23,10 @@ define('UPLOAD_ALLOWED',  ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
 
 // Tạo thư mục nếu chưa có
 if (!is_dir(UPLOAD_DIR)) {
-    mkdir(UPLOAD_DIR, 0755, true);
+    if (!@mkdir(UPLOAD_DIR, 0775, true)) {
+        // Ghi log lỗi để debug
+        error_log('[QNU-SMS] Không thể tạo thư mục: ' . UPLOAD_DIR);
+    }
 }
 
 // ── Xử lý POST ────────────────────────────────────────────────
