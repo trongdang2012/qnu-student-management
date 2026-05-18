@@ -20,6 +20,30 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
+  // ── Dropdown Menu Click Toggle ──────────────────────────────
+  const dropdownToggles = document.querySelectorAll('.nav-item.dropdown > .nav-link, .navbar-user > .user-avatar, .navbar-user > .user-name');
+  dropdownToggles.forEach(toggle => {
+    toggle.addEventListener('click', function (e) {
+      e.preventDefault();
+      const parent = this.closest('.nav-item.dropdown, .navbar-user');
+      const wasOpen = parent.classList.contains('show');
+      
+      // Close all others
+      document.querySelectorAll('.nav-item.dropdown, .navbar-user').forEach(el => el.classList.remove('show'));
+      
+      if (!wasOpen) {
+        parent.classList.add('show');
+      }
+    });
+  });
+
+  // Close dropdowns when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.nav-item.dropdown') && !e.target.closest('.navbar-user')) {
+      document.querySelectorAll('.nav-item.dropdown, .navbar-user').forEach(el => el.classList.remove('show'));
+    }
+  });
+
   // ── Tab system (đăng ký học phần) ───────────────────────────
   document.querySelectorAll('.dk-tab').forEach(tab => {
     tab.addEventListener('click', () => {
