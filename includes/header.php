@@ -29,5 +29,8 @@ $_base = BASE_URL;
   <!-- CSS -->
   <link rel="stylesheet" href="<?= $_base ?>/assets/css/style.css">
   <link rel="stylesheet" href="<?= $_base ?>/assets/css/student.css">
+
+  <!-- SweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body>

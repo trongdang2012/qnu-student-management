@@ -134,13 +134,85 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  // ── Confirm delete buttons ───────────────────────────────────
-  document.querySelectorAll('[data-confirm]').forEach(el => {
-    el.addEventListener('click', function (e) {
-      if (!confirm(this.dataset.confirm || 'Bạn có chắc chắn không?')) {
-        e.preventDefault();
+  // ── SweetAlert2 Confirm overrides ──────────────────────────────
+  // Chuyển inline onclick/onsubmit chứa confirm() thành data-confirm
+  document.querySelectorAll('[onclick*="confirm"], [onsubmit*="confirm"]').forEach(el => {
+    let attr = el.hasAttribute('onclick') ? 'onclick' : 'onsubmit';
+    let code = el.getAttribute(attr);
+    let match = code.match(/confirm\(['"](.*?)['"]\)/);
+    if(match) {
+      el.setAttribute('data-confirm', match[1]);
+      el.removeAttribute(attr);
+      if(attr === 'onsubmit') {
+         el.classList.add('needs-confirm-submit');
+      } else {
+         el.classList.add('needs-confirm-click');
       }
-    });
+    }
+  });
+
+  // Bắt sự kiện click
+  document.body.addEventListener('click', function(e) {
+    let btn = e.target.closest('[data-confirm]');
+    if(!btn) return;
+    
+    // Nếu là nút submit thì bỏ qua để xử lý ở sự kiện submit
+    if((btn.tagName === 'BUTTON' && btn.type === 'submit') || (btn.tagName === 'INPUT' && btn.type === 'submit')) {
+       return; 
+    }
+
+    if(btn.tagName === 'A' || btn.classList.contains('needs-confirm-click')) {
+        e.preventDefault();
+        Swal.fire({
+          title: 'Xác nhận',
+          text: btn.dataset.confirm || 'Bạn có chắc chắn không?',
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#0056B3',
+          cancelButtonColor: '#dc3545',
+          confirmButtonText: 'Đồng ý',
+          cancelButtonText: 'Hủy'
+        }).then((result) => {
+          if (result.isConfirmed) {
+            if(btn.href) window.location.href = btn.href;
+            else if(btn.dataset.action) eval(btn.dataset.action);
+          }
+        });
+    }
+  });
+
+  // Bắt sự kiện submit form
+  document.body.addEventListener('submit', function(e) {
+    let form = e.target;
+    let submitBtn = e.submitter;
+    let hasConfirm = form.hasAttribute('data-confirm') || form.classList.contains('needs-confirm-submit');
+    let confirmMsg = form.dataset.confirm || 'Bạn có chắc chắn?';
+    
+    if(!hasConfirm && submitBtn && submitBtn.hasAttribute('data-confirm')) {
+        hasConfirm = true;
+        confirmMsg = submitBtn.dataset.confirm;
+    }
+
+    if(hasConfirm) {
+      e.preventDefault();
+      Swal.fire({
+          title: 'Xác nhận',
+          text: confirmMsg,
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#0056B3',
+          cancelButtonColor: '#dc3545',
+          confirmButtonText: 'Đồng ý',
+          cancelButtonText: 'Hủy'
+        }).then((result) => {
+          if (result.isConfirmed) {
+            form.removeAttribute('data-confirm');
+            form.classList.remove('needs-confirm-submit');
+            if(submitBtn) submitBtn.removeAttribute('data-confirm');
+            form.submit();
+          }
+        });
+    }
   });
 
   // ── Tooltip đơn giản ────────────────────────────────────────

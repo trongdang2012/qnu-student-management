@@ -27,29 +27,27 @@ $_base = BASE_URL;
   <link rel="stylesheet" href="<?= $_base ?>/assets/css/style.css">
   <link rel="stylesheet" href="<?= $_base ?>/assets/css/student.css">
   
+  <!-- SweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  
   <style>
-    /* Admin Navbar - giống student navbar */
+    /* Admin Sidebar - Vertical Layout */
     .admin-navbar {
       position: fixed;
-      top: 0; left: 0; right: 0;
-      height: var(--header-h);
+      top: 0; left: 0; bottom: 0;
+      width: 250px;
       background: #1a1a2e;
-      box-shadow: 0 2px 10px rgba(0,0,0,.2);
+      box-shadow: 2px 0 10px rgba(0,0,0,.2);
       z-index: 1000;
-      display: flex;
-      align-items: center;
-      border-bottom: 3px solid #ff6b35;
+      border-right: 3px solid #ff6b35;
+      overflow-y: auto;
     }
 
     .admin-navbar-inner {
-      max-width: 1400px;
-      width: 100%;
-      margin: 0 auto;
-      padding: 0 20px;
       display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
+      flex-direction: column;
+      padding: 20px 0;
+      height: 100%;
     }
 
     .admin-navbar-brand {
@@ -59,7 +57,9 @@ $_base = BASE_URL;
       color: #fff;
       font-size: 18px;
       font-weight: 700;
-      flex-shrink: 0;
+      padding: 0 20px 20px 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      margin-bottom: 20px;
     }
 
     .admin-navbar-brand .logo-icon {
@@ -69,32 +69,35 @@ $_base = BASE_URL;
       display: flex; align-items: center; justify-content: center;
       font-size: 18px;
       color: #ff6b35;
+      flex-shrink: 0;
     }
 
     .admin-navbar-menu {
       display: flex;
-      align-items: center;
+      flex-direction: column;
       gap: 4px;
+      padding: 0 10px;
       flex: 1;
-      justify-content: flex-start;
-      margin-left: 20px;
+      margin: 0;
+      list-style: none;
     }
 
     .admin-navbar-menu .nav-item {
       position: relative;
+      width: 100%;
     }
 
     .admin-navbar-menu .nav-link {
       display: flex;
       align-items: center;
-      gap: 6px;
-      padding: 8px 14px;
+      gap: 10px;
+      padding: 12px 14px;
       color: rgba(255,255,255,.75);
-      font-size: 14px;
+      font-size: 15px;
       font-weight: 500;
       border-radius: var(--radius-sm);
       transition: all var(--transition);
-      white-space: nowrap;
+      text-decoration: none;
     }
 
     .admin-navbar-menu .nav-link:hover,
@@ -104,20 +107,20 @@ $_base = BASE_URL;
     }
 
     .admin-navbar-right {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      margin-left: auto;
+      padding: 20px;
+      border-top: 1px solid rgba(255,255,255,0.1);
+      margin-top: auto;
     }
 
     .admin-navbar-right .nav-link {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 10px;
       color: rgba(255,255,255,.75);
-      padding: 8px 12px;
+      padding: 12px 14px;
       border-radius: var(--radius-sm);
       transition: all var(--transition);
+      text-decoration: none;
     }
 
     .admin-navbar-right .nav-link:hover {
@@ -127,8 +130,9 @@ $_base = BASE_URL;
 
     /* Admin wrapper */
     .admin-wrapper {
-      padding-top: calc(var(--header-h) + 24px);
+      padding-top: 24px;
       padding-bottom: 40px;
+      padding-left: 270px;
       min-height: 100vh;
       background: #f5f6fa;
     }
@@ -140,7 +144,13 @@ $_base = BASE_URL;
     }
 
     .page-title {
-      margin-bottom: 24px;
+      position: sticky;
+      top: 0;
+      background: #f5f6fa;
+      padding: 24px 20px 15px 20px;
+      margin: -24px -20px 24px -20px;
+      z-index: 100;
+      border-bottom: 1px solid #e1e3ea;
     }
 
     .page-title h1 {

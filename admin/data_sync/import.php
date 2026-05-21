@@ -45,22 +45,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['sql_file'])) {
         $mysqlPath = 'mysql';
     }
 
-    $escape = static function (string $value): string {
-        return str_replace('"', '\\"', $value);
-    };
-
     $command = '"' . $mysqlPath . '"';
-    $command .= ' -h "' . $escape($db_host) . '"';
-    $command .= ' -u "' . $escape($db_user) . '"';
+    $command .= ' -h "' . $db_host . '"';
+    $command .= ' -u "' . $db_user . '"';
     if ($db_pass !== '') {
-        $command .= ' --password="' . $escape($db_pass) . '"';
+        $command .= ' --password="' . $db_pass . '"';
     }
     $command .= ' --default-character-set=utf8mb4';
-    $command .= ' "' . $escape($db_name) . '"';
-    $command .= ' < "' . $escape($tmpPath) . '"';
-    $command = 'cmd.exe /c "' . str_replace('"', '\\"', $command) . '" 2>&1';
-
-    exec($command, $output, $return_var);
+    $command .= ' "' . $db_name . '"';
+    $command .= ' < "' . $tmpPath . '"';
+    
+    // Create a temporary batch file to avoid cmd.exe escaping issues
+    $batFile = sys_get_temp_dir() . '/import_' . time() . '.bat';
+    file_put_contents($batFile, "@echo off\n" . $command);
+    
+    exec('call "' . $batFile . '" 2>&1', $output, $return_var);
+    @unlink($batFile);
     if ($return_var === 0) {
         $_SESSION['success'] = "Phục hồi cơ sở dữ liệu thành công!";
     } else {

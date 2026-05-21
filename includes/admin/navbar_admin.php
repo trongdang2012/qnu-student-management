@@ -9,10 +9,10 @@ $current_dir = basename(dirname($_SERVER['PHP_SELF']));
   <div class="admin-navbar-inner">
     <div class="admin-navbar-brand">
       <div class="logo-icon">
-        <i class="fas fa-lock"></i>
+        <i class="fas fa-school"></i>
       </div>
       <a href="<?= BASE_URL ?>/admin/dashboard.php" style="color:#fff;text-decoration:none">
-        Admin Panel
+        QNU SMS - Admin
       </a>
     </div>
     
