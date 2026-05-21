@@ -42,7 +42,15 @@ CREATE TABLE IF NOT EXISTS `hoc_phan` (
   `so_tin_chi` INT NOT NULL DEFAULT 3,
   `loai` ENUM('Bắt buộc','Tự chọn','Đại cương') DEFAULT 'Bắt buộc',
   `hoc_ky` INT NOT NULL DEFAULT 1,
-  `nien_khoa` VARCHAR(20)
+  `nien_khoa` VARCHAR(20),
+  `thu` TINYINT DEFAULT NULL COMMENT '2=Thứ 2, ..., 8=Chủ nhật',
+  `tiet_bat_dau` TINYINT DEFAULT NULL,
+  `so_tiet` TINYINT DEFAULT NULL,
+  `phong_hoc` VARCHAR(50) DEFAULT NULL,
+  `giang_vien` VARCHAR(100) DEFAULT NULL,
+  `si_so_toi_da` INT DEFAULT 50,
+  `si_so_hien_tai` INT DEFAULT 0,
+  `ma_hp_tien_quyet` VARCHAR(20) DEFAULT NULL
 ) ENGINE=InnoDB;
 
 -- Bảng chương trình đào tạo (các HP sinh viên cần học)
@@ -162,25 +170,25 @@ INSERT INTO `sinh_vien` (`user_id`,`ma_sv`,`ho_ten`,`ngay_sinh`,`gioi_tinh`,`dia
 (3,'3121410002','Trần Thị Bình','2003-08-22','Nữ','45 Đường Nguyễn Huệ, Quy Nhơn, Bình Định','tranthihinh@gmail.com','0923456789','Công nghệ thông tin','Kỹ thuật - Công nghệ','CNTT47A','2021-2025','Đang học');
 
 -- Học phần
-INSERT INTO `hoc_phan` (`ma_hp`,`ten_hp`,`so_tin_chi`,`loai`,`hoc_ky`,`nien_khoa`) VALUES
-('CNTT001','Lập trình căn bản',4,'Bắt buộc',1,'2021-2025'),
-('CNTT002','Cấu trúc dữ liệu và giải thuật',3,'Bắt buộc',2,'2021-2025'),
-('CNTT003','Lập trình hướng đối tượng',3,'Bắt buộc',3,'2021-2025'),
-('CNTT004','Cơ sở dữ liệu',3,'Bắt buộc',3,'2021-2025'),
-('CNTT005','Mạng máy tính',3,'Bắt buộc',4,'2021-2025'),
-('CNTT006','Lập trình Web',3,'Bắt buộc',4,'2021-2025'),
-('CNTT007','Hệ điều hành',3,'Bắt buộc',4,'2021-2025'),
-('CNTT008','Kiến trúc máy tính',3,'Đại cương',2,'2021-2025'),
-('CNTT009','Trí tuệ nhân tạo',3,'Tự chọn',5,'2021-2025'),
-('CNTT010','An toàn thông tin',3,'Tự chọn',5,'2021-2025'),
-('CNTT011','Phát triển ứng dụng Mobile',3,'Tự chọn',6,'2021-2025'),
-('CNTT012','Thực tập tốt nghiệp',5,'Bắt buộc',7,'2021-2025'),
-('CNTT013','Đồ án tốt nghiệp',7,'Bắt buộc',8,'2021-2025'),
-('GD001','Triết học Mác-Lênin',3,'Đại cương',1,'2021-2025'),
-('GD002','Toán cao cấp A1',4,'Đại cương',1,'2021-2025'),
-('GD003','Tiếng Anh 1',3,'Đại cương',1,'2021-2025'),
-('GD004','Tiếng Anh 2',3,'Đại cương',2,'2021-2025'),
-('GD005','Giáo dục thể chất 1',1,'Đại cương',1,'2021-2025');
+INSERT INTO `hoc_phan` (`ma_hp`,`ten_hp`,`so_tin_chi`,`loai`,`hoc_ky`,`nien_khoa`,`thu`,`tiet_bat_dau`,`so_tiet`,`phong_hoc`,`giang_vien`,`si_so_toi_da`,`si_so_hien_tai`,`ma_hp_tien_quyet`) VALUES
+('CNTT001','Lập trình căn bản',4,'Bắt buộc',1,'2021-2025',2,1,4,'A101','TS. Nguyễn Văn A',80,0,NULL),
+('CNTT002','Cấu trúc dữ liệu và giải thuật',3,'Bắt buộc',2,'2021-2025',3,1,3,'B201','ThS. Lê Văn B',60,0,'CNTT001'),
+('CNTT003','Lập trình hướng đối tượng',3,'Bắt buộc',3,'2021-2025',4,1,3,'A102','TS. Phạm Văn C',70,0,'CNTT001'),
+('CNTT004','Cơ sở dữ liệu',3,'Bắt buộc',3,'2021-2025',5,1,3,'B202','TS. Trần Văn D',75,0,'CNTT001'),
+('CNTT005','Mạng máy tính',3,'Bắt buộc',4,'2021-2025',2,1,3,'A201','TS. Nguyễn Văn Hùng',50,0,NULL),
+('CNTT006','Lập trình Web',3,'Bắt buộc',4,'2021-2025',3,4,3,'B305','ThS. Trần Thị Lan',50,0,'CNTT001'),
+('CNTT007','Hệ điều hành',3,'Bắt buộc',4,'2021-2025',4,1,3,'A101','TS. Lê Văn Minh',50,0,NULL),
+('CNTT008','Kiến trúc máy tính',3,'Đại cương',2,'2021-2025',5,7,3,'B101','ThS. Hoàng Văn E',60,0,NULL),
+('CNTT009','Trí tuệ nhân tạo',3,'Tự chọn',5,'2021-2025',5,4,3,'Lab IT', 'ThS. Phạm Thị Hoa',50,0,'CNTT002'),
+('CNTT010','An toàn thông tin',3,'Tự chọn',5,'2021-2025',6,1,3,'B202','TS. Hoàng Quang Trung',1,0,'CNTT005'),
+('CNTT011','Phát triển ứng dụng Mobile',3,'Tự chọn',6,'2021-2025',3,7,3,'Lab IT','ThS. Nguyễn Thị F',40,0,'CNTT006'),
+('CNTT012','Thực tập tốt nghiệp',5,'Bắt buộc',7,'2021-2025',7,1,5,'Ngoài trường','TS. Trần Văn G',100,0,NULL),
+('CNTT013','Đồ án tốt nghiệp',7,'Bắt buộc',8,'2021-2025',7,6,5,'Ngoài trường','TS. Lê Văn H',100,0,NULL),
+('GD001','Triết học Mác-Lênin',3,'Đại cương',1,'2021-2025',2,7,3,'A301','TS. Lý Văn I',120,0,NULL),
+('GD002','Toán cao cấp A1',4,'Đại cương',1,'2021-2025',3,7,4,'B302','ThS. Nguyễn Văn J',100,0,NULL),
+('GD003','Tiếng Anh 1',3,'Đại cương',1,'2021-2025',4,7,3,'B303','Cô Đỗ Thị K',40,0,NULL),
+('GD004','Tiếng Anh 2',3,'Đại cương',2,'2021-2025',5,7,3,'B304','Cô Đỗ Thị K',45,0,'GD003'),
+('GD005','Giáo dục thể chất 1',1,'Đại cương',1,'2021-2025',6,7,2,'Sân thể chất','Thầy Vũ Văn L',50,0,NULL);
 
 -- Điểm học tập sinh viên 1
 INSERT INTO `diem_hoc_tap` (`sinh_vien_id`,`hoc_phan_id`,`hoc_ky`,`nam_hoc`,`diem_cc`,`diem_gk`,`diem_ck`,`diem_tong`,`diem_chu`,`diem_he4`) VALUES

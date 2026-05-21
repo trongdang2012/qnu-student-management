@@ -52,6 +52,22 @@ $current_dir = basename(dirname($_SERVER['PHP_SELF']));
           <i class="fas fa-calendar-alt"></i> Thời khóa biểu
         </a>
       </li>
+      <li class="nav-item dropdown <?= $current_dir==='diem'?'active':'' ?>">
+        <a class="nav-link" href="#">
+          <i class="fas fa-graduation-cap"></i> Quản lý điểm <span class="arrow">▾</span>
+        </a>
+        <ul class="dropdown-menu">
+          <li><a href="<?= BASE_URL ?>/admin/diem/hoc_tap.php">
+            <span class="menu-icon"><i class="fas fa-book-open"></i></span> Điểm học tập
+          </a></li>
+          <li><a href="<?= BASE_URL ?>/admin/diem/ren_luyen.php">
+            <span class="menu-icon"><i class="fas fa-star"></i></span> Điểm rèn luyện
+          </a></li>
+          <li><a href="<?= BASE_URL ?>/admin/diem/bao_cao.php">
+            <span class="menu-icon"><i class="fas fa-chart-bar"></i></span> Báo cáo điểm
+          </a></li>
+        </ul>
+      </li>
       <li class="nav-item <?= $current_dir==='data_sync'?'active':'' ?>">
         <a class="nav-link" href="<?= BASE_URL ?>/admin/data_sync/index.php">
           <i class="fas fa-database"></i> Nhập/Xuất Dữ liệu

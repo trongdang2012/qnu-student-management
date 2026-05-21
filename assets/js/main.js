@@ -29,13 +29,17 @@ document.addEventListener('DOMContentLoaded', function () {
   document.querySelectorAll('.nav-item.dropdown > .nav-link').forEach(link => {
     link.addEventListener('click', function (e) {
       e.preventDefault();
-      e.stopPropagation(); // Ngăn event bubble lên document (tránh bị đóng ngay lập tức)
-      const item = this.closest('.nav-item.dropdown');
-      const isOpen = item.classList.contains('show');
-      // Đóng tất cả trước
-      closeDropdowns();
-      // Nếu chưa mở thì mở, nếu đã mở thì để đóng (toggle)
-      if (!isOpen) item.classList.add('show');
+      // Chỉ toggle class .show bằng JS trên các thiết bị di động (width <= 768px)
+      // Trên desktop, hiệu ứng hover bằng CSS sẽ tự động mở/đóng menu rất mượt mà
+      if (window.innerWidth <= 768) {
+        e.stopPropagation(); // Ngăn event bubble lên document (tránh bị đóng ngay lập tức)
+        const item = this.closest('.nav-item.dropdown');
+        const isOpen = item.classList.contains('show');
+        // Đóng tất cả trước
+        closeDropdowns();
+        // Nếu chưa mở thì mở, nếu đã mở thì để đóng (toggle)
+        if (!isOpen) item.classList.add('show');
+      }
     });
   });
 

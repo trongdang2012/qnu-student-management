@@ -92,10 +92,20 @@
   position: absolute;
   left: 0;
   right: 0;
-  top: -12px;
-  height: 12px;
+  top: -20px;
+  height: 20px;
 }
 .nav-item.dropdown.show .dropdown-menu { display: block; }
+
+/* Desktop Hover for main navigation dropdowns */
+@media (min-width: 769px) {
+  .nav-item.dropdown:hover .dropdown-menu {
+    display: block;
+  }
+  .nav-item.dropdown:hover .nav-link .arrow {
+    transform: rotate(180deg);
+  }
+}
 .dropdown-menu a {
   display: flex;
   align-items: center;

@@ -21,10 +21,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $mo_ta    = trim($_POST['mo_ta']   ?? '');
     $hp_id    = (int)($_POST['hoc_phan_id'] ?? 0) ?: null;
 
-    if (empty($tieu_de)) {
-        $msg = ['type'=>'danger','text'=>'Vui lòng nhập tiêu đề tài liệu.'];
-    } elseif (empty($_FILES['file_upload']['name'])) {
-        $msg = ['type'=>'danger','text'=>'Vui lòng chọn file để tải lên.'];
+    if (empty($tieu_de) || empty($_FILES['file_upload']['name'])) {
+        $msg = ['type'=>'danger','text'=>'Vui lòng nhập đầy đủ thông tin'];
     } else {
         $file     = $_FILES['file_upload'];
         $orig_name= basename($file['name']);
@@ -33,11 +31,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $tmp      = $file['tmp_name'];
 
         if (!in_array($ext, ALLOWED_FILE_TYPES)) {
-            $msg = ['type'=>'danger','text'=>"Loại file .$ext không được phép. Chỉ chấp nhận: " . implode(', ', ALLOWED_FILE_TYPES)];
+            $msg = ['type'=>'danger','text'=>'Định dạng file không hợp lệ'];
         } elseif ($size > MAX_UPLOAD_SIZE) {
-            $msg = ['type'=>'danger','text'=>'File quá lớn (tối đa 10MB).'];
+            $msg = ['type'=>'danger','text'=>'File vượt quá dung lượng cho phép'];
         } elseif ($file['error'] !== UPLOAD_ERR_OK) {
-            $msg = ['type'=>'danger','text'=>'Có lỗi khi upload file.'];
+            $msg = ['type'=>'danger','text'=>'Tải lên thất bại, vui lòng thử lại'];
         } else {
             // Tạo thư mục nếu chưa có
             if (!is_dir(UPLOAD_DIR)) mkdir(UPLOAD_DIR, 0755, true);
@@ -50,16 +48,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 $stmt = $db->prepare("INSERT INTO tai_lieu (sinh_vien_id, hoc_phan_id, tieu_de, mo_ta, ten_file, duong_dan, kich_thuoc, loai_file) VALUES (?,?,?,?,?,?,?,?)");
                 $stmt->bind_param('iissssss', $sid, $hp_id, $tieu_de, $mo_ta, $orig_name, $new_name, $size, $loai);
                 if ($stmt->execute()) {
-                    setFlash('success', 'Tải lên tài liệu thành công!');
+                    setFlash('success', 'Chia sẻ tài liệu thành công');
                     header('Location: ' . BASE_URL . '/student/truc_tuyen/chia_se_tl.php');
                     exit;
                 } else {
-                    $msg = ['type'=>'danger','text'=>'Lỗi lưu dữ liệu.'];
+                    $msg = ['type'=>'danger','text'=>'Tải lên thất bại, vui lòng thử lại'];
                     unlink($dest);
                 }
                 $stmt->close();
             } else {
-                $msg = ['type'=>'danger','text'=>'Không thể lưu file. Kiểm tra quyền thư mục upload.'];
+                $msg = ['type'=>'danger','text'=>'Tải lên thất bại, vui lòng thử lại'];
             }
         }
     }
@@ -202,9 +200,14 @@ require_once ROOT . '/includes/header.php';
                           style="resize:vertical"><?= e($_POST['mo_ta'] ?? '') ?></textarea>
               </div>
 
-              <button type="submit" class="btn btn-primary w-100">
-                <i class="fas fa-upload"></i> Tải lên
-              </button>
+              <div style="display:flex;gap:12px;margin-top:12px;">
+                <button type="button" id="btnCancelUpload" class="btn btn-secondary" style="flex:1;justify-content:center">
+                  <i class="fas fa-undo"></i> Hủy
+                </button>
+                <button type="submit" class="btn btn-primary" style="flex:2;justify-content:center">
+                  <i class="fas fa-upload"></i> Tải lên
+                </button>
+              </div>
             </form>
           </div>
         </div>
@@ -316,5 +319,27 @@ require_once ROOT . '/includes/header.php';
 
   </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('btnCancelUpload')?.addEventListener('click', function() {
+        const form = document.getElementById('uploadForm');
+        if (form) {
+            form.reset();
+            form.querySelectorAll('.form-control').forEach(el => {
+                el.classList.remove('is-invalid', 'is-valid');
+            });
+            form.querySelectorAll('.form-error').forEach(el => {
+                el.style.display = 'none';
+            });
+        }
+        const info = document.getElementById('fileInfo');
+        if (info) {
+            info.innerHTML = '';
+            info.style.display = 'none';
+        }
+    });
+});
+</script>
 
 <?php require_once ROOT . '/includes/footer.php'; ?>
