@@ -32,6 +32,11 @@ $current_dir = basename(dirname($_SERVER['PHP_SELF']));
           <i class="fas fa-calendar-alt"></i> Thời khóa biểu
         </a>
       </li>
+      <li class="nav-item <?= $current_dir==='data_sync'?'active':'' ?>">
+        <a class="nav-link" href="<?= BASE_URL ?>/admin/data_sync/index.php">
+          <i class="fas fa-database"></i> Nhập/Xuất Dữ liệu
+        </a>
+      </li>
     </ul>
 
     <div class="admin-navbar-right">
