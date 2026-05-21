@@ -37,6 +37,16 @@ $current_dir = basename(dirname($_SERVER['PHP_SELF']));
           <i class="fas fa-book"></i> Học phần
         </a>
       </li>
+      <li class="nav-item <?= $current_dir==='hoc_phi'?'active':'' ?>">
+        <a class="nav-link" href="<?= BASE_URL ?>/admin/hoc_phi/index.php">
+          <i class="fas fa-money-bill-wave"></i> Học phí
+        </a>
+      </li>
+      <li class="nav-item <?= $current_dir==='tai_lieu'?'active':'' ?>">
+        <a class="nav-link" href="<?= BASE_URL ?>/admin/tai_lieu/index.php">
+          <i class="fas fa-folder-open"></i> Tài liệu
+        </a>
+      </li>
       <li class="nav-item <?= $current_dir==='thoi_khoa_bieu'?'active':'' ?>">
         <a class="nav-link" href="<?= BASE_URL ?>/admin/thoi_khoa_bieu/index.php">
           <i class="fas fa-calendar-alt"></i> Thời khóa biểu

@@ -30,7 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['sql_file'])) {
 
     if (!file_exists($mysqlPath)) {
         // Thử fallback nếu không dùng XAMPP
-        $mysqlPath = 'mysql'; 
+        $mysqlPath = 'mysql';
     }
 
     $db_host = DB_HOST;
@@ -40,21 +40,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['sql_file'])) {
 
     $tmpPath = $file['tmp_name'];
 
-    // Xây dựng command
-    // Lưu ý: mysql.exe cần nhận đầu vào từ file, dùng dấu < 
-    $command = "\"$mysqlPath\" -h $db_host -u $db_user";
-    if (!empty($db_pass)) {
-        $command .= " -p$db_pass";
+    $mysqlPath = str_replace('/', '\\', $mysqlPath);
+    if (!file_exists($mysqlPath)) {
+        $mysqlPath = 'mysql';
     }
-    $command .= " $db_name < \"$tmpPath\"";
 
-    // Thực thi
+    $escape = static function (string $value): string {
+        return str_replace('"', '\\"', $value);
+    };
+
+    $command = '"' . $mysqlPath . '"';
+    $command .= ' -h "' . $escape($db_host) . '"';
+    $command .= ' -u "' . $escape($db_user) . '"';
+    if ($db_pass !== '') {
+        $command .= ' --password="' . $escape($db_pass) . '"';
+    }
+    $command .= ' --default-character-set=utf8mb4';
+    $command .= ' "' . $escape($db_name) . '"';
+    $command .= ' < "' . $escape($tmpPath) . '"';
+    $command = 'cmd.exe /c "' . str_replace('"', '\\"', $command) . '" 2>&1';
+
     exec($command, $output, $return_var);
-
     if ($return_var === 0) {
         $_SESSION['success'] = "Phục hồi cơ sở dữ liệu thành công!";
     } else {
-        $_SESSION['error'] = "Đã xảy ra lỗi khi phục hồi CSDL. Mã lỗi: $return_var";
+        $stdout = implode("\n", $output);
+        $message = "Đã xảy ra lỗi khi phục hồi CSDL. Mã lỗi: $return_var";
+        if (!empty($stdout)) {
+            $message .= " - Thông tin: " . substr($stdout, 0, 500);
+        }
+        $_SESSION['error'] = $message;
     }
 
     header("Location: " . BASE_URL . "/admin/data_sync/index.php");
