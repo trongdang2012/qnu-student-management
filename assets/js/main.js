@@ -22,6 +22,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // ── Dropdown click toggle ────────────────────────────────────
   // Nav item dropdowns (Cá nhân, Học tập, Trực tuyến)
+  function closeDropdowns() {
+    document.querySelectorAll('.nav-item.dropdown, .navbar-user').forEach(el => el.classList.remove('show'));
+  }
+
   document.querySelectorAll('.nav-item.dropdown > .nav-link').forEach(link => {
     link.addEventListener('click', function (e) {
       e.preventDefault();
@@ -29,7 +33,7 @@ document.addEventListener('DOMContentLoaded', function () {
       const item = this.closest('.nav-item.dropdown');
       const isOpen = item.classList.contains('show');
       // Đóng tất cả trước
-      document.querySelectorAll('.nav-item.dropdown, .navbar-user').forEach(el => el.classList.remove('show'));
+      closeDropdowns();
       // Nếu chưa mở thì mở, nếu đã mở thì để đóng (toggle)
       if (!isOpen) item.classList.add('show');
     });
@@ -41,7 +45,7 @@ document.addEventListener('DOMContentLoaded', function () {
       e.stopPropagation();
       const userMenu = this.closest('.navbar-user');
       const isOpen = userMenu.classList.contains('show');
-      document.querySelectorAll('.nav-item.dropdown, .navbar-user').forEach(el => el.classList.remove('show'));
+      closeDropdowns();
       if (!isOpen) userMenu.classList.add('show');
     });
   });
@@ -49,7 +53,7 @@ document.addEventListener('DOMContentLoaded', function () {
   // Click ra ngoài thì đóng tất cả dropdown
   document.addEventListener('click', (e) => {
     if (!e.target.closest('.nav-item.dropdown') && !e.target.closest('.navbar-user')) {
-      document.querySelectorAll('.nav-item.dropdown, .navbar-user').forEach(el => el.classList.remove('show'));
+      closeDropdowns();
     }
   });
 
