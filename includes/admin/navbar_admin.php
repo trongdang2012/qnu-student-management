@@ -22,6 +22,16 @@ $current_dir = basename(dirname($_SERVER['PHP_SELF']));
           <i class="fas fa-chart-line"></i> Tổng quan
         </a>
       </li>
+      <li class="nav-item <?= $current_dir==='users'?'active':'' ?>">
+        <a class="nav-link" href="<?= BASE_URL ?>/admin/users/index.php">
+          <i class="fas fa-users"></i> Tài khoản
+        </a>
+      </li>
+      <li class="nav-item <?= $current_dir==='sinh_vien'?'active':'' ?>">
+        <a class="nav-link" href="<?= BASE_URL ?>/admin/sinh_vien/index.php">
+          <i class="fas fa-graduation-cap"></i> Sinh viên
+        </a>
+      </li>
       <li class="nav-item <?= $current_dir==='hoc_phan'?'active':'' ?>">
         <a class="nav-link" href="<?= BASE_URL ?>/admin/hoc_phan/index.php">
           <i class="fas fa-book"></i> Học phần
