@@ -337,6 +337,45 @@
 .credit-item .credit-count { font-size: 13px; color: var(--text-muted); }
 
 /* ── Thời khóa biểu Grid ────────────────────────────────────── */
+.tkb-table {
+  min-width: 900px;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+.tkb-table th {
+  background: var(--primary);
+  color: #fff;
+  font-weight: 600;
+}
+.tkb-table th,
+.tkb-table td {
+  border: 1px solid var(--border);
+  vertical-align: middle;
+}
+.tkb-time {
+  background: #f0f4ff;
+  text-align: center;
+  color: var(--text-muted);
+}
+.tkb-time strong {
+  display: block;
+  color: var(--text);
+}
+.tkb-time span {
+  display: block;
+  font-size: 11px;
+}
+.tkb-empty {
+  height: 58px;
+  background: #fff;
+}
+.tkb-cell-filled {
+  background: #f8fbff;
+  padding: 6px;
+}
+.tkb-cell-filled .tkb-subject {
+  min-height: 100%;
+}
 .tkb-grid {
   display: grid;
   grid-template-columns: 60px repeat(7, 1fr);
@@ -443,7 +482,7 @@
   border-bottom: none;
   transition: all var(--transition);
   background: none;
-  font-family: 'Roboto', sans-serif;
+  font-family: var(--font-sans);
 }
 .dk-tab:hover  { color: var(--primary); background: var(--primary-light); }
 .dk-tab.active { color: var(--primary); background: var(--white); border-color: var(--border); font-weight: 700; }
