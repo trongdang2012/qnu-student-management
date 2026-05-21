@@ -76,7 +76,7 @@ require_once ROOT . '/includes/header.php';
           <i class="fas fa-calendar"></i> Năm học <?= NAM_HOC_HIEN_TAI ?> - Học kỳ <?= HOC_KY_HIEN_TAI ?>
         </p>
       </div>
-      <img src="<?= (empty($sv['anh_dai_dien'])) ? BASE_URL.'/assets/img/default-avatar.png' : BASE_URL.'/uploads/'.e($sv['anh_dai_dien']) ?>"
+      <img src="<?= (empty($sv['anh_dai_dien'])) ? BASE_URL.'/assets/img/default-avatar.svg' : BASE_URL.'/uploads/'.e($sv['anh_dai_dien']) ?>"
            alt="Avatar" class="welcome-avatar">
     </div>
 

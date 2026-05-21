@@ -41,8 +41,9 @@ foreach ($tkb as $row) {
     }
 }
 
-$thu_list  = [2,3,4,5,6,7];
+$thu_list  = [2,3,4,5,6,7,8];
 $tiet_list = range(1, 10);
+$tong_so_tiet = array_sum(array_map(static fn($row) => (int)$row['so_tiet'], $tkb));
 
 // Giờ học từng tiết
 $gio = [1=>'7:00',2=>'7:55',3=>'8:50',4=>'9:55',5=>'10:50',6=>'13:00',7=>'13:55',8=>'14:50',9=>'15:55',10=>'16:50'];
@@ -105,57 +106,66 @@ require_once ROOT . '/includes/header.php';
       </div>
     <?php else: ?>
 
-    <!-- Lưới TKB -->
+    <!-- Bảng TKB -->
     <div class="card fade-in">
       <div class="card-header">
         <h3><i class="fas fa-th"></i> Lịch học — HK<?= $hk_filter ?> / <?= e($nh_filter) ?></h3>
-        <span class="badge badge-primary"><?= count($tkb) ?> tiết / tuần</span>
+        <span class="badge badge-primary"><?= $tong_so_tiet ?> tiết / tuần</span>
       </div>
       <div class="card-body" style="padding:16px">
         <div class="table-wrap">
-          <div class="tkb-grid">
-            <!-- Header row -->
-            <div class="tkb-header">Tiết</div>
-            <?php foreach ($thu_list as $thu): ?>
-              <div class="tkb-header"><?= tenThu($thu) ?></div>
-            <?php endforeach; ?>
-
-            <!-- Rows -->
-            <?php
-            $rendered = [];  // theo dõi ô đã render (bỏ qua ô span)
-            foreach ($tiet_list as $tiet):
-            ?>
-              <div class="tkb-tiet">
-                <div><?= $tiet ?></div>
-                <div style="font-size:10px"><?= $gio[$tiet] ?? '' ?></div>
-              </div>
-              <?php foreach ($thu_list as $thu):
-                $cell_key = $thu . '_' . $tiet;
-                if (in_array($cell_key, $rendered)) continue;
-                $subject = $grid[$thu][$tiet] ?? null;
+          <table class="tkb-table">
+            <thead>
+              <tr>
+                <th style="width:80px;text-align:center">Tiết</th>
+                <?php foreach ($thu_list as $thu): ?>
+                  <th style="text-align:center"><?= e(tenThu($thu)) ?></th>
+                <?php endforeach; ?>
+              </tr>
+            </thead>
+            <tbody>
+              <?php
+              $rendered = [];
+              foreach ($tiet_list as $tiet):
               ?>
-                <div class="tkb-cell">
-                  <?php if ($subject):
-                    // Đánh dấu tất cả tiết span
-                    for ($t2=$subject['tiet_bat_dau']; $t2<$subject['tiet_bat_dau']+$subject['so_tiet']; $t2++) {
-                        if ($t2 !== $tiet) $rendered[] = $thu.'_'.$t2;
-                    }
+                <tr>
+                  <td class="tkb-time">
+                    <strong><?= $tiet ?></strong>
+                    <span><?= e($gio[$tiet] ?? '') ?></span>
+                  </td>
+                  <?php foreach ($thu_list as $thu):
+                    $cell_key = $thu . '_' . $tiet;
+                    if (isset($rendered[$cell_key])) continue;
+                    $subject = $grid[$thu][$tiet] ?? null;
                   ?>
-                    <div class="tkb-subject"
-                         data-tooltip="<?= e($subject['ten_hp']) ?> | <?= e($subject['giang_vien']??'') ?> | Phòng <?= e($subject['phong_hoc']??'') ?>">
-                      <div class="sub-name"><?= e($subject['ten_hp']) ?></div>
-                      <?php if (!empty($subject['phong_hoc'])): ?>
-                        <div class="sub-room"><i class="fas fa-door-open" style="font-size:10px"></i> <?= e($subject['phong_hoc']) ?></div>
-                      <?php endif; ?>
-                      <?php if (!empty($subject['giang_vien'])): ?>
-                        <div class="sub-gv"><i class="fas fa-chalkboard-teacher" style="font-size:10px"></i> <?= e($subject['giang_vien']) ?></div>
-                      <?php endif; ?>
-                    </div>
-                  <?php endif; ?>
-                </div>
+                    <?php if ($subject && (int)$subject['tiet_bat_dau'] === $tiet): ?>
+                      <?php
+                        $rowspan = min((int)$subject['so_tiet'], count($tiet_list) - $tiet + 1);
+                        for ($t2 = $tiet + 1; $t2 < $tiet + $rowspan; $t2++) {
+                            $rendered[$thu . '_' . $t2] = true;
+                        }
+                      ?>
+                      <td class="tkb-cell-filled" rowspan="<?= $rowspan ?>">
+                        <div class="tkb-subject"
+                             title="<?= e($subject['ten_hp']) ?> | <?= e($subject['giang_vien'] ?? '') ?> | Phòng <?= e($subject['phong_hoc'] ?? '') ?>">
+                          <div class="sub-name"><?= e($subject['ten_hp']) ?></div>
+                          <div class="sub-code"><?= e($subject['ma_hp']) ?></div>
+                          <?php if (!empty($subject['phong_hoc'])): ?>
+                            <div class="sub-room"><i class="fas fa-door-open" style="font-size:10px"></i> <?= e($subject['phong_hoc']) ?></div>
+                          <?php endif; ?>
+                          <?php if (!empty($subject['giang_vien'])): ?>
+                            <div class="sub-gv"><i class="fas fa-chalkboard-teacher" style="font-size:10px"></i> <?= e($subject['giang_vien']) ?></div>
+                          <?php endif; ?>
+                        </div>
+                      </td>
+                    <?php else: ?>
+                      <td class="tkb-empty"></td>
+                    <?php endif; ?>
+                  <?php endforeach; ?>
+                </tr>
               <?php endforeach; ?>
-            <?php endforeach; ?>
-          </div>
+            </tbody>
+          </table>
         </div>
 
         <!-- Danh sách môn học kỳ -->

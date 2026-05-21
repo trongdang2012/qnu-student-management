@@ -77,17 +77,25 @@
 .nav-item.dropdown .dropdown-menu {
   display: none;
   position: absolute;
-  top: calc(100% + 8px);
+  top: 100%;
   left: 0;
   background: var(--white);
   border-radius: var(--radius);
   box-shadow: var(--shadow-md);
   min-width: 200px;
   padding: 6px 0;
-  z-index: 999;
+  z-index: 1200;
   animation: fadeIn .18s ease;
 }
-.nav-item.dropdown:hover .dropdown-menu { display: block; }
+.nav-item.dropdown .dropdown-menu::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -12px;
+  height: 12px;
+}
+.nav-item.dropdown.show .dropdown-menu { display: block; }
 .dropdown-menu a {
   display: flex;
   align-items: center;
@@ -107,7 +115,7 @@
   transition: transform var(--transition);
   margin-left: 2px;
 }
-.nav-item.dropdown:hover .nav-link .arrow { transform: rotate(180deg); }
+.nav-item.dropdown.show .nav-link .arrow { transform: rotate(180deg); }
 
 /* User info (right side) */
 .navbar-user {
@@ -137,17 +145,25 @@
 .navbar-user .user-dropdown {
   display: none;
   position: absolute;
-  top: calc(100% + 10px);
+  top: 100%;
   right: 0;
   background: var(--white);
   border-radius: var(--radius);
   box-shadow: var(--shadow-md);
   min-width: 200px;
   padding: 6px 0;
-  z-index: 999;
+  z-index: 1200;
   animation: fadeIn .18s ease;
 }
-.navbar-user:hover .user-dropdown { display: block; }
+.navbar-user .user-dropdown::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -12px;
+  height: 12px;
+}
+.navbar-user.show .user-dropdown { display: block; }
 .user-dropdown-header {
   padding: 14px 16px;
   border-bottom: 1px solid var(--border);
@@ -321,6 +337,45 @@
 .credit-item .credit-count { font-size: 13px; color: var(--text-muted); }
 
 /* ── Thời khóa biểu Grid ────────────────────────────────────── */
+.tkb-table {
+  min-width: 900px;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+.tkb-table th {
+  background: var(--primary);
+  color: #fff;
+  font-weight: 600;
+}
+.tkb-table th,
+.tkb-table td {
+  border: 1px solid var(--border);
+  vertical-align: middle;
+}
+.tkb-time {
+  background: #f0f4ff;
+  text-align: center;
+  color: var(--text-muted);
+}
+.tkb-time strong {
+  display: block;
+  color: var(--text);
+}
+.tkb-time span {
+  display: block;
+  font-size: 11px;
+}
+.tkb-empty {
+  height: 58px;
+  background: #fff;
+}
+.tkb-cell-filled {
+  background: #f8fbff;
+  padding: 6px;
+}
+.tkb-cell-filled .tkb-subject {
+  min-height: 100%;
+}
 .tkb-grid {
   display: grid;
   grid-template-columns: 60px repeat(7, 1fr);
@@ -427,7 +482,7 @@
   border-bottom: none;
   transition: all var(--transition);
   background: none;
-  font-family: 'Roboto', sans-serif;
+  font-family: var(--font-sans);
 }
 .dk-tab:hover  { color: var(--primary); background: var(--primary-light); }
 .dk-tab.active { color: var(--primary); background: var(--white); border-color: var(--border); font-weight: 700; }

@@ -20,6 +20,43 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
+  // ── Dropdown click toggle ────────────────────────────────────
+  // Nav item dropdowns (Cá nhân, Học tập, Trực tuyến)
+  function closeDropdowns() {
+    document.querySelectorAll('.nav-item.dropdown, .navbar-user').forEach(el => el.classList.remove('show'));
+  }
+
+  document.querySelectorAll('.nav-item.dropdown > .nav-link').forEach(link => {
+    link.addEventListener('click', function (e) {
+      e.preventDefault();
+      e.stopPropagation(); // Ngăn event bubble lên document (tránh bị đóng ngay lập tức)
+      const item = this.closest('.nav-item.dropdown');
+      const isOpen = item.classList.contains('show');
+      // Đóng tất cả trước
+      closeDropdowns();
+      // Nếu chưa mở thì mở, nếu đã mở thì để đóng (toggle)
+      if (!isOpen) item.classList.add('show');
+    });
+  });
+
+  // User menu (avatar + tên người dùng)
+  document.querySelectorAll('.navbar-user .user-avatar, .navbar-user .user-name').forEach(el => {
+    el.addEventListener('click', function (e) {
+      e.stopPropagation();
+      const userMenu = this.closest('.navbar-user');
+      const isOpen = userMenu.classList.contains('show');
+      closeDropdowns();
+      if (!isOpen) userMenu.classList.add('show');
+    });
+  });
+
+  // Click ra ngoài thì đóng tất cả dropdown
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.nav-item.dropdown') && !e.target.closest('.navbar-user')) {
+      closeDropdowns();
+    }
+  });
+
   // ── Tab system (đăng ký học phần) ───────────────────────────
   document.querySelectorAll('.dk-tab').forEach(tab => {
     tab.addEventListener('click', () => {
