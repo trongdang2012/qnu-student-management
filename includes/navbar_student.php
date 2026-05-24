@@ -50,9 +50,11 @@ $_menu = $active_menu ?? '';
           <li><a href="<?= $_base ?>/student/ca_nhan/cap_nhat.php" role="menuitem">
             <span class="menu-icon"><i class="fas fa-edit"></i></span> Cập nhật thông tin
           </a></li>
-          <li><a href="<?= $_base ?>/student/ca_nhan/tien_do.php" role="menuitem">
-            <span class="menu-icon"><i class="fas fa-tasks"></i></span> Tiến độ tín chỉ
-          </a></li>
+          <li>
+          <a href="<?= BASE_URL ?>/student/ca_nhan/tien_do.php" class="<?= $active_menu === 'ca_nhan' ? 'active' : '' ?>">
+            <span class="menu-icon"><i class="fas fa-tasks"></i></span> Tiến độ học tập
+          </a>
+        </li>
         </ul>
       </li>
 

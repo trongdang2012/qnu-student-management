@@ -82,7 +82,7 @@ h4 { font-size: 16px; font-weight: 500; }
 .btn-primary   { background: var(--primary);  color: #fff; }
 .btn-primary:hover  { background: var(--primary-dark); color: #fff; }
 
-.btn-success   { background: var(--success);  color: #fff; }
+.btn-success   { background: var(--success);  color: #fff; justify-content: center;}
 .btn-success:hover  { background: #1e7e34; color: #fff; }
 
 .btn-danger    { background: var(--danger);   color: #fff; }

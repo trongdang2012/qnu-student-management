@@ -173,6 +173,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $msg = ['type' => 'danger', 'text' => 'Lỗi hệ thống, vui lòng thử lại sau'];
         }
     }
+
+    // Nếu là AJAX Request (qua Fetch API)
+    if (isset($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false) {
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode($msg);
+        exit;
+    }
 }
 
 // ── Danh sách HP đã đăng ký kỳ này ─────────────────────────
@@ -329,11 +336,10 @@ require_once ROOT . '/includes/header.php';
                 <td style="text-align:center"><?= dkBadge($dk['trang_thai']) ?></td>
                 <td style="text-align:center">
                   <?php if ($dk['trang_thai'] === 'Chờ duyệt'): ?>
-                    <form method="POST" style="display:inline">
+                    <form class="ajax-form-dk" method="POST" style="display:inline" data-confirm="Bạn có chắc muốn hủy đăng ký học phần này?">
                       <input type="hidden" name="action" value="huy">
                       <input type="hidden" name="hoc_phan_id" value="<?= (int)$dk['hoc_phan_id'] ?>">
-                      <button type="submit" class="btn btn-danger btn-sm"
-                              data-confirm="Bạn có chắc muốn hủy đăng ký học phần này?">
+                      <button type="button" class="btn btn-danger btn-sm btn-submit-dk">
                         <i class="fas fa-times"></i> Hủy
                       </button>
                     </form>
@@ -396,17 +402,15 @@ require_once ROOT . '/includes/header.php';
                   <?php endif; ?>
                 </td>
                 <td style="text-align:center">
-                  <form method="POST" style="display:inline">
+                  <form class="ajax-form-dk" method="POST" style="display:inline" data-confirm="<?= $is_full ? 'Học phần đã đủ số lượng, bạn có chắc chắn muốn thử đăng ký?' : 'Đăng ký học phần: ' . e($hp['ten_hp']) . '?' ?>">
                     <input type="hidden" name="action" value="dang_ky">
                     <input type="hidden" name="hoc_phan_id" value="<?= (int)$hp['id'] ?>">
                     <?php if ($is_full): ?>
-                      <button type="submit" class="btn btn-secondary btn-sm"
-                              data-confirm="Học phần đã đủ số lượng, bạn có chắc chắn muốn thử đăng ký?">
+                      <button type="button" class="btn btn-secondary btn-sm btn-submit-dk">
                         <i class="fas fa-exclamation-triangle"></i> Đăng ký (Đầy)
                       </button>
                     <?php else: ?>
-                      <button type="submit" class="btn btn-primary btn-sm"
-                              data-confirm="Đăng ký học phần: <?= e($hp['ten_hp']) ?>?">
+                      <button type="button" class="btn btn-primary btn-sm btn-submit-dk">
                         <i class="fas fa-plus"></i> Đăng ký
                       </button>
                     <?php endif; ?>
@@ -438,5 +442,72 @@ require_once ROOT . '/includes/header.php';
 
   </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const dkForms = document.querySelectorAll('.ajax-form-dk');
+    
+    dkForms.forEach(form => {
+        const btn = form.querySelector('.btn-submit-dk');
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const confirmMsg = form.getAttribute('data-confirm');
+            
+            Swal.fire({
+                title: 'Xác nhận',
+                text: confirmMsg,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#0056B3',
+                cancelButtonColor: '#dc3545',
+                confirmButtonText: 'Đồng ý',
+                cancelButtonText: 'Hủy'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Disable button to prevent double submit
+                    const originalHtml = btn.innerHTML;
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xử lý...';
+                    
+                    const formData = new FormData(form);
+                    fetch(window.location.href, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data && data.type) {
+                            Swal.fire({
+                                icon: data.type === 'danger' ? 'error' : (data.type === 'success' ? 'success' : 'warning'),
+                                title: data.type === 'success' ? 'Thành công' : 'Thông báo',
+                                text: data.text,
+                                showConfirmButton: data.type !== 'success',
+                                timer: data.type === 'success' ? 1500 : undefined
+                            }).then(() => {
+                                if (data.type === 'success') {
+                                    // Tải lại trang nhẹ nhàng để cập nhật cả 2 bảng
+                                    window.location.reload();
+                                } else {
+                                    btn.disabled = false;
+                                    btn.innerHTML = originalHtml;
+                                }
+                            });
+                        }
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        Swal.fire('Lỗi', 'Mất kết nối với máy chủ!', 'error');
+                        btn.disabled = false;
+                        btn.innerHTML = originalHtml;
+                    });
+                }
+            });
+        });
+    });
+});
+</script>
 
 <?php require_once ROOT . '/includes/footer.php'; ?>

@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `username` VARCHAR(50) NOT NULL UNIQUE,
   `password` VARCHAR(255) NOT NULL,
   `role` ENUM('student','admin') NOT NULL DEFAULT 'student',
+  `email` VARCHAR(100) DEFAULT NULL,
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 
@@ -158,10 +159,10 @@ CREATE TABLE IF NOT EXISTS `tai_lieu` (
 -- ============================================================
 
 -- Tài khoản (password = 'password123' dạng hash sha256 đơn giản, thực tế dùng bcrypt)
-INSERT INTO `users` (`username`, `password`, `role`) VALUES
-('admin', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin'),
-('sv001', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'student'),
-('sv002', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'student');
+INSERT INTO `users` (`username`, `password`, `role`, `email`) VALUES
+('admin', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', 'admin@qnu.edu.vn'),
+('sv001', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'student', 'nguyenvanan@gmail.com'),
+('sv002', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'student', 'tranthihinh@gmail.com');
 -- Password mặc định: password
 
 -- Thông tin sinh viên

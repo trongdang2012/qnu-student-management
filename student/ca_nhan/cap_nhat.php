@@ -31,6 +31,7 @@ if (!is_dir(UPLOAD_DIR)) {
 
 // ── Xử lý POST ────────────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    header('Content-Type: application/json; charset=utf-8');
     $email = trim($_POST['email'] ?? '');
     $sdt   = trim($_POST['so_dien_thoai'] ?? '');
 
@@ -87,8 +88,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if ($stmt->execute()) {
-            setFlash('success', 'Cập nhật thông tin thành công!');
-            header('Location: ' . BASE_URL . '/student/ca_nhan/cap_nhat.php');
+            echo json_encode([
+                'success' => true, 
+                'message' => 'Cập nhật thông tin thành công!',
+                'avatar_url' => $new_avatar ? BASE_URL . '/' . UPLOAD_DIR . basename($new_avatar) : null // Quick path resolution
+            ]);
             exit;
         } else {
             $errors['db'] = 'Có lỗi xảy ra khi lưu dữ liệu.';
@@ -96,9 +100,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->close();
     }
 
-    // Giữ lại giá trị người dùng nhập
-    $sv['email']         = $email;
-    $sv['so_dien_thoai'] = $sdt;
+    echo json_encode(['success' => false, 'errors' => $errors]);
+    exit;
 }
 
 // ── Avatar hiện tại ────────────────────────────────────────────
@@ -127,16 +130,6 @@ require_once ROOT . '/includes/header.php';
       <h1><i class="fas fa-edit"></i> Cập nhật thông tin</h1>
       <p>Chỉnh sửa <strong>Email</strong>, <strong>Số điện thoại</strong> và <strong>Ảnh đại diện</strong>. Thông tin khác liên hệ phòng Đào tạo.</p>
     </div>
-
-    <!-- Flash / Lỗi DB -->
-    <?php $flash = getFlash(); if ($flash): ?>
-      <div class="alert alert-<?= e($flash['type']) ?>" data-auto-dismiss>
-        <i class="fas fa-check-circle"></i> <?= e($flash['msg']) ?>
-      </div>
-    <?php endif; ?>
-    <?php if (!empty($errors['db'])): ?>
-      <div class="alert alert-danger"><i class="fas fa-times-circle"></i> <?= e($errors['db']) ?></div>
-    <?php endif; ?>
 
     <form action="" method="POST" enctype="multipart/form-data" id="updateForm" novalidate>
 
@@ -184,12 +177,7 @@ require_once ROOT . '/includes/header.php';
                 <i class="fas fa-upload"></i> Chọn ảnh
               </label>
               <span id="avatarFileName" style="font-size:13px;color:var(--text-muted);margin-left:10px"></span>
-
-              <?php if (!empty($errors['avatar'])): ?>
-                <p style="color:var(--danger);font-size:13px;margin-top:8px">
-                  <i class="fas fa-exclamation-circle"></i> <?= e($errors['avatar']) ?>
-                </p>
-              <?php endif; ?>
+              <p id="avatarError" style="color:var(--danger);font-size:13px;margin-top:8px;display:none;"></p>
             </div>
           </div>
         </div>
@@ -236,15 +224,12 @@ require_once ROOT . '/includes/header.php';
               <i class="fas fa-envelope"></i> Email liên hệ <span class="required">*</span>
             </label>
             <input type="email" id="email" name="email"
-                   class="form-control <?= isset($errors['email']) ? 'is-invalid' : '' ?>"
+                   class="form-control"
                    value="<?= e($sv['email'] ?? '') ?>"
                    placeholder="example@gmail.com"
                    autocomplete="email">
-            <?php if (isset($errors['email'])): ?>
-              <span class="form-error" style="display:block"><?= e($errors['email']) ?></span>
-            <?php else: ?>
-              <span class="form-hint">Địa chỉ email dùng để nhận thông báo từ trường.</span>
-            <?php endif; ?>
+            <span class="form-error" id="emailError" style="display:none;"></span>
+            <span class="form-hint" id="emailHint">Địa chỉ email dùng để nhận thông báo từ trường.</span>
           </div>
 
           <!-- SĐT -->
@@ -253,15 +238,12 @@ require_once ROOT . '/includes/header.php';
               <i class="fas fa-phone"></i> Số điện thoại
             </label>
             <input type="tel" id="so_dien_thoai" name="so_dien_thoai"
-                   class="form-control <?= isset($errors['sdt']) ? 'is-invalid' : '' ?>"
+                   class="form-control"
                    value="<?= e($sv['so_dien_thoai'] ?? '') ?>"
                    placeholder="0912 345 678"
                    autocomplete="tel">
-            <?php if (isset($errors['sdt'])): ?>
-              <span class="form-error" style="display:block"><?= e($errors['sdt']) ?></span>
-            <?php else: ?>
-              <span class="form-hint">Số điện thoại liên hệ (không bắt buộc).</span>
-            <?php endif; ?>
+            <span class="form-error" id="sdtError" style="display:none;"></span>
+            <span class="form-hint" id="sdtHint">Số điện thoại liên hệ (không bắt buộc).</span>
           </div>
 
           <!-- Nút -->
@@ -311,6 +293,85 @@ function previewAvatar(input) {
     document.getElementById('avatarPreview').src = e.target.result;
   };
   reader.readAsDataURL(file);
+}
+
+// Xử lý AJAX Form Cập nhật thông tin
+const updateForm = document.getElementById('updateForm');
+const btnSave = document.getElementById('btnSave');
+
+if (updateForm) {
+  updateForm.addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    // Xóa lỗi cũ
+    document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+    document.querySelectorAll('.form-error').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.form-hint').forEach(el => el.style.display = 'block');
+    document.getElementById('avatarError').style.display = 'none';
+
+    btnSave.disabled = true;
+    btnSave.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang lưu...';
+
+    const formData = new FormData(this);
+
+    fetch(window.location.href, {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'Accept': 'application/json'
+      }
+    })
+    .then(res => res.json())
+    .then(data => {
+      btnSave.disabled = false;
+      btnSave.innerHTML = '<i class="fas fa-save"></i> Lưu thay đổi';
+
+      if (data.success) {
+        // Cập nhật lại avatar URL trên Navbar nếu có
+        if (data.avatar_url && document.querySelector('.user-avatar')) {
+            document.querySelector('.user-avatar').src = data.avatar_url;
+            document.getElementById('avatarPreview').src = data.avatar_url;
+        }
+
+        Swal.fire({
+          icon: 'success',
+          title: 'Thành công',
+          text: data.message,
+          showConfirmButton: false,
+          timer: 1500
+        });
+      } else {
+        if (data.errors) {
+            // Hiển thị lỗi tương ứng
+            if (data.errors.email) {
+                document.getElementById('email').classList.add('is-invalid');
+                document.getElementById('emailError').innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + data.errors.email;
+                document.getElementById('emailError').style.display = 'block';
+                document.getElementById('emailHint').style.display = 'none';
+            }
+            if (data.errors.sdt) {
+                document.getElementById('so_dien_thoai').classList.add('is-invalid');
+                document.getElementById('sdtError').innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + data.errors.sdt;
+                document.getElementById('sdtError').style.display = 'block';
+                document.getElementById('sdtHint').style.display = 'none';
+            }
+            if (data.errors.avatar) {
+                document.getElementById('avatarError').innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + data.errors.avatar;
+                document.getElementById('avatarError').style.display = 'block';
+            }
+            if (data.errors.db) {
+                 Swal.fire('Lỗi', data.errors.db, 'error');
+            }
+        }
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      btnSave.disabled = false;
+      btnSave.innerHTML = '<i class="fas fa-save"></i> Lưu thay đổi';
+      Swal.fire('Lỗi', 'Đã xảy ra lỗi kết nối, vui lòng thử lại.', 'error');
+    });
+  });
 }
 </script>
 

@@ -73,7 +73,60 @@ $cpa = round((float)($r->fetch_assoc()['cpa'] ?? 0), 2);
 
 $pct_total = $tc_total > 0 ? min(100, round($tc_dat_total / $tc_total * 100)) : 0;
 
-$page_title  = 'Tiến độ tín chỉ';
+// ── Tính toán cảnh báo học tập ─────────────────────────────
+$diem_db = $db->query("
+    SELECT d.hoc_ky, d.nam_hoc, d.diem_tong, hp.so_tin_chi
+    FROM diem_hoc_tap d
+    JOIN hoc_phan hp ON hp.id = d.hoc_phan_id
+    WHERE d.sinh_vien_id = $sid AND d.diem_tong IS NOT NULL
+    ORDER BY d.nam_hoc, d.hoc_ky
+")->fetch_all(MYSQLI_ASSOC);
+
+$ky_hoc_map = [];
+foreach ($diem_db as $d) {
+    $key = $d['nam_hoc'] . '_HK' . $d['hoc_ky'];
+    if (!isset($ky_hoc_map[$key])) {
+        $ky_hoc_map[$key] = ['tong_diem' => 0, 'tong_tc' => 0];
+    }
+    $ky_hoc_map[$key]['tong_diem'] += $d['diem_tong'] * $d['so_tin_chi'];
+    $ky_hoc_map[$key]['tong_tc'] += $d['so_tin_chi'];
+}
+
+$canh_bao_lien_tiep = 0;
+$ky_hoc_list = array_values($ky_hoc_map);
+for ($i = count($ky_hoc_list) - 1; $i >= 0; $i--) {
+    $ky = $ky_hoc_list[$i];
+    $tb_ky = $ky['tong_tc'] > 0 ? $ky['tong_diem'] / $ky['tong_tc'] : 0;
+    if ($tb_ky < 4.0) {
+        $canh_bao_lien_tiep++;
+    } else {
+        break; 
+    }
+}
+
+// ── Tính toán nợ môn ────────────────────────────────────────
+$diem_cao_nhat = [];
+foreach ($ds_hk as $m) {
+    $ma = $m['ma_hp'];
+    if (!isset($diem_cao_nhat[$ma])) {
+        $diem_cao_nhat[$ma] = $m;
+    } else {
+        if (!is_null($m['diem_tong']) && $m['diem_tong'] > $diem_cao_nhat[$ma]['diem_tong']) {
+            $diem_cao_nhat[$ma] = $m;
+        }
+    }
+}
+
+$no_mon_list = [];
+$tong_tc_no = 0;
+foreach ($diem_cao_nhat as $m) {
+    if (!is_null($m['diem_tong']) && $m['diem_tong'] < 4.0) {
+        $no_mon_list[] = $m;
+        $tong_tc_no += $m['so_tin_chi'];
+    }
+}
+
+$page_title  = 'Tiến độ học tập';
 $active_menu = 'ca_nhan';
 require_once ROOT . '/includes/header.php';
 ?>
@@ -87,11 +140,25 @@ require_once ROOT . '/includes/header.php';
       <div class="breadcrumb">
         <a href="<?= BASE_URL ?>/student/dashboard.php">Tổng quan</a>
         <span>›</span><span>Cá nhân</span>
-        <span>›</span><span>Tiến độ tín chỉ</span>
+        <span>›</span><span>Tiến độ học tập</span>
       </div>
-      <h1><i class="fas fa-tasks"></i> Tiến độ tích lũy tín chỉ</h1>
+      <h1><i class="fas fa-tasks"></i> Tiến độ học tập</h1>
       <p>Theo dõi tiến độ hoàn thành chương trình đào tạo của bạn.</p>
     </div>
+
+    <?php if ($canh_bao_lien_tiep > 0): ?>
+    <div class="alert <?= $canh_bao_lien_tiep >= 3 ? 'alert-danger' : 'alert-warning' ?> mb-20 fade-in" style="font-size: 16px; border-left: 5px solid <?= $canh_bao_lien_tiep >= 3 ? '#dc3545' : '#ffc107' ?>; background-color: <?= $canh_bao_lien_tiep >= 3 ? '#f8d7da' : '#fff3cd' ?>; color: <?= $canh_bao_lien_tiep >= 3 ? '#721c24' : '#856404' ?>;">
+      <i class="fas fa-exclamation-triangle" style="font-size: 20px; margin-right: 10px; margin-top: 2px;"></i>
+      <div>
+        <strong>Cảnh báo học tập!</strong> Bạn đang bị cảnh báo học tập <strong><?= $canh_bao_lien_tiep ?> kỳ liên tiếp</strong> (Do điểm trung bình học kỳ < 4.0).
+        <?php if ($canh_bao_lien_tiep >= 3): ?>
+          <br>Lưu ý: Bị cảnh báo 3 kỳ liên tiếp sẽ dẫn đến <strong>BUỘC THÔI HỌC</strong> theo quy chế. Vui lòng liên hệ cố vấn học tập ngay!
+        <?php else: ?>
+          <br>Hãy chú ý đăng ký học lại và cải thiện kết quả học tập ở kỳ tiếp theo nhé!
+        <?php endif; ?>
+      </div>
+    </div>
+    <?php endif; ?>
 
     <!-- Tổng quan -->
     <div class="stat-grid fade-in">
@@ -123,6 +190,13 @@ require_once ROOT . '/includes/header.php';
           <div class="stat-label">CPA hiện tại</div>
         </div>
       </div>
+      <div class="stat-card">
+        <div class="stat-icon red" style="background:#fef2f2;color:#ef4444;"><i class="fas fa-exclamation-circle"></i></div>
+        <div>
+          <div class="stat-value"><?= count($no_mon_list) ?> <span style="font-size:14px;font-weight:400">môn (<?= $tong_tc_no ?> TC)</span></div>
+          <div class="stat-label">Đang nợ</div>
+        </div>
+      </div>
     </div>
 
     <!-- Thanh tiến độ tổng -->
@@ -145,6 +219,47 @@ require_once ROOT . '/includes/header.php';
         </p>
       </div>
     </div>
+
+    <?php if (count($no_mon_list) > 0): ?>
+    <!-- Đề xuất môn học (Môn nợ) -->
+    <div class="card mb-20 fade-in" style="border-left: 4px solid #ef4444;">
+      <div class="card-header">
+        <h3 style="color: #ef4444;"><i class="fas fa-lightbulb"></i> Đề xuất đăng ký học lại</h3>
+      </div>
+      <div class="card-body" style="padding:0">
+        <div style="padding: 15px 20px; background: #fef2f2;">
+            <p style="margin:0; color: #991b1b;">Bạn đang có <strong><?= count($no_mon_list) ?></strong> học phần chưa đạt (điểm < 4.0). Hệ thống khuyến nghị ưu tiên đăng ký học lại các học phần này trong học kỳ tới:</p>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>Mã HP</th><th>Tên học phần</th>
+              <th style="text-align:center">TC</th>
+              <th style="text-align:center">Loại</th>
+              <th style="text-align:center">Điểm rớt</th>
+            </tr></thead>
+            <tbody>
+            <?php foreach ($no_mon_list as $m): ?>
+              <tr>
+                <td><code><?= e($m['ma_hp']) ?></code></td>
+                <td><strong><?= e($m['ten_hp']) ?></strong></td>
+                <td style="text-align:center"><?= (int)$m['so_tin_chi'] ?></td>
+                <td style="text-align:center">
+                  <span class="badge badge-<?= $m['loai']==='Bắt buộc' ? 'danger' : ($m['loai']==='Tự chọn' ? 'warning' : 'info') ?>">
+                    <?= e($m['loai']) ?>
+                  </span>
+                </td>
+                <td style="text-align:center;color:#ef4444;font-weight:bold;">
+                  <?= number_format((float)$m['diem_tong'], 1) ?>
+                </td>
+              </tr>
+            <?php endforeach; ?>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <?php endif; ?>
 
     <!-- Tiến độ theo nhóm môn -->
     <div class="card mb-20 fade-in">
