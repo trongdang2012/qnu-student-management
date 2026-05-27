@@ -1,0 +1,6 @@
+RewriteEngine On
+
+# Chuyển hướng nếu không phải là file tĩnh
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php [QSA,L]

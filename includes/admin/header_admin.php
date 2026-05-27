@@ -32,15 +32,60 @@ $_base = BASE_URL;
   
   <style>
     /* Admin Sidebar - Vertical Layout */
+    :root {
+      --sidebar-width: 250px;
+    }
+
     .admin-navbar {
       position: fixed;
       top: 0; left: 0; bottom: 0;
-      width: 250px;
-      background: #1a1a2e;
+      width: var(--sidebar-width);
+      background: var(--primary);
       box-shadow: 2px 0 10px rgba(0,0,0,.2);
       z-index: 1000;
-      border-right: 3px solid #ff6b35;
       overflow-y: auto;
+      transition: width 0.1s;
+    }
+    .admin-navbar.collapsed {
+      transform: translateX(-100%);
+      transition: transform 0.3s ease;
+    }
+
+    .sidebar-resizer {
+      position: absolute;
+      top: 0; right: 0; bottom: 0;
+      width: 5px;
+      cursor: ew-resize;
+      background: transparent;
+      z-index: 1010;
+    }
+    .sidebar-resizer:hover, .sidebar-resizer.active {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    .admin-hamburger {
+      position: fixed;
+      top: 15px; left: 15px;
+      z-index: 1001;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      width: 40px; height: 40px;
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
+      cursor: pointer;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    .admin-hamburger.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .admin-hamburger:hover {
+      background: var(--primary-dark);
     }
 
     .admin-navbar-inner {
@@ -64,11 +109,11 @@ $_base = BASE_URL;
 
     .admin-navbar-brand .logo-icon {
       width: 38px; height: 38px;
-      background: rgba(255,107,53,.2);
+      background: rgba(255,255,255,.15);
       border-radius: 8px;
       display: flex; align-items: center; justify-content: center;
       font-size: 18px;
-      color: #ff6b35;
+      color: #fff;
       flex-shrink: 0;
     }
 
@@ -102,8 +147,47 @@ $_base = BASE_URL;
 
     .admin-navbar-menu .nav-link:hover,
     .admin-navbar-menu .nav-link.active {
-      background: rgba(255,107,53,.2);
-      color: #ff6b35;
+      background: rgba(255,255,255,.18);
+      color: #fff;
+    }
+
+    /* Admin Dropdown - Accordion */
+    .admin-navbar-menu .nav-item.dropdown .dropdown-menu {
+      position: static;
+      display: none;
+      box-shadow: none;
+      background: transparent;
+      padding: 5px 0 5px 20px;
+      margin: 0;
+    }
+    
+    .admin-navbar-menu .nav-item.dropdown .dropdown-menu::before {
+      display: none;
+    }
+    
+    .admin-navbar-menu .nav-item.dropdown.open .dropdown-menu,
+    .admin-navbar-menu .nav-item.dropdown.active .dropdown-menu {
+      display: block;
+    }
+
+    .admin-navbar-menu .nav-item.dropdown .dropdown-menu a {
+      color: rgba(255,255,255,0.7);
+      padding: 8px 14px;
+      font-size: 14px;
+    }
+    .admin-navbar-menu .nav-item.dropdown .dropdown-menu a:hover {
+      color: #fff;
+      background: rgba(255,255,255,0.1);
+      border-radius: 4px;
+    }
+    
+    .admin-navbar-menu .nav-item.dropdown .nav-link .arrow {
+      transform: rotate(0deg);
+      transition: transform 0.2s;
+    }
+    .admin-navbar-menu .nav-item.dropdown.open .nav-link .arrow,
+    .admin-navbar-menu .nav-item.dropdown.active .nav-link .arrow {
+      transform: rotate(180deg);
     }
 
     .admin-navbar-right {
@@ -124,17 +208,22 @@ $_base = BASE_URL;
     }
 
     .admin-navbar-right .nav-link:hover {
-      background: rgba(255,107,53,.2);
-      color: #ff6b35;
+      background: rgba(255,255,255,.18);
+      color: #fff;
     }
 
     /* Admin wrapper */
     .admin-wrapper {
       padding-top: 24px;
       padding-bottom: 40px;
-      padding-left: 270px;
+      padding-left: calc(var(--sidebar-width) + 20px);
       min-height: 100vh;
       background: #f5f6fa;
+      transition: padding-left 0.1s;
+    }
+    .admin-wrapper.collapsed {
+      padding-left: 20px;
+      transition: padding-left 0.3s ease;
     }
 
     .admin-container {
@@ -393,3 +482,6 @@ $_base = BASE_URL;
   </style>
 </head>
 <body>
+  <button class="admin-hamburger" id="adminHamburger">
+    <i class="fas fa-bars"></i>
+  </button>
