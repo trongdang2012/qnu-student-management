@@ -254,6 +254,19 @@ function formatSize(int $bytes): string {
                   </select>
                 </div>
 
+                <!-- Quyền chia sẻ -->
+                <div class="form-group">
+                  <label style="font-size:13px; font-weight:500; display:block; margin-bottom:8px;">Chế độ chia sẻ</label>
+                  <label style="display:inline-flex; align-items:center; gap:8px; margin-right:18px; font-size:13px;">
+                    <input type="radio" name="cong_khai" value="1" checked>
+                    Công khai (mọi người có thể xem)
+                  </label>
+                  <label style="display:inline-flex; align-items:center; gap:8px; font-size:13px;">
+                    <input type="radio" name="cong_khai" value="0">
+                    Riêng tư (chỉ bạn thấy trong tài liệu của tôi)
+                  </label>
+                </div>
+
                 <!-- Mô tả -->
                 <div class="form-group">
                   <label for="mo_ta" style="font-size:13px; font-weight:500;">Mô tả ngắn</label>
@@ -302,6 +315,8 @@ function formatSize(int $bytes): string {
                           <span><?= formatSize((int)$tl['kich_thuoc']) ?></span>
                           <span>•</span>
                           <span><i class="fas fa-download"></i> <?= (int)$tl['luot_tai'] ?></span>
+                          <span>•</span>
+                          <span style="font-weight:600; color:<?= $tl['is_public'] ? '#198754' : '#6c757d' ?>;"><?= $tl['is_public'] ? 'Công khai' : 'Riêng tư' ?></span>
                         </div>
                       </div>
                     </div>
@@ -411,10 +426,11 @@ function formatSize(int $bytes): string {
               </div>
 
               <div>
-                <div class="tl-meta" style="margin-top:12px; border-top:1px solid #f8f9fa; padding-top:10px;">
-                  <span title="Người đăng"><i class="fas fa-user"></i> <?= e($tl['ho_ten']) ?></span>
+                <div class="tl-meta" style="margin-top:12px; border-top:1px solid #f8f9fa; padding-top:10px; display:flex; flex-wrap:wrap; gap:10px;">
+                  <span title="Người đăng"><i class="fas fa-user"></i> <?= e($tl['ho_ten'] ?: 'Admin') ?></span>
                   <span title="Dung lượng"><i class="fas fa-file"></i> <?= formatSize((int)$tl['kich_thuoc']) ?></span>
                   <span title="Lượt tải"><i class="fas fa-download"></i> <?= (int)$tl['luot_tai'] ?></span>
+                  <span title="Chế độ chia sẻ" style="font-weight:600;color:#198754;">Công khai</span>
                 </div>
                 
                 <div style="font-size:11px;color:var(--text-muted); margin-top:6px; display:flex; justify-content:space-between; align-items:center;">

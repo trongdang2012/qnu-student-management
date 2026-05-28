@@ -29,15 +29,24 @@
           <div class="form-row full">
             <div class="form-group">
               <label>Mô tả</label>
-              <textarea name="description" class="form-control" rows="4"><?= e($item['description'] ?? '') ?></textarea>
+              <textarea name="description" class="form-control" rows="4"><?= e($item['mo_ta'] ?? '') ?></textarea>
+            </div>
+          </div>
+          <div class="form-row full">
+            <div class="form-group">
+              <label>Chế độ chia sẻ</label>
+              <select name="is_public" class="form-control">
+                <option value="1" <?= (!empty($item['is_public']) ? 'selected' : '') ?>>Công khai</option>
+                <option value="0" <?= (empty($item['is_public']) ? 'selected' : '') ?>>Riêng tư</option>
+              </select>
             </div>
           </div>
           <div class="form-row">
             <div class="form-group">
               <label>File hiện tại</label>
               <div>
-                <?php if (!empty($item['file'])): ?>
-                  <a href="<?= BASE_URL ?>/admin/tai-lieu/download?file=<?= rawurlencode(basename($item['file'])) ?>" target="_blank"><?= basename($item['file']) ?></a>
+                <?php if (!empty($item['duong_dan'])): ?>
+                  <a href="<?= BASE_URL ?>/admin/tai-lieu/download?file=<?= rawurlencode(basename($item['duong_dan'])) ?>" target="_blank"><?= basename($item['duong_dan']) ?></a>
                 <?php else: ?>
                   —
                 <?php endif; ?>

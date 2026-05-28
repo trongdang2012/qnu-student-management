@@ -31,6 +31,8 @@
                 <th>#</th>
                 <th>Tiêu đề</th>
                 <th>Mô tả</th>
+                <th>Người đăng</th>
+                <th>Chế độ</th>
                 <th>File</th>
                 <th>Ngày tạo</th>
                 <th>Hành động</th>
@@ -38,21 +40,23 @@
             </thead>
             <tbody>
               <?php if (empty($items)): ?>
-                <tr><td colspan="6" class="text-center text-muted">Chưa có tài liệu nào.</td></tr>
+                <tr><td colspan="8" class="text-center text-muted">Chưa có tài liệu nào.</td></tr>
               <?php else: ?>
                 <?php foreach ($items as $item): ?>
                   <tr>
                     <td><?= e($item['id']) ?></td>
-                    <td><?= e($item['title']) ?></td>
-                    <td style="max-width:360px;"><?= e($item['description'] ?? '') ?></td>
+                    <td><?= e($item['tieu_de']) ?></td>
+                    <td style="max-width:360px;"><?= e($item['mo_ta'] ?? '') ?></td>
+                    <td><?= e($item['ho_ten'] ?: 'Admin') ?></td>
+                    <td><?= ($item['is_public'] ?? 1) ? '<span class="badge badge-success">Công khai</span>' : '<span class="badge badge-warning">Riêng tư</span>' ?></td>
                     <td>
-                      <?php if (!empty($item['file'])): ?>
-                        <a href="<?= BASE_URL ?>/admin/tai-lieu/download?file=<?= rawurlencode(basename($item['file'])) ?>" target="_blank"><i class="fas fa-download"></i> Tải</a>
+                      <?php if (!empty($item['duong_dan'])): ?>
+                        <a href="<?= BASE_URL ?>/admin/tai-lieu/download?file=<?= rawurlencode(basename($item['duong_dan'])) ?>" target="_blank"><i class="fas fa-download"></i> Tải</a>
                       <?php else: ?>
                         —
                       <?php endif; ?>
                     </td>
-                    <td><?= e($item['created_at'] ?? '') ?></td>
+                    <td><?= e($item['ngay_dang'] ?? '') ?></td>
                     <td class="table-actions">
                       <a class="btn btn-primary btn-sm" href="<?= BASE_URL ?>/admin/tai-lieu/edit?id=<?= e($item['id']) ?>">Sửa</a>
                       <form method="POST" action="<?= BASE_URL ?>/admin/tai-lieu/delete" style="display:inline" onsubmit="return confirm('Bạn có chắc muốn xóa tài liệu này?');">

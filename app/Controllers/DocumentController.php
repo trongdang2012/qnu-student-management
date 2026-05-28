@@ -27,11 +27,12 @@ class DocumentController extends Controller {
                 $tieu_de  = trim($_POST['tieu_de'] ?? '');
                 $mo_ta    = trim($_POST['mo_ta']   ?? '');
                 $hp_id    = (int)($_POST['hoc_phan_id'] ?? 0) ?: null;
+                $is_public = isset($_POST['cong_khai']) && $_POST['cong_khai'] === '1' ? 1 : 0;
 
                 if (empty($tieu_de) || empty($_FILES['file_upload']['name'])) {
                     $msg = ['type'=>'danger','text'=>'Vui lòng nhập đầy đủ thông tin'];
                 } else {
-                    $msg = $documentModel->uploadDocument($sv['id'], $hp_id, $tieu_de, $mo_ta, $_FILES['file_upload']);
+                    $msg = $documentModel->uploadDocument($sv['id'], $hp_id, $tieu_de, $mo_ta, $_FILES['file_upload'], $is_public);
                     if ($msg['type'] === 'success') {
                         setFlash('success', 'Chia sẻ tài liệu thành công');
                         $this->redirect('/student/tai-lieu');

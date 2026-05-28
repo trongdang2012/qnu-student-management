@@ -248,6 +248,35 @@ class StudentController extends Controller {
             'active_menu' => 'hoc_tap'
         ]);
     }
+
+    public function payTuition() {
+        $this->requireStudent();
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->redirect('/student/hoc-phi');
+        }
+
+        $tuitionId = (int)($_POST['tuition_id'] ?? 0);
+        if ($tuitionId <= 0) {
+            setFlash('danger', 'ID khoản học phí không hợp lệ.');
+            $this->redirect('/student/hoc-phi');
+        }
+
+        $studentModel = new StudentModel();
+        $sv = $studentModel->getStudentInfo($_SESSION['user_id']);
+        if (!$sv) {
+            $this->redirect('/auth/logout');
+        }
+
+        $result = $studentModel->payTuition($sv['id'], $tuitionId);
+        if ($result['success']) {
+            setFlash('success', $result['message']);
+        } else {
+            setFlash('danger', $result['message']);
+        }
+
+        $this->redirect('/student/hoc-phi');
+    }
+
     public function notifications() {
         $this->requireStudent();
         $studentModel = new StudentModel();

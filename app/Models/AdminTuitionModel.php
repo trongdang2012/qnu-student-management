@@ -5,9 +5,35 @@ use App\Core\Database;
 
 class AdminTuitionModel {
     private $db;
+    private $hocPhanIdColumnExists = null;
 
     public function __construct() {
         $this->db = Database::getInstance();
+        $this->ensureHocPhanIdColumn();
+    }
+
+    private function hasHocPhanIdColumn() {
+        if ($this->hocPhanIdColumnExists !== null) {
+            return $this->hocPhanIdColumnExists;
+        }
+
+        $row = $this->db->fetch("SELECT COUNT(*) AS cnt FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'hoc_phi' AND COLUMN_NAME = 'hoc_phan_id'");
+        $this->hocPhanIdColumnExists = ((int)($row['cnt'] ?? 0) > 0);
+        return $this->hocPhanIdColumnExists;
+    }
+
+    private function ensureHocPhanIdColumn() {
+        if ($this->hasHocPhanIdColumn()) {
+            return;
+        }
+
+        try {
+            $this->db->query('ALTER TABLE hoc_phi ADD COLUMN hoc_phan_id INT DEFAULT NULL');
+            $this->hocPhanIdColumnExists = true;
+        } catch (\Throwable $e) {
+            // Nếu không thể thêm cột tự động thì để trạng thái false và tiếp tục chạy với fallback không join
+            $this->hocPhanIdColumnExists = false;
+        }
     }
 
     public function getKhoaList() {
@@ -38,6 +64,104 @@ class AdminTuitionModel {
         }
         $sql .= " ORDER BY lop ASC";
         return $this->db->fetchAll($sql, $params);
+    }
+
+    public function getCourseList() {
+        $sql = "SELECT hp.* FROM hoc_phan hp ORDER BY hp.hoc_ky, hp.ten_hp";
+        return $this->db->fetchAll($sql);
+    }
+
+    public function getFilteredTuitionRecords($khoa, $nganh, $lop) {
+        $sql = "SELECT hf.*, sv.ma_sv, sv.ho_ten, sv.khoa, sv.nganh, sv.lop";
+        if ($this->hasHocPhanIdColumn()) {
+            $sql .= ", hp.ma_hp, hp.ten_hp, hp.so_tin_chi";
+        }
+        $sql .= " FROM hoc_phi hf
+                JOIN sinh_vien sv ON sv.id = hf.sinh_vien_id";
+        if ($this->hasHocPhanIdColumn()) {
+            $sql .= " LEFT JOIN hoc_phan hp ON hp.id = hf.hoc_phan_id";
+        }
+        $sql .= " WHERE 1 = 1";
+
+        $params = [];
+        if ($khoa !== '') {
+            $sql .= ' AND sv.khoa = :khoa';
+            $params['khoa'] = $khoa;
+        }
+        if ($nganh !== '') {
+            $sql .= ' AND sv.nganh = :nganh';
+            $params['nganh'] = $nganh;
+        }
+        if ($lop !== '') {
+            $sql .= ' AND sv.lop = :lop';
+            $params['lop'] = $lop;
+        }
+        $sql .= ' ORDER BY hf.nam_hoc DESC, hf.hoc_ky DESC, sv.khoa, sv.nganh, sv.lop, sv.ho_ten';
+        return $this->db->fetchAll($sql, $params);
+    }
+
+    public function applyCourseTuitionRate($courseId, $hocKy, $namHoc, $pricePerCredit, $han_nop) {
+        $course = $this->db->fetch('SELECT * FROM hoc_phan WHERE id = :id LIMIT 1', ['id' => $courseId]);
+        if (!$course || $pricePerCredit <= 0 || $hocKy <= 0 || $namHoc === '') {
+            return false;
+        }
+
+        $feeAmount = (float)$course['so_tin_chi'] * (float)$pricePerCredit;
+        $status = 'Chưa nộp';
+        $studentsSql = "SELECT DISTINCT sv.id AS sinh_vien_id, dk.hoc_ky, dk.nam_hoc
+                        FROM dang_ky_hp dk
+                        JOIN sinh_vien sv ON sv.id = dk.sinh_vien_id
+                        WHERE dk.hoc_phan_id = :hp
+                          AND dk.trang_thai = 'Đã duyệt'
+                          AND dk.hoc_ky = :hk
+                          AND dk.nam_hoc = :nh";
+        $params = ['hp' => $courseId, 'hk' => $hocKy, 'nh' => $namHoc];
+
+        $students = $this->db->fetchAll($studentsSql, $params);
+        if (empty($students)) {
+            return false;
+        }
+
+        foreach ($students as $student) {
+            $studentId = (int)$student['sinh_vien_id'];
+            $hocKy = $student['hoc_ky'];
+            $namHoc = $student['nam_hoc'];
+            $existing = $this->db->fetch('SELECT id, da_nop FROM hoc_phi WHERE sinh_vien_id = :sid AND hoc_ky = :hk AND nam_hoc = :nh AND hoc_phan_id = :hp LIMIT 1', [
+                'sid' => $studentId,
+                'hk' => $hocKy,
+                'nh' => $namHoc,
+                'hp' => $courseId
+            ]);
+
+            $status = 'Chưa nộp';
+            $paidAmount = $existing ? (float)$existing['da_nop'] : 0;
+            if ($paidAmount >= $feeAmount && $feeAmount > 0) {
+                $status = 'Đã nộp';
+            } elseif ($paidAmount > 0) {
+                $status = 'Nợ';
+            }
+
+            if ($existing) {
+                $this->db->query('UPDATE hoc_phi SET so_tien = :so_tien, han_nop = :han_nop, trang_thai = :trang_thai WHERE id = :id', [
+                    'so_tien' => $feeAmount,
+                    'han_nop' => $han_nop,
+                    'trang_thai' => $status,
+                    'id' => $existing['id']
+                ]);
+            } else {
+                $this->db->query('INSERT INTO hoc_phi (sinh_vien_id, hoc_phan_id, hoc_ky, nam_hoc, so_tien, da_nop, han_nop, trang_thai) VALUES (:sid, :hp, :hk, :nh, :so_tien, 0, :han_nop, :trang_thai)', [
+                    'sid' => $studentId,
+                    'hp' => $courseId,
+                    'hk' => $hocKy,
+                    'nh' => $namHoc,
+                    'so_tien' => $feeAmount,
+                    'han_nop' => $han_nop,
+                    'trang_thai' => $status
+                ]);
+            }
+        }
+
+        return true;
     }
 
     public function getTuitionSummaryByStudents($khoa, $nganh, $lop) {
@@ -95,7 +219,17 @@ class AdminTuitionModel {
     }
 
     public function getTuitionRecord($id) {
-        return $this->db->fetch('SELECT hf.*, sv.ma_sv, sv.ho_ten, sv.khoa, sv.nganh, sv.lop FROM hoc_phi hf JOIN sinh_vien sv ON sv.id = hf.sinh_vien_id WHERE hf.id = :id LIMIT 1', ['id' => $id]);
+        $sql = 'SELECT hf.*, sv.ma_sv, sv.ho_ten, sv.khoa, sv.nganh, sv.lop';
+        if ($this->hasHocPhanIdColumn()) {
+            $sql .= ', hp.ma_hp, hp.ten_hp, hp.so_tin_chi';
+        }
+        $sql .= ' FROM hoc_phi hf JOIN sinh_vien sv ON sv.id = hf.sinh_vien_id';
+        if ($this->hasHocPhanIdColumn()) {
+            $sql .= ' LEFT JOIN hoc_phan hp ON hp.id = hf.hoc_phan_id';
+        }
+        $sql .= ' WHERE hf.id = :id LIMIT 1';
+
+        return $this->db->fetch($sql, ['id' => $id]);
     }
 
     public function getTuitionById($id) {
@@ -109,30 +243,107 @@ class AdminTuitionModel {
     }
 
     public function getAllFees() {
-        return $this->db->fetchAll('SELECT hf.*, sv.ma_sv, sv.ho_ten, sv.khoa, sv.nganh, sv.lop FROM hoc_phi hf JOIN sinh_vien sv ON sv.id = hf.sinh_vien_id ORDER BY hf.nam_hoc DESC, hf.hoc_ky DESC, sv.khoa, sv.nganh, sv.lop');
+        $sql = 'SELECT hf.*, sv.ma_sv, sv.ho_ten, sv.khoa, sv.nganh, sv.lop';
+        if ($this->hasHocPhanIdColumn()) {
+            $sql .= ', hp.ma_hp, hp.ten_hp, hp.so_tin_chi';
+        }
+        $sql .= ' FROM hoc_phi hf JOIN sinh_vien sv ON sv.id = hf.sinh_vien_id';
+        if ($this->hasHocPhanIdColumn()) {
+            $sql .= ' LEFT JOIN hoc_phan hp ON hp.id = hf.hoc_phan_id';
+        }
+        $sql .= ' ORDER BY hf.nam_hoc DESC, hf.hoc_ky DESC, sv.khoa, sv.nganh, sv.lop';
+        return $this->db->fetchAll($sql);
+    }
+
+    private function getDefaultAdminId() {
+        $admin = $this->db->fetch('SELECT id FROM users WHERE role = ? ORDER BY id ASC LIMIT 1', ['admin']);
+        return $admin['id'] ?? null;
+    }
+
+    private function sendTuitionConfirmationNotification(array $record) {
+        $adminId = $this->getDefaultAdminId();
+        $title = 'Xác nhận nộp học phí';
+        $content = sprintf(
+            'Hệ thống đã xác nhận học phí HK %d năm học %s của bạn đã được thanh toán đầy đủ (%s đ).',
+            (int)$record['hoc_ky'],
+            $record['nam_hoc'],
+            number_format((float)$record['so_tien'], 0, ',', '.')
+        );
+
+        $this->db->query(
+            'INSERT INTO thong_bao (tieu_de, noi_dung, loai, nguoi_gui_id) VALUES (:title, :content, :type, :admin_id)',
+            [
+                'title' => $title,
+                'content' => $content,
+                'type' => 'success',
+                'admin_id' => $adminId,
+            ]
+        );
+
+        $notificationId = $this->db->lastInsertId();
+        if ($notificationId) {
+            $this->db->query(
+                'INSERT INTO thong_bao_sinh_vien (thong_bao_id, sinh_vien_id) VALUES (:notification_id, :student_id)',
+                ['notification_id' => $notificationId, 'student_id' => $record['sinh_vien_id']]
+            );
+        }
     }
 
     public function confirmTuitionArray($ids) {
         if (empty($ids)) return 0;
+
         $placeholders = implode(',', array_fill(0, count($ids), '?'));
-        
-        $mysqli = $this->db->getConnection();
-        $stmt = $mysqli->prepare("UPDATE hoc_phi SET da_nop = so_tien, trang_thai = 'Đã nộp' WHERE id IN ($placeholders)");
-        $types = str_repeat('i', count($ids));
-        $stmt->bind_param($types, ...$ids);
-        $stmt->execute();
-        $affected = $stmt->affected_rows;
-        $stmt->close();
-        return $affected;
+        $tuitionRecords = $this->db->fetchAll(
+            "SELECT hf.id, hf.sinh_vien_id, hf.hoc_ky, hf.nam_hoc, hf.so_tien FROM hoc_phi hf WHERE hf.id IN ($placeholders)",
+            $ids
+        );
+
+        $stmt = $this->db->query(
+            "UPDATE hoc_phi SET da_nop = so_tien, trang_thai = 'Đã nộp' WHERE id IN ($placeholders)",
+            $ids
+        );
+
+        foreach ($tuitionRecords as $record) {
+            $this->sendTuitionConfirmationNotification($record);
+        }
+
+        return $stmt->rowCount();
     }
 
     public function confirmTuitionSingle($id) {
-        $this->db->query("UPDATE hoc_phi SET da_nop = so_tien, trang_thai = 'Đã nộp' WHERE id = :id", ['id' => $id]);
-        $mysqli = $this->db->getConnection();
-        return $mysqli->affected_rows;
+        $record = $this->db->fetch(
+            'SELECT hf.id, hf.sinh_vien_id, hf.hoc_ky, hf.nam_hoc, hf.so_tien FROM hoc_phi hf WHERE hf.id = :id LIMIT 1',
+            ['id' => $id]
+        );
+        if (!$record) {
+            return 0;
+        }
+
+        $stmt = $this->db->query(
+            "UPDATE hoc_phi SET da_nop = so_tien, trang_thai = 'Đã nộp' WHERE id = :id",
+            ['id' => $id]
+        );
+
+        if ($stmt->rowCount() > 0) {
+            $this->sendTuitionConfirmationNotification($record);
+        }
+
+        return $stmt->rowCount();
     }
 
-    public function getPendingFees() {
-        return $this->db->fetchAll("SELECT hf.*, sv.ma_sv, sv.ho_ten, sv.khoa, sv.nganh, sv.lop FROM hoc_phi hf JOIN sinh_vien sv ON sv.id = hf.sinh_vien_id WHERE hf.trang_thai IN ('Chưa nộp', 'Nợ') ORDER BY sv.khoa, sv.nganh, sv.lop, hf.nam_hoc DESC, hf.hoc_ky DESC");
+    public function getPendingFees(string $maSv = '') {
+        $sql = "SELECT hf.*, sv.ma_sv, sv.ho_ten, sv.khoa, sv.nganh, sv.lop
+                FROM hoc_phi hf
+                JOIN sinh_vien sv ON sv.id = hf.sinh_vien_id
+                WHERE hf.trang_thai IN ('Chưa nộp', 'Nợ')";
+
+        $params = [];
+        if ($maSv !== '') {
+            $sql .= ' AND sv.ma_sv = :ma_sv';
+            $params['ma_sv'] = $maSv;
+        }
+
+        $sql .= ' ORDER BY sv.khoa, sv.nganh, sv.lop, hf.nam_hoc DESC, hf.hoc_ky DESC';
+        return $this->db->fetchAll($sql, $params);
     }
 }

@@ -31,6 +31,15 @@
               <textarea name="description" class="form-control" rows="4"></textarea>
             </div>
           </div>
+          <div class="form-row full">
+            <div class="form-group">
+              <label>Chế độ chia sẻ</label>
+              <select name="is_public" class="form-control">
+                <option value="1">Công khai</option>
+                <option value="0">Riêng tư</option>
+              </select>
+            </div>
+          </div>
           <div class="form-row">
             <div class="form-group">
               <label>File (tùy chọn)</label>

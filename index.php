@@ -85,6 +85,7 @@ $router->get('/student/download', 'DocumentController@download');
 
 $router->get('/student/diem-ren-luyen', 'StudentController@trainingPoints');
 $router->get('/student/hoc-phi', 'StudentController@tuitionFees');
+$router->post('/student/hoc-phi/nop', 'StudentController@payTuition');
 
 // Route của Admin
 $router->get('/admin/dashboard', 'Admin\DashboardController@index');

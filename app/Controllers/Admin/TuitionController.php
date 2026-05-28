@@ -83,18 +83,47 @@ class TuitionController extends Controller {
             }
         }
 
-        $fees = $this->tuitionModel->getAllFees();
+        $courseList = $this->tuitionModel->getCourseList();
+        $fees = $this->tuitionModel->getFilteredTuitionRecords('', '', '');
 
         $this->view('admin/tuition/cap_nhat', [
             'editRecord' => $editRecord,
             'fees' => $fees,
+            'courseList' => $courseList,
             'page_title' => 'Cập nhật học phí',
             'active_menu' => 'hoc_phi'
         ]);
     }
 
     public function saveUpdate() {
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST' || ($_POST['action'] ?? '') !== 'save') {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->redirect('/admin/hoc-phi/cap-nhat');
+        }
+
+        $actionType = $_POST['action'] ?? 'save';
+        if ($actionType === 'apply_course_rate') {
+            $courseId = (int)($_POST['course_id'] ?? 0);
+            $hocKy = max(1, min(8, (int)($_POST['hoc_ky'] ?? 0)));
+            $namHoc = trim($_POST['nam_hoc'] ?? '');
+            $donGia = max(0, (float)($_POST['don_gia'] ?? 0));
+            $han_nop = trim($_POST['han_nop'] ?? '');
+
+            if ($courseId <= 0 || $donGia <= 0 || $hocKy <= 0 || $namHoc === '') {
+                setFlash('danger', 'Vui lòng chọn học phần, học kỳ, nhập năm học và đơn giá hợp lệ.');
+            } else {
+                $result = $this->tuitionModel->applyCourseTuitionRate($courseId, $hocKy, $namHoc, $donGia, $han_nop);
+                if ($result) {
+                    setFlash('success', 'Áp dụng mức học phí theo học phần thành công.');
+                } else {
+                    setFlash('danger', 'Không có sinh viên đăng ký học phần này trong học kỳ/năm học đã chọn hoặc lỗi khi áp dụng học phí.');
+                }
+            }
+
+            $this->redirect('/admin/hoc-phi/cap-nhat');
+            return;
+        }
+
+        if ($actionType !== 'save') {
             $this->redirect('/admin/hoc-phi/cap-nhat');
         }
 
@@ -128,16 +157,23 @@ class TuitionController extends Controller {
 
     public function confirm() {
         $id = (int)($_GET['id'] ?? 0);
+        $maSvFilter = trim($_GET['ma_sv'] ?? '');
+
         if ($id > 0 && ($_GET['action'] ?? '') === 'mark') {
             $affected = $this->tuitionModel->confirmTuitionSingle($id);
             setFlash('success', $affected > 0 ? 'Đã xác nhận nộp học phí cho bản ghi.' : 'Không tìm thấy bản ghi để xác nhận.');
-            $this->redirect('/admin/hoc-phi/xac-nhan');
+            $redirectUrl = '/admin/hoc-phi/xac-nhan';
+            if ($maSvFilter !== '') {
+                $redirectUrl .= '?ma_sv=' . urlencode($maSvFilter);
+            }
+            $this->redirect($redirectUrl);
         }
 
-        $pendingFees = $this->tuitionModel->getPendingFees();
+        $pendingFees = $this->tuitionModel->getPendingFees($maSvFilter);
 
         $this->view('admin/tuition/xac_nhan', [
             'pendingFees' => $pendingFees,
+            'filterMSV' => $maSvFilter,
             'page_title' => 'Xác nhận học phí',
             'active_menu' => 'hoc_phi'
         ]);

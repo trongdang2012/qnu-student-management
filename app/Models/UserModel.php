@@ -10,12 +10,12 @@ class UserModel {
     }
 
     public function findByUsername($username) {
-        $sql = "SELECT id, username, password, role, email, two_factor_auth FROM users WHERE username = :username LIMIT 1";
+        $sql = "SELECT id, username, password, role, email, COALESCE(two_factor_auth, 1) AS two_factor_auth FROM users WHERE username = :username LIMIT 1";
         return $this->db->fetch($sql, ['username' => $username]);
     }
 
     public function findById($id) {
-        $sql = "SELECT id, username, password, role, email, two_factor_auth FROM users WHERE id = :id LIMIT 1";
+        $sql = "SELECT id, username, password, role, email, COALESCE(two_factor_auth, 1) AS two_factor_auth FROM users WHERE id = :id LIMIT 1";
         return $this->db->fetch($sql, ['id' => $id]);
     }
 

@@ -57,7 +57,8 @@ class DocumentController extends Controller {
             }
         }
 
-        if ($this->documentModel->insertDocument($title, $description, $filePath)) {
+        $isPublic = isset($_POST['is_public']) && $_POST['is_public'] === '1' ? 1 : 0;
+        if ($this->documentModel->insertDocument($title, $description, $filePath, $isPublic)) {
             setFlash('success', 'Thêm tài liệu thành công.');
         } else {
             setFlash('danger', 'Lỗi lưu tài liệu.');
@@ -123,7 +124,8 @@ class DocumentController extends Controller {
             }
         }
 
-        if ($this->documentModel->updateDocument($id, $title, $description, $filePath)) {
+        $isPublic = isset($_POST['is_public']) && $_POST['is_public'] === '1' ? 1 : 0;
+        if ($this->documentModel->updateDocument($id, $title, $description, $filePath, $isPublic)) {
             setFlash('success', 'Cập nhật tài liệu thành công.');
         } else {
             setFlash('danger', 'Lỗi cập nhật tài liệu.');
@@ -157,7 +159,7 @@ class DocumentController extends Controller {
             $this->redirect('/admin/tai-lieu');
         }
         
-        $path = ROOT . '/storage/documents/uploads/' . basename($file);
+        $path = rtrim(UPLOAD_DIR, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . basename($file);
         if (file_exists($path)) {
             header('Content-Description: File Transfer');
             header('Content-Type: application/octet-stream');

@@ -10,7 +10,7 @@ class DocumentModel {
         $this->db = Database::getInstance();
     }
 
-    public function uploadDocument($studentId, $hpId, $title, $description, $file) {
+    public function uploadDocument($studentId, $hpId, $title, $description, $file, $isPublic = 1) {
         $orig_name= basename($file['name']);
         $ext      = strtolower(pathinfo($orig_name, PATHINFO_EXTENSION));
         $size     = $file['size'];
@@ -26,25 +26,27 @@ class DocumentModel {
 
         if (!is_dir(UPLOAD_DIR)) mkdir(UPLOAD_DIR, 0755, true);
 
+        $studentId = $studentId ?: 0;
         $new_name = time() . '_' . $studentId . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '_', $orig_name);
-        $dest     = UPLOAD_DIR . $new_name;
+        $dest     = rtrim(UPLOAD_DIR, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $new_name;
 
         if (move_uploaded_file($tmp, $dest)) {
             $loai = strtoupper($ext);
             try {
-                $this->db->query("INSERT INTO tai_lieu (sinh_vien_id, hoc_phan_id, tieu_de, mo_ta, ten_file, duong_dan, kich_thuoc, loai_file) VALUES (:sid, :hpId, :tieuDe, :moTa, :tenFile, :duongDan, :kichThuoc, :loai)", [
-                    'sid' => $studentId,
+                $this->db->query("INSERT INTO tai_lieu (sinh_vien_id, hoc_phan_id, tieu_de, mo_ta, ten_file, duong_dan, kich_thuoc, loai_file, is_public) VALUES (:sid, :hpId, :tieuDe, :moTa, :tenFile, :duongDan, :kichThuoc, :loai, :isPublic)", [
+                    'sid' => $studentId > 0 ? $studentId : null,
                     'hpId' => $hpId,
                     'tieuDe' => $title,
                     'moTa' => $description,
                     'tenFile' => $orig_name,
                     'duongDan' => $new_name,
                     'kichThuoc' => $size,
-                    'loai' => $loai
+                    'loai' => $loai,
+                    'isPublic' => $isPublic ? 1 : 0
                 ]);
                 return ['type'=>'success','text'=>'Chia sẻ tài liệu thành công'];
             } catch (\Exception $e) {
-                unlink($dest);
+                if (file_exists($dest)) unlink($dest);
                 return ['type'=>'danger','text'=>'Tải lên thất bại, vui lòng thử lại'];
             }
         } else {
@@ -55,9 +57,20 @@ class DocumentModel {
     public function deleteDocument($studentId, $documentId) {
         $row = $this->db->fetch("SELECT duong_dan FROM tai_lieu WHERE id=:id AND sinh_vien_id=:sid", ['id' => $documentId, 'sid' => $studentId]);
         if ($row) {
-            $file_path = UPLOAD_DIR . $row['duong_dan'];
+            $file_path = rtrim(UPLOAD_DIR, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $row['duong_dan'];
             if (file_exists($file_path)) unlink($file_path);
             $this->db->query("DELETE FROM tai_lieu WHERE id=:id AND sinh_vien_id=:sid", ['id' => $documentId, 'sid' => $studentId]);
+            return true;
+        }
+        return false;
+    }
+
+    public function deleteDocumentById($documentId) {
+        $row = $this->db->fetch("SELECT duong_dan FROM tai_lieu WHERE id=:id", ['id' => $documentId]);
+        if ($row) {
+            $file_path = rtrim(UPLOAD_DIR, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $row['duong_dan'];
+            if (file_exists($file_path)) unlink($file_path);
+            $this->db->query("DELETE FROM tai_lieu WHERE id=:id", ['id' => $documentId]);
             return true;
         }
         return false;
@@ -86,13 +99,26 @@ class DocumentModel {
         $sql = "
             SELECT tl.*, sv.ho_ten, sv.ma_sv, hp.ten_hp
             FROM tai_lieu tl
-            JOIN sinh_vien sv ON sv.id = tl.sinh_vien_id
+            LEFT JOIN sinh_vien sv ON sv.id = tl.sinh_vien_id
             LEFT JOIN hoc_phan hp ON hp.id = tl.hoc_phan_id
             $where
             ORDER BY tl.ngay_dang DESC
         ";
 
-        return $this->db->fetchAll($sql, $params);
+        $rows = $this->db->fetchAll($sql, $params);
+
+        // Nếu chế độ không phải 'cua_toi', chỉ trả về tài liệu công khai.
+        if ($mode !== 'cua_toi') {
+            $filtered = [];
+            foreach ($rows as $r) {
+                if (!isset($r['is_public']) || intval($r['is_public']) === 1) {
+                    $filtered[] = $r;
+                }
+            }
+            return $filtered;
+        }
+
+        return $rows;
     }
 
     public function getDocumentById($id) {

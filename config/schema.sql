@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `password` VARCHAR(255) NOT NULL,
   `role` ENUM('student','admin') NOT NULL DEFAULT 'student',
   `email` VARCHAR(100) DEFAULT NULL,
+  `two_factor_auth` TINYINT(1) NOT NULL DEFAULT 1,
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 
@@ -112,13 +113,15 @@ CREATE TABLE IF NOT EXISTS `diem_ren_luyen` (
 CREATE TABLE IF NOT EXISTS `hoc_phi` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `sinh_vien_id` INT NOT NULL,
+  `hoc_phan_id` INT DEFAULT NULL,
   `hoc_ky` INT NOT NULL,
   `nam_hoc` VARCHAR(20) NOT NULL,
   `so_tien` DECIMAL(15,0) NOT NULL DEFAULT 0,
   `da_nop` DECIMAL(15,0) NOT NULL DEFAULT 0,
   `han_nop` DATE DEFAULT NULL,
   `trang_thai` ENUM('Chưa nộp','Đã nộp','Nợ') DEFAULT 'Chưa nộp',
-  FOREIGN KEY (`sinh_vien_id`) REFERENCES `sinh_vien`(`id`) ON DELETE CASCADE
+  FOREIGN KEY (`sinh_vien_id`) REFERENCES `sinh_vien`(`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`hoc_phan_id`) REFERENCES `hoc_phan`(`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
 -- Bảng thời khóa biểu
@@ -140,7 +143,7 @@ CREATE TABLE IF NOT EXISTS `thoi_khoa_bieu` (
 -- Bảng tài liệu chia sẻ
 CREATE TABLE IF NOT EXISTS `tai_lieu` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
-  `sinh_vien_id` INT NOT NULL,
+  `sinh_vien_id` INT DEFAULT NULL,
   `hoc_phan_id` INT DEFAULT NULL,
   `tieu_de` VARCHAR(200) NOT NULL,
   `mo_ta` TEXT,
@@ -148,6 +151,7 @@ CREATE TABLE IF NOT EXISTS `tai_lieu` (
   `duong_dan` VARCHAR(500),
   `kich_thuoc` INT DEFAULT 0,
   `loai_file` VARCHAR(50),
+  `is_public` TINYINT(1) NOT NULL DEFAULT 1,
   `luot_tai` INT DEFAULT 0,
   `ngay_dang` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (`sinh_vien_id`) REFERENCES `sinh_vien`(`id`) ON DELETE CASCADE,

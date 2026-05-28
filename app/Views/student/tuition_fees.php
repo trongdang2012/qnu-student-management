@@ -23,6 +23,13 @@ function statusBadge(string $tt): string {
       <p>Xem lịch sử nộp học phí và các khoản nợ đọng.</p>
     </div>
 
+    <?php if ($flash = getFlash()): ?>
+      <div class="alert alert-<?= e($flash['type']) ?> fade-in">
+        <i class="fas fa-<?= $flash['type'] === 'success' ? 'check-circle' : 'exclamation-circle' ?>"></i>
+        <?= e($flash['msg']) ?>
+      </div>
+    <?php endif; ?>
+
     <!-- Tổng quan -->
     <div class="stat-grid fade-in">
       <div class="stat-card">
@@ -78,11 +85,13 @@ function statusBadge(string $tt): string {
         <thead><tr>
           <th>Năm học</th>
           <th style="text-align:center">Học kỳ</th>
+          <th>Học phần</th>
           <th style="text-align:right">Học phí</th>
           <th style="text-align:right">Đã nộp</th>
           <th style="text-align:right">Còn nợ</th>
           <th style="text-align:center">Hạn nộp</th>
           <th style="text-align:center">Trạng thái</th>
+          <th style="text-align:center">Hành động</th>
         </tr></thead>
         <tbody>
         <?php if (empty($tuitionFeesInfo['hp_list'])): ?>
@@ -95,6 +104,9 @@ function statusBadge(string $tt): string {
         <tr <?= $qua_han ? 'style="background:#fff5f5"' : '' ?>>
           <td><?= e($hp['nam_hoc']) ?></td>
           <td style="text-align:center">HK <?= (int)$hp['hoc_ky'] ?></td>
+          <td>
+            <?= e((isset($hp['ma_hp']) && $hp['ma_hp']) ? $hp['ma_hp'] . ' - ' . ($hp['ten_hp'] ?? '') : 'Học phí kỳ') ?>
+          </td>
           <td style="text-align:right;font-weight:500"><?= formatMoney((float)$hp['so_tien']) ?></td>
           <td style="text-align:right;color:var(--success);font-weight:500"><?= formatMoney((float)$hp['da_nop']) ?></td>
           <td style="text-align:right;font-weight:700;color:<?= $no > 0 ? 'var(--danger)' : 'var(--success)' ?>">
@@ -109,6 +121,16 @@ function statusBadge(string $tt): string {
             <?php else: ?> — <?php endif; ?>
           </td>
           <td style="text-align:center"><?= statusBadge($hp['trang_thai']) ?></td>
+          <td style="text-align:center">
+            <?php if ($hp['trang_thai'] !== 'Đã nộp'): ?>
+              <form method="POST" action="<?= BASE_URL ?>/student/hoc-phi/nop" style="margin:0;">
+                <input type="hidden" name="tuition_id" value="<?= (int)$hp['id'] ?>">
+                <button type="submit" class="btn btn-sm btn-primary">Nộp học phí</button>
+              </form>
+            <?php else: ?>
+              <span style="color:var(--success);font-weight:600">Đã hoàn tất</span>
+            <?php endif; ?>
+          </td>
         </tr>
         <?php endforeach; ?>
         <?php endif; ?>
