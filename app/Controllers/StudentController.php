@@ -3,6 +3,7 @@ namespace App\Controllers;
 
 use App\Core\Controller;
 use App\Models\StudentModel;
+use App\Models\UserModel;
 
 class StudentController extends Controller {
     
@@ -19,7 +20,15 @@ class StudentController extends Controller {
         $sv = $studentModel->getStudentInfo($_SESSION['user_id']);
 
         if (!$sv) {
-            $this->redirect('/auth/logout');
+            die('<div style="padding:24px;background:#f8d7da;color:#721c24;border:1px solid #f5c6cb;border-radius:12px;font-family:\'Roboto\',sans-serif;margin:60px auto;max-width:600px;box-shadow:0 10px 30px rgba(0,0,0,0.05);">
+                <h3 style="margin-top:0;color:#b02a37;font-size:20px;display:flex;align-items:center;gap:10px;"><i class="fas fa-exclamation-triangle"></i> Lỗi Liên Kết Hồ Sơ</h3>
+                <p style="font-size:14.5px;line-height:1.6;">Tài khoản của bạn (ID: <strong>' . htmlspecialchars($_SESSION['user_id']) . '</strong>, Username: <strong>' . htmlspecialchars($_SESSION['username']) . '</strong>) đã đăng nhập thành công vào hệ thống. Tuy nhiên, <strong>hồ sơ sinh viên tương ứng của tài khoản này chưa được thiết lập</strong> trong bảng dữ liệu <code>sinh_vien</code>!</p>
+                <p style="font-size:14px;color:#5c636a;margin-bottom:20px;">Vui lòng liên hệ Admin hệ thống để liên kết tài khoản này với mã số sinh viên tương ứng.</p>
+                <hr style="border:none;border-top:1px dashed #f5c6cb;margin:18px 0;">
+                <div style="text-align:right;">
+                    <a href="' . BASE_URL . '/auth/logout" style="display:inline-block;padding:8px 20px;background:#dc3545;color:#fff;border-radius:6px;text-decoration:none;font-weight:600;font-size:13.5px;box-shadow:0 4px 10px rgba(220,53,69,0.15);transition:background 0.2s;">Quay lại đăng nhập</a>
+                </div>
+            </div>');
         }
 
         $stats = $studentModel->getDashboardStats($sv['id'], $sv['nganh']);
@@ -59,8 +68,14 @@ class StudentController extends Controller {
         $sv = $studentModel->getStudentInfo($_SESSION['user_id']);
         if (!$sv) $this->redirect('/auth/logout');
 
+        // Lấy trạng thái 2FA của user từ bảng users
+        $userModel = new UserModel();
+        $user = $userModel->findById($_SESSION['user_id']);
+        $two_factor_auth = $user['two_factor_auth'] ?? 1;
+
         $this->view('student/update_profile', [
             'sv' => $sv,
+            'two_factor_auth' => $two_factor_auth,
             'page_title' => 'Cập nhật thông tin',
             'active_menu' => 'ca_nhan'
         ]);
@@ -123,6 +138,12 @@ class StudentController extends Controller {
         if (empty($errors)) {
             try {
                 $studentModel->updateProfile($sid, $email, $sdt, $new_avatar);
+
+                // Cập nhật trạng thái 2FA
+                $two_factor_auth = isset($_POST['two_factor_auth']) ? (int)$_POST['two_factor_auth'] : 0;
+                $userModel = new UserModel();
+                $userModel->updateTwoFactorAuth($_SESSION['user_id'], $two_factor_auth);
+
                 return $this->json([
                     'success' => true,
                     'message' => 'Cập nhật thành công!',

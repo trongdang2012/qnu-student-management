@@ -89,9 +89,9 @@ class AdminUserModel {
         return $this->db->fetch('SELECT id FROM users WHERE username = :un', ['un' => $username]);
     }
 
-    public function insertUser($username, $hashed_password, $role) {
-        $sql = "INSERT INTO users (username, password, role) VALUES (:un, :pw, :role)";
-        return $this->db->query($sql, ['un' => $username, 'pw' => $hashed_password, 'role' => $role]);
+    public function insertUser($username, $hashed_password, $role, $email) {
+        $sql = "INSERT INTO users (username, password, role, email) VALUES (:un, :pw, :role, :email)";
+        return $this->db->query($sql, ['un' => $username, 'pw' => $hashed_password, 'role' => $role, 'email' => $email]);
     }
 
     public function updateUserPasswordAndRole($id, $hashed_password, $role) {
@@ -105,6 +105,46 @@ class AdminUserModel {
     }
 
     public function deleteUser($id) {
-        return $this->db->query("DELETE FROM users WHERE id = :id", ['id' => $id]);
+        $pdo = $this->db->getConnection();
+        $pdo->beginTransaction();
+        try {
+            // 1. Kiểm tra xem user này có sinh viên liên kết không
+            $sv = $this->db->fetch("SELECT id FROM sinh_vien WHERE user_id = :id LIMIT 1", ['id' => $id]);
+            if ($sv) {
+                $sid = $sv['id'];
+                
+                // 1.1 Xóa file vật lý của tài liệu chia sẻ trước khi xóa trong database
+                $docs = $this->db->fetchAll("SELECT duong_dan FROM tai_lieu WHERE sinh_vien_id = :sid", ['sid' => $sid]);
+                foreach ($docs as $doc) {
+                    if (!empty($doc['duong_dan'])) {
+                        $file_path = (defined('UPLOAD_DIR') ? UPLOAD_DIR : (defined('ROOT') ? ROOT : dirname(dirname(__DIR__))) . '/uploads/') . $doc['duong_dan'];
+                        if (file_exists($file_path)) {
+                            @unlink($file_path);
+                        }
+                    }
+                }
+                
+                // 1.2 Xóa các bảng phụ liên quan đến sinh viên
+                $this->db->query("DELETE FROM diem_hoc_tap WHERE sinh_vien_id = :sid", ['sid' => $sid]);
+                $this->db->query("DELETE FROM dang_ky_hp WHERE sinh_vien_id = :sid", ['sid' => $sid]);
+                $this->db->query("DELETE FROM thoi_khoa_bieu WHERE sinh_vien_id = :sid", ['sid' => $sid]);
+                $this->db->query("DELETE FROM hoc_phi WHERE sinh_vien_id = :sid", ['sid' => $sid]);
+                $this->db->query("DELETE FROM diem_ren_luyen WHERE sinh_vien_id = :sid", ['sid' => $sid]);
+                $this->db->query("DELETE FROM thong_bao_sinh_vien WHERE sinh_vien_id = :sid", ['sid' => $sid]);
+                $this->db->query("DELETE FROM tai_lieu WHERE sinh_vien_id = :sid", ['sid' => $sid]);
+                
+                // 1.3 Xóa bản ghi trong bảng sinh_vien
+                $this->db->query("DELETE FROM sinh_vien WHERE id = :sid", ['sid' => $sid]);
+            }
+            
+            // 2. Xóa bản ghi trong bảng users
+            $res = $this->db->query("DELETE FROM users WHERE id = :id", ['id' => $id]);
+            
+            $pdo->commit();
+            return $res;
+        } catch (\Exception $e) {
+            $pdo->rollBack();
+            throw $e;
+        }
     }
 }

@@ -44,6 +44,20 @@
             <small style="color: var(--text-muted); margin-top: 5px; display: block;">Username phải duy nhất trong hệ thống</small>
           </div>
 
+          <!-- Email -->
+          <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text);">
+              <i class="fas fa-envelope"></i> Email <span style="color: var(--danger);">*</span>
+            </label>
+            <input 
+              type="email" 
+              name="email" 
+              placeholder="Nhập email đăng ký của người dùng"
+              required
+              style="width: 100%; padding: 12px 15px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-family: var(--font-sans); font-size: 15px;"
+            >
+          </div>
+
           <!-- Password -->
           <div style="margin-bottom: 20px;">
             <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text);">

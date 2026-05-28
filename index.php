@@ -99,6 +99,11 @@ $router->get('/admin/hoc-phan', 'Admin\CourseController@index');
 $router->post('/admin/hoc-phan/save', 'Admin\CourseController@save');
 $router->post('/admin/hoc-phan/delete', 'Admin\CourseController@delete');
 
+$router->get('/admin/lop-hoc-phan', 'Admin\ClassController@index');
+$router->post('/admin/lop-hoc-phan/save', 'Admin\ClassController@save');
+$router->post('/admin/lop-hoc-phan/delete', 'Admin\ClassController@delete');
+$router->get('/admin/lop-hoc-phan/optimize', 'Admin\ClassController@optimize');
+
 $router->get('/admin/diem/hoc-tap', 'Admin\GradeController@academic');
 $router->post('/admin/diem/hoc-tap/save', 'Admin\GradeController@academicSave');
 $router->get('/admin/diem/ren-luyen', 'Admin\GradeController@training');

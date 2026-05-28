@@ -13,11 +13,15 @@ class CourseModel {
     public function getProgramDetails($studentId, $nganh) {
         $rows = $this->db->fetchAll("
             SELECT c.hoc_ky, hp.ma_hp, hp.ten_hp, hp.so_tin_chi, hp.loai,
-                   d.diem_tong, d.diem_chu, d.diem_he4, dk.trang_thai AS dk_trang_thai
+                   d.diem_tong, d.diem_chu, d.diem_he4,
+                   (SELECT dk.trang_thai FROM dang_ky_hp dk 
+                    LEFT JOIN lop_hoc_phan lhp ON lhp.id = dk.lop_hoc_phan_id 
+                    WHERE (dk.hoc_phan_id = hp.id OR lhp.hoc_phan_id = hp.id) 
+                      AND dk.sinh_vien_id = :sid 
+                    ORDER BY dk.ngay_dang_ky DESC LIMIT 1) AS dk_trang_thai
             FROM ctdt_chi_tiet c
             JOIN hoc_phan hp ON hp.id = c.hoc_phan_id
-            LEFT JOIN diem_hoc_tap d ON d.hoc_phan_id = hp.id AND d.sinh_vien_id = :sid
-            LEFT JOIN dang_ky_hp dk ON dk.hoc_phan_id = hp.id AND dk.sinh_vien_id = :sid2
+            LEFT JOIN diem_hoc_tap d ON d.hoc_phan_id = hp.id AND d.sinh_vien_id = :sid2
             WHERE c.nganh = :nganh
             ORDER BY c.hoc_ky, hp.loai, hp.ma_hp
         ", ['sid' => $studentId, 'sid2' => $studentId, 'nganh' => $nganh]);
@@ -84,15 +88,22 @@ class CourseModel {
     }
 
     public function getSchedule($studentId, $hk_filter, $nh_filter) {
-        $list_nh = $this->db->fetchAll("SELECT DISTINCT nam_hoc FROM thoi_khoa_bieu WHERE sinh_vien_id=:sid ORDER BY nam_hoc DESC", ['sid' => $studentId]);
+        $list_nh = $this->db->fetchAll("
+            SELECT DISTINCT nam_hoc FROM dang_ky_hp 
+            WHERE sinh_vien_id = :sid AND trang_thai = 'Đã duyệt'
+            ORDER BY nam_hoc DESC
+        ", ['sid' => $studentId]);
         
         $tkb = $this->db->fetchAll("
             SELECT t.*, hp.ten_hp, hp.ma_hp, hp.so_tin_chi
-            FROM thoi_khoa_bieu t
-            JOIN hoc_phan hp ON hp.id = t.hoc_phan_id
-            WHERE t.sinh_vien_id = :sid
-              AND t.hoc_ky = :hk
-              AND t.nam_hoc = :nh
+            FROM dang_ky_hp dk
+            JOIN lop_hoc_phan l ON l.id = dk.lop_hoc_phan_id
+            JOIN thoi_khoa_bieu t ON t.lop_hoc_phan_id = l.id
+            JOIN hoc_phan hp ON hp.id = l.hoc_phan_id
+            WHERE dk.sinh_vien_id = :sid
+              AND dk.hoc_ky = :hk
+              AND dk.nam_hoc = :nh
+              AND dk.trang_thai = 'Đã duyệt'
             ORDER BY t.thu, t.tiet_bat_dau
         ", ['sid' => $studentId, 'hk' => $hk_filter, 'nh' => $nh_filter]);
 
@@ -115,113 +126,162 @@ class CourseModel {
 
     public function getRegisteredCourses($studentId, $hk, $nh) {
         return $this->db->fetchAll("
-            SELECT dk.*, hp.ten_hp, hp.ma_hp, hp.so_tin_chi, hp.thu, hp.tiet_bat_dau, hp.so_tiet, hp.phong_hoc, hp.giang_vien, hp.si_so_toi_da, hp.si_so_hien_tai, hp.ma_hp_tien_quyet
+            SELECT dk.*, hp.ten_hp, hp.ma_hp, hp.so_tin_chi, l.ma_lop_hp, l.giang_vien, l.si_so_toi_da, l.si_so_hien_tai, hp.ma_hp_tien_quyet,
+                   t.thu, t.tiet_bat_dau, t.so_tiet, t.phong_hoc
             FROM dang_ky_hp dk
-            JOIN hoc_phan hp ON hp.id = dk.hoc_phan_id
+            JOIN lop_hoc_phan l ON l.id = dk.lop_hoc_phan_id
+            JOIN hoc_phan hp ON hp.id = l.hoc_phan_id
+            LEFT JOIN thoi_khoa_bieu t ON t.lop_hoc_phan_id = l.id
             WHERE dk.sinh_vien_id = :sid AND dk.hoc_ky = :hk AND dk.nam_hoc = :nh
             ORDER BY dk.ngay_dang_ky DESC
         ", ['sid' => $studentId, 'hk' => $hk, 'nh' => $nh]);
     }
 
-    public function getAvailableCourses($studentId, $nganh, $registeredIds) {
-        $id_str = empty($registeredIds) ? '0' : implode(',', $registeredIds);
+    public function getAvailableCourses($studentId, $nganh, $registeredLhpIds) {
+        // Lọc sạch mảng, chỉ giữ lại các ID hợp lệ > 0 để tránh lỗi SQL cú pháp khi implode
+        $validIds = array_filter(array_map('intval', (array)$registeredLhpIds));
+        $id_str = empty($validIds) ? '0' : implode(',', $validIds);
         
+        $hk_hien_tai = defined('HOC_KY_HIEN_TAI') ? HOC_KY_HIEN_TAI : 2;
+        $nh_hien_tai = defined('NAM_HOC_HIEN_TAI') ? NAM_HOC_HIEN_TAI : '2025-2026';
+
         $sql = "
-            SELECT hp.id, hp.ma_hp, hp.ten_hp, hp.so_tin_chi, hp.loai, hp.thu, hp.tiet_bat_dau, hp.so_tiet, hp.phong_hoc, hp.giang_vien, hp.si_so_toi_da, hp.si_so_hien_tai, hp.ma_hp_tien_quyet
-            FROM ctdt_chi_tiet c
-            JOIN hoc_phan hp ON hp.id = c.hoc_phan_id
+            SELECT l.id AS lop_hoc_phan_id, l.ma_lop_hp, l.giang_vien, l.si_so_toi_da, l.si_so_hien_tai,
+                   hp.id AS hoc_phan_id, hp.ma_hp, hp.ten_hp, hp.so_tin_chi, hp.loai, hp.ma_hp_tien_quyet,
+                   t.thu, t.tiet_bat_dau, t.so_tiet, t.phong_hoc
+            FROM lop_hoc_phan l
+            JOIN hoc_phan hp ON l.hoc_phan_id = hp.id
+            JOIN ctdt_chi_tiet c ON hp.id = c.hoc_phan_id
+            LEFT JOIN thoi_khoa_bieu t ON t.lop_hoc_phan_id = l.id
             WHERE c.nganh = :nganh
-              AND hp.id NOT IN ($id_str)
+              AND l.hoc_ky = :hk_hien_tai
+              AND l.nam_hoc = :nh_hien_tai
+              AND l.trang_thai_mo_lop = 'Đang mở'
+              AND l.id NOT IN ($id_str)
               AND NOT EXISTS (
                   SELECT 1 FROM diem_hoc_tap d
                   WHERE d.hoc_phan_id = hp.id AND d.sinh_vien_id = :sid AND d.diem_he4 >= 1.0
               )
-            ORDER BY c.hoc_ky, hp.ten_hp
+            ORDER BY hp.ten_hp, l.ma_lop_hp
         ";
-        return $this->db->fetchAll($sql, ['nganh' => $nganh, 'sid' => $studentId]);
+        return $this->db->fetchAll($sql, [
+            'nganh' => $nganh, 
+            'sid' => $studentId,
+            'hk_hien_tai' => $hk_hien_tai,
+            'nh_hien_tai' => $nh_hien_tai
+        ]);
     }
 
-    public function registerCourse($studentId, $hpId, $hk, $nh) {
-        $course = $this->db->fetch("SELECT ma_hp, ten_hp, thu, tiet_bat_dau, so_tiet, si_so_toi_da, si_so_hien_tai, ma_hp_tien_quyet FROM hoc_phan WHERE id = :id", ['id' => $hpId]);
-        if (!$course) return ['type' => 'danger', 'text' => 'Học phần không tồn tại.'];
+    public function registerCourse($studentId, $lhpId, $hk, $nh) {
+        // Lấy thông tin lớp học phần
+        $class = $this->db->fetch("
+            SELECT l.*, hp.id AS hoc_phan_id, hp.ma_hp, hp.ten_hp, hp.ma_hp_tien_quyet 
+            FROM lop_hoc_phan l
+            JOIN hoc_phan hp ON l.hoc_phan_id = hp.id
+            WHERE l.id = :id
+        ", ['id' => $lhpId]);
+        if (!$class) return ['type' => 'danger', 'text' => 'Lớp học phần không tồn tại.'];
 
-        $ma_hp = $course['ma_hp'];
-        $target_thu = $course['thu'];
-        $target_start = $course['tiet_bat_dau'];
-        $target_count = $course['so_tiet'];
-        $si_so_toi_da = (int)$course['si_so_toi_da'];
-        $si_so_hien_tai = (int)$course['si_so_hien_tai'];
-        $prereq_ma = $course['ma_hp_tien_quyet'];
+        $hpId = $class['hoc_phan_id'];
+        $ma_hp = $class['ma_hp'];
+        $si_so_toi_da = (int)$class['si_so_toi_da'];
+        $si_so_hien_tai = (int)$class['si_so_hien_tai'];
+        $prereq_ma = $class['ma_hp_tien_quyet'];
 
-        // 1. Kiểm tra đã đăng ký
-        $chk = $this->db->fetch("SELECT id FROM dang_ky_hp WHERE sinh_vien_id=:sid AND hoc_phan_id=:hpId AND hoc_ky=:hk AND nam_hoc=:nh AND trang_thai IN ('Chờ duyệt', 'Đã duyệt')", 
-            ['sid' => $studentId, 'hpId' => $hpId, 'hk' => (string)$hk, 'nh' => $nh]);
-        if ($chk) return ['type' => 'warning', 'text' => 'Bạn đã đăng ký học phần này.'];
+        // 0. Kiểm tra môn đã đạt điểm hệ 4 >= 1.0 (D trở lên)
+        $passed = $this->db->fetch("SELECT id FROM diem_hoc_tap WHERE sinh_vien_id = :sid AND hoc_phan_id = :hpId AND diem_he4 >= 1.0", 
+            ['sid' => $studentId, 'hpId' => $hpId]);
+        if ($passed) {
+            return ['type' => 'danger', 'text' => 'Bạn đã hoàn thành đạt học phần này trước đó (không được đăng ký lại).'];
+        }
 
-        // 2. Kiểm tra sĩ số
-        if ($si_so_hien_tai >= $si_so_toi_da) return ['type' => 'danger', 'text' => 'Học phần đã đủ số lượng.'];
+        // 1. Kiểm tra đã đăng ký bất kỳ lớp học phần nào của môn học này trong học kỳ này chưa
+        $chk = $this->db->fetch("
+            SELECT dk.id FROM dang_ky_hp dk
+            JOIN lop_hoc_phan lhp ON lhp.id = dk.lop_hoc_phan_id
+            WHERE dk.sinh_vien_id = :sid 
+              AND lhp.hoc_phan_id = :hpId 
+              AND dk.hoc_ky = :hk 
+              AND dk.nam_hoc = :nh 
+              AND dk.trang_thai IN ('Chờ duyệt', 'Đã duyệt')
+        ", ['sid' => $studentId, 'hpId' => $hpId, 'hk' => (string)$hk, 'nh' => $nh]);
+        if ($chk) return ['type' => 'warning', 'text' => 'Bạn đã đăng ký một lớp học phần của môn này trong học kỳ hiện tại.'];
+
+        // 2. Kiểm tra sĩ số lớp học phần
+        if ($si_so_hien_tai >= $si_so_toi_da) return ['type' => 'danger', 'text' => 'Lớp học phần đã đủ sĩ số tối đa.'];
 
         // 3. Kiểm tra môn tiên quyết
         if (!empty($prereq_ma)) {
             $prereq = $this->db->fetch("SELECT id FROM hoc_phan WHERE ma_hp = :ma", ['ma' => $prereq_ma]);
             if ($prereq) {
-                $passed = $this->db->fetch("SELECT id FROM diem_hoc_tap WHERE sinh_vien_id = :sid AND hoc_phan_id = :pid AND diem_he4 >= 1.0", 
+                $passedPrereq = $this->db->fetch("SELECT id FROM diem_hoc_tap WHERE sinh_vien_id = :sid AND hoc_phan_id = :pid AND diem_he4 >= 1.0", 
                     ['sid' => $studentId, 'pid' => $prereq['id']]);
-                if (!$passed) return ['type' => 'danger', 'text' => 'Không đủ điều kiện đăng ký. Bạn chưa học đạt học phần tiên quyết.'];
+                if (!$passedPrereq) return ['type' => 'danger', 'text' => 'Không đủ điều kiện đăng ký. Bạn chưa học đạt học phần tiên quyết: ' . $prereq_ma];
             }
         }
 
-        // 4. Kiểm tra trùng lịch
-        $activeCourses = $this->db->fetchAll("
-            SELECT hp.ten_hp, hp.thu, hp.tiet_bat_dau, hp.so_tiet
+        // 4. Kiểm tra trùng lịch học cá nhân của sinh viên
+        // Lấy lịch học của lớp chuẩn bị đăng ký
+        $targetSchedules = $this->db->fetchAll("SELECT thu, tiet_bat_dau, so_tiet FROM thoi_khoa_bieu WHERE lop_hoc_phan_id = :lhpId", ['lhpId' => $lhpId]);
+        
+        // Lấy lịch học của các lớp đã đăng ký
+        $activeSchedules = $this->db->fetchAll("
+            SELECT hp.ten_hp, t.thu, t.tiet_bat_dau, t.so_tiet
             FROM dang_ky_hp dk
-            JOIN hoc_phan hp ON hp.id = dk.hoc_phan_id
+            JOIN lop_hoc_phan l ON l.id = dk.lop_hoc_phan_id
+            JOIN thoi_khoa_bieu t ON t.lop_hoc_phan_id = l.id
+            JOIN hoc_phan hp ON hp.id = l.hoc_phan_id
             WHERE dk.sinh_vien_id = :sid AND dk.hoc_ky = :hk AND dk.nam_hoc = :nh AND dk.trang_thai IN ('Chờ duyệt', 'Đã duyệt')
         ", ['sid' => $studentId, 'hk' => (string)$hk, 'nh' => $nh]);
 
-        foreach ($activeCourses as $row) {
-            $act_thu = $row['thu'];
-            $act_start = $row['tiet_bat_dau'];
-            $act_count = $row['so_tiet'];
+        foreach ($targetSchedules as $tar) {
+            $tar_thu = $tar['thu'];
+            $tar_start = $tar['tiet_bat_dau'];
+            $tar_count = $tar['so_tiet'];
 
-            if ($act_thu == $target_thu && $act_thu !== null && $target_thu !== null) {
-                if ($target_start < $act_start + $act_count && $act_start < $target_start + $target_count) {
-                    return ['type' => 'danger', 'text' => 'Trùng lịch học với học phần: ' . $row['ten_hp']];
+            foreach ($activeSchedules as $act) {
+                $act_thu = $act['thu'];
+                $act_start = $act['tiet_bat_dau'];
+                $act_count = $act['so_tiet'];
+
+                if ($act_thu == $tar_thu) {
+                    // Kiểm tra giao tiết học
+                    if ($tar_start < $act_start + $act_count && $act_start < $tar_start + $tar_count) {
+                        return ['type' => 'danger', 'text' => 'Trùng lịch học vào Thứ ' . $tar_thu . ' (tiết ' . $act_start . '-' . ($act_start + $act_count - 1) . ') với lớp: ' . $act['ten_hp']];
+                    }
                 }
             }
         }
 
-        // Đăng ký
+        // Thực hiện đăng ký
         try {
-            $this->db->query("INSERT INTO dang_ky_hp (sinh_vien_id, hoc_phan_id, hoc_ky, nam_hoc, trang_thai) VALUES (:sid, :hpId, :hk, :nh, 'Chờ duyệt')", 
-                ['sid' => $studentId, 'hpId' => $hpId, 'hk' => (string)$hk, 'nh' => $nh]);
+            $this->db->query("
+                INSERT INTO dang_ky_hp (sinh_vien_id, lop_hoc_phan_id, hoc_phan_id, hoc_ky, nam_hoc, trang_thai) 
+                VALUES (:sid, :lhpId, :hpId, :hk, :nh, 'Chờ duyệt')
+            ", ['sid' => $studentId, 'lhpId' => $lhpId, 'hpId' => $hpId, 'hk' => (string)$hk, 'nh' => $nh]);
             
-            $this->db->query("UPDATE hoc_phan SET si_so_hien_tai = si_so_hien_tai + 1 WHERE id = :hpId", ['hpId' => $hpId]);
+            $this->db->query("UPDATE lop_hoc_phan SET si_so_hien_tai = si_so_hien_tai + 1 WHERE id = :lhpId", ['lhpId' => $lhpId]);
 
-            return ['type' => 'success', 'text' => 'Đăng ký thành công!'];
+            return ['type' => 'success', 'text' => 'Đăng ký lớp học phần thành công!'];
         } catch (\Exception $e) {
             return ['type' => 'danger', 'text' => 'Lỗi hệ thống, vui lòng thử lại sau.'];
         }
     }
 
-    public function cancelCourse($studentId, $hpId, $hk, $nh) {
+    public function cancelCourse($studentId, $lhpId, $hk, $nh) {
         try {
-            // Chỉ xóa dòng nào đang 'Chờ duyệt'
-            $sql = "DELETE FROM dang_ky_hp WHERE sinh_vien_id=:sid AND hoc_phan_id=:hpId AND hoc_ky=:hk AND nam_hoc=:nh AND trang_thai='Chờ duyệt'";
-            $result = $this->db->query($sql, ['sid' => $studentId, 'hpId' => $hpId, 'hk' => (string)$hk, 'nh' => $nh]);
-            
-            // Check if any row was affected
-            // We can check if row exists before deleting, or use PDO rowCount, but Database class might not expose rowCount.
-            // Let's do a select before delete to ensure it exists and is 'Chờ duyệt'
-            $chk = $this->db->fetch("SELECT id FROM dang_ky_hp WHERE sinh_vien_id=:sid AND hoc_phan_id=:hpId AND hoc_ky=:hk AND nam_hoc=:nh AND trang_thai='Chờ duyệt'", 
-                ['sid' => $studentId, 'hpId' => $hpId, 'hk' => (string)$hk, 'nh' => $nh]);
+            // Kiểm tra sự tồn tại của đăng ký ở trạng thái 'Chờ duyệt'
+            $chk = $this->db->fetch("
+                SELECT id FROM dang_ky_hp 
+                WHERE sinh_vien_id = :sid AND lop_hoc_phan_id = :lhpId AND hoc_ky = :hk AND nam_hoc = :nh AND trang_thai = 'Chờ duyệt'
+            ", ['sid' => $studentId, 'lhpId' => $lhpId, 'hk' => (string)$hk, 'nh' => $nh]);
                 
             if ($chk) {
-                 $this->db->query("DELETE FROM dang_ky_hp WHERE id=:id", ['id' => $chk['id']]);
-                 $this->db->query("UPDATE hoc_phan SET si_so_hien_tai = GREATEST(0, si_so_hien_tai - 1) WHERE id = :hpId", ['hpId' => $hpId]);
-                 return ['type' => 'success', 'text' => 'Đã hủy đăng ký học phần.'];
+                 $this->db->query("DELETE FROM dang_ky_hp WHERE id = :id", ['id' => $chk['id']]);
+                 $this->db->query("UPDATE lop_hoc_phan SET si_so_hien_tai = GREATEST(0, si_so_hien_tai - 1) WHERE id = :lhpId", ['lhpId' => $lhpId]);
+                 return ['type' => 'success', 'text' => 'Đã hủy đăng ký lớp học phần thành công.'];
             } else {
-                 return ['type' => 'warning', 'text' => 'Không thể hủy. Học phần đã được duyệt hoặc đã bị hủy.'];
+                 return ['type' => 'warning', 'text' => 'Không thể hủy. Lớp học phần đã được duyệt hoặc đã bị hủy.'];
             }
         } catch (\Exception $e) {
             return ['type' => 'danger', 'text' => 'Lỗi hệ thống, vui lòng thử lại sau.'];

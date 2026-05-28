@@ -86,7 +86,8 @@ class CourseController extends Controller {
         $courseModel = new CourseModel();
         $da_dk = $courseModel->getRegisteredCourses($sv['id'], $hk, $nh);
         
-        $da_dk_ids = array_column($da_dk, 'hoc_phan_id');
+        // Lấy đúng cột lop_hoc_phan_id (ID lớp học phần đã đăng ký) để truyền sang getAvailableCourses loại trừ
+        $da_dk_ids = array_column($da_dk, 'lop_hoc_phan_id');
         $co_the_dk = $courseModel->getAvailableCourses($sv['id'], $sv['nganh'], $da_dk_ids);
 
         $tc_dang_ky = array_sum(array_column($da_dk, 'so_tin_chi'));

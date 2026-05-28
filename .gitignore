@@ -1,0 +1,18 @@
+# QNU Student Management System - Git Ignore Profile
+# Bỏ qua thư mục uploads chứa tài liệu động dung lượng lớn
+uploads/*
+!uploads/.gitkeep
+
+# Bỏ qua các file cấu hình và log tạm thời
+*.log
+*.tmp
+*.txt
+cookie.txt
+sim_cookie.txt
+sim_otp_cookie.txt
+
+# Bỏ qua cấu hình của IDE
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

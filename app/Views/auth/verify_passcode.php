@@ -36,7 +36,9 @@ $page_title = 'Xác minh mã Passcode';
             if (!empty($email) && strpos($email, '@') !== false) {
                 $parts = explode("@", $email);
                 if (strlen($parts[0]) > 2) {
-                    $hiddenEmail = substr($parts[0], 0, 2) . str_repeat("*", strlen($parts[0]) - 2) . "@" . $parts[1];
+                    // Chỉ lặp tối đa 5 dấu sao để tránh chuỗi quá dài gây tràn khung
+                    $stars = str_repeat("*", min(5, strlen($parts[0]) - 2));
+                    $hiddenEmail = substr($parts[0], 0, 2) . $stars . "@" . $parts[1];
                 } else {
                     $hiddenEmail = $email;
                 }
@@ -45,8 +47,8 @@ $page_title = 'Xác minh mã Passcode';
             }
         ?>
 
-        <div class="alert alert-warning">
-          <i class="fas fa-envelope-open-text"></i>
+        <div class="alert alert-warning" style="word-break: break-word; overflow-wrap: break-word; display: flex; align-items: flex-start; gap: 10px;">
+          <i class="fas fa-envelope-open-text" style="margin-top: 3px; flex-shrink: 0;"></i>
           <div>Một mã Passcode gồm **6 chữ số** đã được gửi tới email <strong><?= e($hiddenEmail) ?></strong>. Mã này có hiệu lực trong vòng 5 phút.</div>
         </div>
 

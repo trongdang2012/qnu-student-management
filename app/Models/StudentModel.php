@@ -54,8 +54,8 @@ class StudentModel {
 
         // Số HP đang học kỳ này
         $sql5 = "SELECT COUNT(*) AS cnt FROM dang_ky_hp
-                 WHERE sinh_vien_id = :sid AND hoc_ky = :hk AND trang_thai='Đã duyệt'";
-        $hp_hk = (int)($this->db->fetch($sql5, ['sid' => $studentId, 'hk' => $hk_hien_tai])['cnt'] ?? 0);
+                 WHERE sinh_vien_id = :sid AND hoc_ky = :hk AND nam_hoc = :nh AND trang_thai='Đã duyệt'";
+        $hp_hk = (int)($this->db->fetch($sql5, ['sid' => $studentId, 'hk' => (string)$hk_hien_tai, 'nh' => NAM_HOC_HIEN_TAI])['cnt'] ?? 0);
 
         // Danh sách môn nợ (điểm tổng kết < 4.0 và chưa học cải thiện/học lại đạt)
         $sql_no = "SELECT hp.ma_hp, hp.ten_hp, hp.so_tin_chi, temp.max_diem
@@ -96,11 +96,17 @@ class StudentModel {
     public function updateProfile($studentId, $email, $phone, $avatar = null) {
         if ($avatar !== null) {
             $sql = "UPDATE sinh_vien SET email = :email, so_dien_thoai = :phone, anh_dai_dien = :avatar WHERE id = :sid";
-            return $this->db->query($sql, ['email' => $email, 'phone' => $phone, 'avatar' => $avatar, 'sid' => $studentId]);
+            $res = $this->db->query($sql, ['email' => $email, 'phone' => $phone, 'avatar' => $avatar, 'sid' => $studentId]);
         } else {
             $sql = "UPDATE sinh_vien SET email = :email, so_dien_thoai = :phone WHERE id = :sid";
-            return $this->db->query($sql, ['email' => $email, 'phone' => $phone, 'sid' => $studentId]);
+            $res = $this->db->query($sql, ['email' => $email, 'phone' => $phone, 'sid' => $studentId]);
         }
+
+        // Cập nhật đồng bộ sang bảng users
+        $sqlUser = "UPDATE users SET email = :email WHERE id = (SELECT user_id FROM sinh_vien WHERE id = :sid LIMIT 1)";
+        $this->db->query($sqlUser, ['email' => $email, 'sid' => $studentId]);
+
+        return $res;
     }
 
     public function getProgressInfo($studentId, $nganh) {

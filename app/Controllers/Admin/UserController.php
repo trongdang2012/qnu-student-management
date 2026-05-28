@@ -62,6 +62,7 @@ class UserController extends Controller {
         $password = $_POST['password'] ?? '';
         $password_confirm = $_POST['password_confirm'] ?? '';
         $role = trim($_POST['role'] ?? '');
+        $email = trim($_POST['email'] ?? '');
 
         $errors = [];
 
@@ -82,6 +83,11 @@ class UserController extends Controller {
         if (!in_array($role, ['admin', 'student'])) {
             $errors[] = 'Role không hợp lệ';
         }
+        if (empty($email)) {
+            $errors[] = 'Email không được để trống';
+        } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $errors[] = 'Email không đúng định dạng';
+        }
 
         if (!empty($errors)) {
             $_SESSION['errors'] = $errors;
@@ -94,7 +100,7 @@ class UserController extends Controller {
         }
 
         $hashed_password = password_hash($password, PASSWORD_BCRYPT);
-        if ($this->userModel->insertUser($username, $hashed_password, $role)) {
+        if ($this->userModel->insertUser($username, $hashed_password, $role, $email)) {
             setFlash('success', 'Thêm tài khoản thành công!');
             $this->redirect('/admin/users');
         } else {
