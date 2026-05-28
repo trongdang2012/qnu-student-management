@@ -35,18 +35,26 @@
       </div>
     <?php else: ?>
       <div class="card fade-in">
-        <div class="card-header" style="background:#fafafa">
+        <div class="card-header" style="background:#fafafa; flex-wrap: wrap;">
           <h3><i class="fas fa-users"></i> Danh sách sinh viên (<?= count($students) ?>)</h3>
-          <div style="display:flex; gap:10px">
+          
+          <div style="display:flex; gap:10px; align-items:center; flex-wrap: wrap; margin-top: 5px;">
             <a href="<?= BASE_URL ?>/admin/diem/hoc-tap" class="btn btn-secondary btn-sm"><i class="fas fa-arrow-left"></i> Quay lại</a>
-            <button type="submit" form="gradesForm" class="btn btn-primary btn-sm"><i class="fas fa-save"></i> Lưu điểm</button>
+            <a href="<?= BASE_URL ?>/admin/diem/hoc-tap/export-template?hoc_phan_id=<?= $hoc_phan_id ?>" class="btn btn-info btn-sm" style="color:white; background:#17a2b8; border:none;">
+                <i class="fas fa-download"></i> Tải template (Excel/CSV)
+            </a>
+            <form action="<?= BASE_URL ?>/admin/diem/hoc-tap/import" method="POST" enctype="multipart/form-data" style="display:inline-flex; align-items:center; gap:5px; margin:0;">
+                <input type="hidden" name="hoc_phan_id" value="<?= $hoc_phan_id ?>">
+                <input type="file" name="excel_file" accept=".csv" required style="font-size:12px; max-width:200px; padding:3px;" class="form-control" title="Chọn file .csv">
+                <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-upload"></i> Nhập/Đè điểm</button>
+            </form>
           </div>
         </div>
         
         <div class="card-body" style="padding:0">
-          <form id="gradesForm" method="POST" action="<?= BASE_URL ?>/admin/diem/hoc-tap/save">
-            <input type="hidden" name="action" value="save_grades">
-            <input type="hidden" name="hoc_phan_id" value="<?= $hoc_phan_id ?>">
+            <div style="padding:10px 20px; background:#e9ecef; font-size:13px; color:#555;">
+                <i class="fas fa-info-circle"></i> <strong>Hướng dẫn:</strong> Vui lòng tải template, mở bằng Excel để nhập điểm, sau đó <strong>Save As</strong> định dạng <strong>CSV (Comma delimited)</strong> để tải lên. Việc tải lên sẽ <strong>ghi đè</strong> điểm cũ (nếu có).
+            </div>
             
             <div class="table-wrap">
               <table>
@@ -71,27 +79,15 @@
                       <td><?= e($sv['lop'] ?? 'Chưa rõ') ?></td>
                       
                       <td style="text-align:center">
-                        <input type="number" step="0.1" min="0" max="10" 
-                               name="diem[<?= $sv['sinh_vien_id'] ?>][cc]" 
-                               value="<?= is_null($sv['diem_cc']) ? '' : number_format((float)$sv['diem_cc'], 1) ?>" 
-                               class="form-control text-center grade-cc" 
-                               style="max-width:80px; margin:0 auto; padding:6px" placeholder="0 - 10">
+                        <span style="font-weight:500; font-size:14px"><?= is_null($sv['diem_cc']) ? '—' : number_format((float)$sv['diem_cc'], 1) ?></span>
                       </td>
                       
                       <td style="text-align:center">
-                        <input type="number" step="0.1" min="0" max="10" 
-                               name="diem[<?= $sv['sinh_vien_id'] ?>][gk]" 
-                               value="<?= is_null($sv['diem_gk']) ? '' : number_format((float)$sv['diem_gk'], 1) ?>" 
-                               class="form-control text-center grade-gk" 
-                               style="max-width:80px; margin:0 auto; padding:6px" placeholder="0 - 10">
+                        <span style="font-weight:500; font-size:14px"><?= is_null($sv['diem_gk']) ? '—' : number_format((float)$sv['diem_gk'], 1) ?></span>
                       </td>
                       
                       <td style="text-align:center">
-                        <input type="number" step="0.1" min="0" max="10" 
-                               name="diem[<?= $sv['sinh_vien_id'] ?>][ck]" 
-                               value="<?= is_null($sv['diem_ck']) ? '' : number_format((float)$sv['diem_ck'], 1) ?>" 
-                               class="form-control text-center grade-ck" 
-                               style="max-width:80px; margin:0 auto; padding:6px" placeholder="0 - 10">
+                        <span style="font-weight:500; font-size:14px"><?= is_null($sv['diem_ck']) ? '—' : number_format((float)$sv['diem_ck'], 1) ?></span>
                       </td>
                       
                       <td style="text-align:center; font-weight:700; font-size:15px; color:var(--primary)">
@@ -116,12 +112,6 @@
                 </tbody>
               </table>
             </div>
-            
-            <div style="display:flex; justify-content:flex-end; gap:15px; padding:20px; background:#fcfcfc; border-top:1px solid #eee">
-              <a href="<?= BASE_URL ?>/admin/diem/hoc-tap" class="btn btn-secondary"><i class="fas fa-times"></i> Hủy</a>
-              <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Lưu bảng điểm</button>
-            </div>
-          </form>
         </div>
       </div>
     <?php endif; ?>
@@ -129,88 +119,6 @@
   </div>
 </div>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const rows = document.querySelectorAll('.student-row');
-    
-    function getDiemChu(score) {
-        if (score >= 9.0) return { letter: 'A+', type: 'success' };
-        if (score >= 8.5) return { letter: 'A', type: 'success' };
-        if (score >= 8.0) return { letter: 'B+', type: 'primary' };
-        if (score >= 7.0) return { letter: 'B', type: 'primary' };
-        if (score >= 6.5) return { letter: 'C+', type: 'warning' };
-        if (score >= 5.5) return { letter: 'C', type: 'warning' };
-        if (score >= 5.0) return { letter: 'D+', type: 'secondary' };
-        if (score >= 4.0) return { letter: 'D', type: 'secondary' };
-        return { letter: 'F', type: 'danger' };
-    }
-    
-    function getDiemHe4(score) {
-        if (score >= 9.0) return 4.0;
-        if (score >= 8.5) return 3.7;
-        if (score >= 8.0) return 3.5;
-        if (score >= 7.0) return 3.0;
-        if (score >= 6.5) return 2.5;
-        if (score >= 5.5) return 2.0;
-        if (score >= 5.0) return 1.5;
-        if (score >= 4.0) return 1.0;
-        return 0.0;
-    }
 
-    rows.forEach(row => {
-        const ccInput = row.querySelector('.grade-cc');
-        const gkInput = row.querySelector('.grade-gk');
-        const ckInput = row.querySelector('.grade-ck');
-        const totalSpan = row.querySelector('.span-total');
-        const he4Span = row.querySelector('.span-he4');
-        const letterBadge = row.querySelector('.badge-letter');
-        
-        function calculateRow() {
-            const ccVal = ccInput.value.trim();
-            const gkVal = gkInput.value.trim();
-            const ckVal = ckInput.value.trim();
-            
-            if (ccVal === '' || gkVal === '' || ckVal === '') {
-                totalSpan.textContent = '—';
-                he4Span.textContent = '—';
-                letterBadge.textContent = '—';
-                letterBadge.className = 'badge badge-secondary badge-letter';
-                letterBadge.style.backgroundColor = '#aaa';
-                return;
-            }
-            
-            const cc = parseFloat(ccVal);
-            const gk = parseFloat(gkVal);
-            const ck = parseFloat(ckVal);
-            
-            if (isNaN(cc) || cc < 0 || cc > 10 || 
-                isNaN(gk) || gk < 0 || gk > 10 || 
-                isNaN(ck) || ck < 0 || ck > 10) {
-                totalSpan.textContent = 'Lỗi';
-                he4Span.textContent = 'Lỗi';
-                letterBadge.textContent = 'ERR';
-                letterBadge.className = 'badge badge-danger badge-letter';
-                letterBadge.style.backgroundColor = '';
-                return;
-            }
-            
-            const total = Math.round((cc * 0.1 + gk * 0.3 + ck * 0.6) * 100) / 100;
-            totalSpan.textContent = total.toFixed(1);
-            
-            const he4 = getDiemHe4(total);
-            he4Span.textContent = he4.toFixed(1);
-            
-            const chu = getDiemChu(total);
-            letterBadge.textContent = chu.letter;
-            letterBadge.className = `badge badge-${chu.type} badge-letter`;
-            letterBadge.style.backgroundColor = '';
-        }
-        
-        [ccInput, gkInput, ckInput].forEach(input => {
-            input.addEventListener('input', calculateRow);
-        });
-    });
-});
-</script>
 
 <?php require_once ROOT . '/includes/admin/footer_admin.php'; ?>

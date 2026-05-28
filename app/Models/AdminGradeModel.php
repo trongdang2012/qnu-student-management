@@ -65,6 +65,18 @@ class AdminGradeModel {
         return $this->db->fetch("SELECT ho_ten, ma_sv FROM sinh_vien WHERE id = :id", ['id' => $sv_id]);
     }
 
+    public function getStudentInfoForGradeErrorByCode($ma_sv, $khoa, $nganh, $lop) {
+        return $this->db->fetch(
+            "SELECT id AS sinh_vien_id, ho_ten, ma_sv FROM sinh_vien WHERE ma_sv = :ma_sv AND khoa = :khoa AND nganh = :nganh AND lop = :lop",
+            [
+                'ma_sv' => $ma_sv,
+                'khoa' => $khoa,
+                'nganh' => $nganh,
+                'lop' => $lop
+            ]
+        );
+    }
+
     public function getRegistrationInfo($sv_id, $hp_id) {
         return $this->db->fetch("SELECT hoc_ky, nam_hoc FROM dang_ky_hp WHERE sinh_vien_id = :sv_id AND hoc_phan_id = :hp_id AND trang_thai = 'Đã duyệt' LIMIT 1", 
             ['sv_id' => $sv_id, 'hp_id' => $hp_id]);
@@ -117,13 +129,36 @@ class AdminGradeModel {
 
     // --- Điểm rèn luyện ---
 
+    public function getKhoaList() {
+        return $this->db->fetchAll("SELECT DISTINCT khoa FROM sinh_vien WHERE khoa IS NOT NULL AND khoa != '' ORDER BY khoa ASC");
+    }
+
+    public function getNganhListByKhoa($khoa) {
+        return $this->db->fetchAll("SELECT DISTINCT nganh FROM sinh_vien WHERE khoa = :khoa AND nganh IS NOT NULL AND nganh != '' ORDER BY nganh ASC", ['khoa' => $khoa]);
+    }
+
+    // Get all departments regardless of faculty
+    public function getAllNganhList() {
+        return $this->db->fetchAll("SELECT DISTINCT nganh FROM sinh_vien WHERE nganh IS NOT NULL AND nganh != '' ORDER BY nganh ASC");
+    }
+
     public function getLopList() {
         return $this->db->fetchAll("SELECT DISTINCT lop FROM sinh_vien WHERE lop IS NOT NULL AND lop != '' ORDER BY lop ASC");
     }
 
-    public function getTrainingGrades($hoc_ky, $nam_hoc, $search = '', $lop_filter = '') {
+    // Get list of classes filtered by faculty (khoa) and department (nganh)
+    public function getLopListByKhoaAndNganh($khoa, $nganh) {
+        return $this->db->fetchAll(
+            "SELECT DISTINCT lop FROM sinh_vien WHERE khoa = :khoa AND nganh = :nganh AND lop IS NOT NULL AND lop != '' ORDER BY lop ASC",
+            ['khoa' => $khoa, 'nganh' => $nganh]
+        );
+    }
+
+
+
+    public function getTrainingGrades($hoc_ky, $nam_hoc, $search = '', $khoa = '', $nganh = '', $lop_filter = '') {
         $sql = "
-            SELECT sv.id AS sinh_vien_id, sv.ma_sv, sv.ho_ten, sv.lop, sv.nganh,
+            SELECT sv.id AS sinh_vien_id, sv.ma_sv, sv.ho_ten, sv.lop, sv.nganh, sv.khoa,
                    drl.diem, drl.xep_loai, drl.ghi_chu
             FROM sinh_vien sv
             LEFT JOIN diem_ren_luyen drl 
@@ -140,6 +175,14 @@ class AdminGradeModel {
             $params['search2'] = '%' . $search . '%';
         }
 
+        if ($khoa !== '') {
+            $sql .= " AND sv.khoa = :khoa";
+            $params['khoa'] = $khoa;
+        }
+        if ($nganh !== '') {
+            $sql .= " AND sv.nganh = :nganh";
+            $params['nganh'] = $nganh;
+        }
         if ($lop_filter !== '') {
             $sql .= " AND sv.lop = :lop";
             $params['lop'] = $lop_filter;
@@ -186,5 +229,14 @@ class AdminGradeModel {
         return $this->db->fetch("SELECT diem, xep_loai FROM diem_ren_luyen WHERE sinh_vien_id = :sv_id AND hoc_ky = :hk AND nam_hoc = :nh LIMIT 1", [
             'sv_id' => $sv_id, 'hk' => $hk, 'nh' => $nh
         ]);
+    }
+
+    public function calculateXepLoai($score) {
+        if ($score >= 90) return 'Xuất sắc';
+        if ($score >= 80) return 'Tốt';
+        if ($score >= 70) return 'Khá';
+        if ($score >= 50) return 'Trung bình';
+        if ($score >= 30) return 'Yếu';
+        return 'Kém';
     }
 }
