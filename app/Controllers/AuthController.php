@@ -35,6 +35,22 @@ class AuthController extends Controller {
             return $this->json(['success' => false, 'message' => 'Tên đăng nhập hoặc mật khẩu không đúng.']);
         }
 
+        // Đăng nhập thẳng nếu tắt xác thực 2 lớp (two_factor_auth == 0)
+        if (isset($user['two_factor_auth']) && $user['two_factor_auth'] == 0) {
+            session_regenerate_id(true);
+            $_SESSION['user_id']  = $user['id'];
+            $_SESSION['username'] = $user['username'];
+            $_SESSION['role']     = $user['role'];
+            $_SESSION['user_role']= $user['role'];
+            $_SESSION['login_at'] = time();
+
+            if ($user['role'] === 'admin') {
+                return $this->json(['success' => true, 'redirect' => BASE_URL . '/admin/dashboard']);
+            } else {
+                return $this->json(['success' => true, 'redirect' => BASE_URL . '/student/dashboard']);
+            }
+        }
+
         $email = $user['email'];
         if (empty($email)) {
             return $this->json(['success' => false, 'message' => 'Tài khoản của bạn chưa được thiết lập email.']);
@@ -45,7 +61,6 @@ class AuthController extends Controller {
         require_once ROOT . '/includes/vendor/PHPMailer/src/PHPMailer.php';
         require_once ROOT . '/includes/vendor/PHPMailer/src/SMTP.php';
 
-        session_regenerate_id(true);
         $otp = sprintf("%06d", mt_rand(0, 999999));
         $_SESSION['pending_user'] = [
             'id' => $user['id'],

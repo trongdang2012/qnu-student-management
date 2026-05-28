@@ -136,6 +136,24 @@ $avatar_url = (!empty($sv['anh_dai_dien']))
             <span class="form-hint" id="sdtHint">Số điện thoại liên hệ (không bắt buộc).</span>
           </div>
 
+          <!-- Xác thực 2 lớp (2FA) -->
+          <div class="form-group" style="margin-top:20px; margin-bottom: 24px; padding: 15px; background: var(--bg-light, #f8f9fa); border-radius: 8px; border: 1px solid var(--border, #e2e8f0)">
+            <label style="display:flex;align-items:center;cursor:pointer;margin:0;width:100%">
+              <div style="display:flex;align-items:center;gap:12px">
+                <div style="width:40px;height:40px;border-radius:50%;background:rgba(40,167,69,0.1);color:var(--success, #28a745);display:flex;align-items:center;justify-content:center;font-size:18px">
+                  <i class="fas fa-shield-alt"></i>
+                </div>
+                <div>
+                  <strong style="font-size:15px;color:var(--text, #2d3748)">Xác thực hai lớp (2FA OTP)</strong>
+                  <div style="font-size:12.5px;color:var(--text-muted, #718096);margin-top:2px">Bảo vệ tài khoản bằng mã xác thực gửi qua Email khi đăng nhập.</div>
+                </div>
+              </div>
+              <div style="margin-left:auto">
+                <input type="checkbox" id="two_factor_auth" name="two_factor_auth" value="1" <?= $two_factor_auth == 1 ? 'checked' : '' ?> style="width:20px;height:20px;cursor:pointer">
+              </div>
+            </label>
+          </div>
+
           <!-- Nút -->
           <div style="display:flex;gap:12px;margin-top:8px">
             <button type="submit" class="btn btn-primary" id="btnSave">

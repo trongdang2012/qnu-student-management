@@ -36,6 +36,11 @@ $active_menu = $active_menu ?? 'dashboard';
           <i class="fas fa-book"></i> Học phần
         </a>
       </li>
+      <li class="nav-item <?= $active_menu==='lop_hoc_phan'?'active':'' ?>">
+        <a class="nav-link" href="<?= BASE_URL ?>/admin/lop-hoc-phan">
+          <i class="fas fa-chalkboard-teacher"></i> Lớp học phần
+        </a>
+      </li>
       <li class="nav-item <?= $active_menu==='hoc_phi'?'active':'' ?>">
         <a class="nav-link" href="<?= BASE_URL ?>/admin/hoc-phi">
           <i class="fas fa-money-bill-wave"></i> Học phí

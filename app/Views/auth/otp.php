@@ -46,7 +46,9 @@ $page_title = 'Xác thực OTP';
             if (!empty($email) && strpos($email, '@') !== false) {
                 $parts = explode("@", $email);
                 if (strlen($parts[0]) > 2) {
-                    $hiddenEmail = substr($parts[0], 0, 2) . str_repeat("*", strlen($parts[0]) - 2) . "@" . $parts[1];
+                    // Chỉ lặp tối đa 5 dấu sao để tránh chuỗi quá dài gây tràn khung
+                    $stars = str_repeat("*", min(5, strlen($parts[0]) - 2));
+                    $hiddenEmail = substr($parts[0], 0, 2) . $stars . "@" . $parts[1];
                 } else {
                     $hiddenEmail = $email;
                 }
@@ -55,8 +57,8 @@ $page_title = 'Xác thực OTP';
             }
         ?>
 
-        <div class="alert alert-info">
-          <i class="fas fa-envelope"></i>
+        <div class="alert alert-info" style="word-break: break-word; overflow-wrap: break-word; display: flex; align-items: flex-start; gap: 10px;">
+          <i class="fas fa-envelope" style="margin-top: 3px; flex-shrink: 0;"></i>
           <div>Chúng tôi đã gửi một mã gồm 6 chữ số đến email <strong><?= e($hiddenEmail) ?></strong>. Mã có hiệu lực
             trong vòng 5 phút.</div>
         </div>
