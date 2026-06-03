@@ -115,6 +115,9 @@ function sortIcon($col, $current_sort, $current_order) {
             <button type="button" class="btn btn-outline btn-sm" id="btnToggleSidebar" style="padding: 5px 12px; font-size: 13px; display: flex; align-items: center; gap: 6px; background: var(--bg-card); border: 1px solid var(--border); color: var(--text-muted); cursor: pointer; border-radius: var(--radius-sm); transition: all 0.2s;">
               <i class="fas fa-eye-slash" id="toggleSidebarIcon"></i> <span id="toggleSidebarText">Ẩn cấu trúc</span>
             </button>
+            <button type="button" class="btn btn-success btn-sm" onclick="showImportModal()" style="display: flex; align-items: center; gap: 6px;">
+              <i class="fas fa-file-excel"></i> Nhập Excel
+            </button>
             <a href="<?= BASE_URL ?>/admin/sinh-vien/add" class="btn btn-primary btn-sm">
               <i class="fas fa-plus"></i> Thêm sinh viên
             </a>
@@ -238,12 +241,10 @@ function sortIcon($col, $current_sort, $current_order) {
                         </span>
                       </td>
                       <td style="padding: 12px; text-align: center;">
-                        <a href="<?= BASE_URL ?>/admin/sinh-vien/edit?id=<?= $student['id'] ?>" class="btn btn-sm"
-                          style="background: #17a2b8; color: #fff; padding: 5px 10px; font-size: 12px; border-radius: 4px;">
+                        <a href="<?= BASE_URL ?>/admin/sinh-vien/edit?id=<?= $student['id'] ?>" class="btn-edit-action">
                           <i class="fas fa-edit"></i> Sửa
                         </a>
-                        <a href="<?= BASE_URL ?>/admin/sinh-vien/delete?id=<?= $student['id'] ?>" class="btn btn-sm"
-                          style="background: #dc3545; color: #fff; padding: 5px 10px; font-size: 12px; border-radius: 4px;"
+                        <a href="<?= BASE_URL ?>/admin/sinh-vien/delete?id=<?= $student['id'] ?>" class="btn-delete-action"
                           onclick="return confirm('Xóa sinh viên này? (Sẽ xóa tài khoản liên kết)');">
                           <i class="fas fa-trash"></i> Xóa
                         </a>
@@ -403,5 +404,39 @@ document.addEventListener('DOMContentLoaded', function() {
       }
   }
 </style>
+
+<!-- Modal Import Excel -->
+<div class="modal" id="importModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center;">
+  <div class="modal-content" style="background: white; border-radius: 8px; padding: 30px; width: 90%; max-width: 500px; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
+    <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 15px;">
+      <h2 style="margin:0; font-size:18px;">Nhập sinh viên hàng loạt từ file Excel</h2>
+      <span style="cursor: pointer; font-size: 24px; font-weight: bold; color: #999;" onclick="closeImportModal()">&times;</span>
+    </div>
+    <form method="POST" action="<?= BASE_URL ?>/admin/sinh-vien/import" enctype="multipart/form-data">
+      <div class="form-group" style="margin-bottom: 18px;">
+        <label style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 6px;">Chọn file Excel (.xlsx) <span style="color:red">*</span></label>
+        <input type="file" name="excel_file" class="form-control" accept=".xlsx" required style="width: 100%; padding: 9px 13px; font-size: 15px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); outline: none;">
+        <p style="font-size: 12px; color: var(--text-muted); margin-top: 8px; line-height:1.5;">
+          Định dạng cột file Excel mẫu (theo thứ tự): <br>
+          <code style="background:#f4f6f9; padding:2px 4px; border-radius:3px; display:block; margin:4px 0;">Cột A: MSSV | Cột B: Họ tên | Cột C: Ngày sinh | Cột D: Giới tính | Cột E: Email | Cột F: SĐT | Cột G: Ngành | Cột H: Lớp | Cột I: Khoa | Cột J: Niên khóa | Cột K: Địa chỉ</code>
+          * Hàng đầu tiên phải là tiêu đề cột. Mật khẩu mặc định sẽ là <code>Student@123</code>.
+        </p>
+      </div>
+      <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+        <button type="button" class="btn btn-secondary" onclick="closeImportModal()">Hủy</button>
+        <button type="submit" class="btn btn-success"><i class="fas fa-file-import"></i> Bắt đầu Nhập</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function showImportModal() {
+    document.getElementById('importModal').style.display = 'flex';
+}
+function closeImportModal() {
+    document.getElementById('importModal').style.display = 'none';
+}
+</script>
 
 <?php require_once ROOT . '/includes/admin/footer_admin.php'; ?>

@@ -21,15 +21,15 @@
           <div class="stat-value"><?= count($courseGroups) ?></div>
         </div>
       </div>
-      <div class="stat-card" style="border-left-color:#17a2b8">
-        <i class="fas fa-users" style="color:#17a2b8"></i>
+      <div class="stat-card">
+        <i class="fas fa-users"></i>
         <div>
           <h3>Sinh viên có đăng ký</h3>
           <div class="stat-value"><?= $studentCount ?></div>
         </div>
       </div>
-      <div class="stat-card" style="border-left-color:#ffc107">
-        <i class="fas fa-calendar-day" style="color:#ffc107"></i>
+      <div class="stat-card">
+        <i class="fas fa-calendar-day"></i>
         <div>
           <h3>Lịch hiện có</h3>
           <div class="stat-value"><?= $existingCount ?></div>
@@ -61,7 +61,7 @@
           </a>
         </form>
 
-        <div style="background:#f7f9fc;border-left:4px solid #0066cc;border-radius:6px;padding:14px;margin-top:14px">
+        <div style="background:#f7f9fc;border-left:none;border-radius:6px;padding:14px;margin-top:14px">
           <strong>Luật tối ưu:</strong>
           gom sinh viên theo học phần, tránh trùng lịch sinh viên, tránh trùng phòng, ưu tiên thứ 2-6 và buổi sáng, hạn chế dồn quá nhiều tiết vào một ngày.
         </div>

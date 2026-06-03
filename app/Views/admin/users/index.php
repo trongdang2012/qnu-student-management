@@ -211,12 +211,10 @@ function sortIcon($col, $current_sort, $current_order) {
                         <?= date('d/m/Y H:i', strtotime($user['created_at'])) ?>
                       </td>
                       <td style="padding: 12px; text-align: center;">
-                        <a href="<?= BASE_URL ?>/admin/users/edit?id=<?= $user['id'] ?>" class="btn btn-sm"
-                          style="background: #17a2b8; color: #fff; padding: 5px 10px; font-size: 12px; border-radius: 4px;">
+                        <a href="<?= BASE_URL ?>/admin/users/edit?id=<?= $user['id'] ?>" class="btn-edit-action">
                           <i class="fas fa-edit"></i> Sửa
                         </a>
-                        <a href="<?= BASE_URL ?>/admin/users/delete?id=<?= $user['id'] ?>" class="btn btn-sm"
-                          style="background: #dc3545; color: #fff; padding: 5px 10px; font-size: 12px; border-radius: 4px;"
+                        <a href="<?= BASE_URL ?>/admin/users/delete?id=<?= $user['id'] ?>" class="btn-delete-action"
                           onclick="return confirm('Xóa tài khoản này? (Sinh viên liên kết nếu có cũng sẽ bị xóa)');">
                           <i class="fas fa-trash"></i> Xóa
                         </a>

@@ -63,6 +63,38 @@
       </div>
     </div>
 
+    <div class="card fade-in" style="margin-bottom:24px;">
+      <div class="card-header"><h3><i class="fas fa-magic"></i> Tính học phí tự động hàng loạt</h3></div>
+      <div class="card-body">
+        <form method="POST" action="<?= BASE_URL ?>/admin/hoc-phi/tinh-tu-dong" class="form-grid" style="gap:12px;">
+          <div class="form-group" style="flex:1;">
+            <label>Học kỳ</label>
+            <select name="hoc_ky" class="form-control" required>
+              <option value="">Chọn học kỳ</option>
+              <?php for ($i = 1; $i <= 8; $i++): ?>
+                <option value="<?= $i ?>" <?= $i == HOC_KY_HIEN_TAI ? 'selected' : '' ?>>HK <?= $i ?></option>
+              <?php endfor; ?>
+            </select>
+          </div>
+          <div class="form-group" style="flex:1;">
+            <label>Năm học</label>
+            <input type="text" name="nam_hoc" class="form-control" value="<?= NAM_HOC_HIEN_TAI ?>" placeholder="VD: 2025-2026" required>
+          </div>
+          <div class="form-group" style="flex:1;">
+            <label>Đơn giá/tín chỉ (VND)</label>
+            <input type="number" name="don_gia" class="form-control" step="1000" min="0" placeholder="VD: 450000" required>
+          </div>
+          <div class="form-group" style="flex:1;">
+            <label>Hạn nộp</label>
+            <input type="date" name="han_nop" class="form-control">
+          </div>
+          <div class="form-group" style="align-self:flex-end;">
+            <button type="submit" class="btn btn-warning" onclick="return confirm('Hệ thống sẽ tự động tính học phí cho tất cả sinh viên đăng ký học phần trong học kỳ và năm học đã chọn dựa trên số tín chỉ thực tế. Bạn có chắc chắn muốn thực hiện không?')"><i class="fas fa-calculator"></i> Tính học phí hàng loạt</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <?php if ($editRecord): ?>
       <div class="card fade-in" style="margin-bottom:24px;">
         <div class="card-header"><h3><i class="fas fa-pencil-alt"></i> Sửa học phí sinh viên</h3></div>

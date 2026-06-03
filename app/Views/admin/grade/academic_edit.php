@@ -45,7 +45,7 @@
             </a>
             <form action="<?= BASE_URL ?>/admin/diem/hoc-tap/import" method="POST" enctype="multipart/form-data" style="display:inline-flex; align-items:center; gap:5px; margin:0;">
                 <input type="hidden" name="hoc_phan_id" value="<?= $hoc_phan_id ?>">
-                <input type="file" name="excel_file" accept=".csv" required style="font-size:12px; max-width:200px; padding:3px;" class="form-control" title="Chọn file .csv">
+                <input type="file" name="excel_file" accept=".xlsx, .csv" required style="font-size:12px; max-width:200px; padding:3px;" class="form-control" title="Chọn file Excel hoặc CSV">
                 <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-upload"></i> Nhập/Đè điểm</button>
             </form>
           </div>
@@ -53,7 +53,7 @@
         
         <div class="card-body" style="padding:0">
             <div style="padding:10px 20px; background:#e9ecef; font-size:13px; color:#555;">
-                <i class="fas fa-info-circle"></i> <strong>Hướng dẫn:</strong> Vui lòng tải template, mở bằng Excel để nhập điểm, sau đó <strong>Save As</strong> định dạng <strong>CSV (Comma delimited)</strong> để tải lên. Việc tải lên sẽ <strong>ghi đè</strong> điểm cũ (nếu có).
+                <i class="fas fa-info-circle"></i> <strong>Hướng dẫn:</strong> Vui lòng tải template, mở bằng Excel để nhập điểm, sau đó tải lên file định dạng <strong>.xlsx</strong> hoặc <strong>.csv</strong>. Việc tải lên sẽ <strong>ghi đè</strong> điểm cũ (nếu có).
             </div>
             
             <div class="table-wrap">

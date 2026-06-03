@@ -45,10 +45,12 @@ class ClassController extends Controller {
 
         // Lấy danh sách các học phần hoạt động để làm dropdown chọn
         $allCourses = $this->courseModel->getCourses('', 0, '', '', 1000, 0);
+        $nganhList = $this->courseModel->getNganhListInCtdt();
 
         $this->view('admin/class/index', [
             'list' => $list,
             'allCourses' => $allCourses,
+            'nganhList' => $nganhList,
             'search' => $search,
             'hocKyFilter' => $hoc_ky,
             'giangVienFilter' => $giang_vien,
@@ -79,12 +81,20 @@ class ClassController extends Controller {
         $ngay_ket_thuc = trim($_POST['ngay_ket_thuc'] ?? '');
         $trang_thai_mo_lop = trim($_POST['trang_thai_mo_lop'] ?? 'Đang mở');
         
+        $ngay_bat_dau_dk = trim($_POST['ngay_bat_dau_dk'] ?? '');
+        $ngay_ket_thuc_dk = trim($_POST['ngay_ket_thuc_dk'] ?? '');
+        
+        $ngay_bat_dau_dk = $ngay_bat_dau_dk !== '' ? $ngay_bat_dau_dk : null;
+        $ngay_ket_thuc_dk = $ngay_ket_thuc_dk !== '' ? $ngay_ket_thuc_dk : null;
+        
         $search_keep = $_POST['search_keep'] ?? '';
 
         if ($ma_lop_hp === '' || $hoc_phan_id <= 0 || $giang_vien === '' || $ngay_bat_dau === '' || $ngay_ket_thuc === '') {
             setFlash('danger', 'Vui lòng điền đầy đủ các thông tin bắt buộc.');
         } elseif ($si_so_toi_da <= 0) {
             setFlash('danger', 'Sĩ số tối đa phải lớn hơn 0.');
+        } elseif ($ngay_bat_dau_dk !== null && $ngay_ket_thuc_dk !== null && $ngay_bat_dau_dk > $ngay_ket_thuc_dk) {
+            setFlash('danger', 'Ngày bắt đầu đăng ký không được lớn hơn ngày kết thúc đăng ký.');
         } else {
             if ($id > 0) {
                 // Sửa thông tin lớp học phần
@@ -92,13 +102,15 @@ class ClassController extends Controller {
                 if ($exists) {
                     setFlash('danger', 'Mã lớp học phần đã tồn tại trên một lớp khác. Vui lòng dùng mã khác.');
                 } else {
-                    // Đối với chỉnh sửa, chỉ cho phép chỉnh sửa: giảng viên, sĩ số tối đa, thời gian học, trạng thái lớp theo đúng yêu cầu
+                    // Đối với chỉnh sửa, cho phép chỉnh sửa các trường bao gồm cả thời gian đăng ký
                     $this->courseModel->updateClass($id, [
                         'giang_vien' => $giang_vien,
                         'si_so_toi_da' => $si_so_toi_da,
                         'ngay_bat_dau' => $ngay_bat_dau,
                         'ngay_ket_thuc' => $ngay_ket_thuc,
-                        'trang_thai_mo_lop' => $trang_thai_mo_lop
+                        'trang_thai_mo_lop' => $trang_thai_mo_lop,
+                        'ngay_bat_dau_dk' => $ngay_bat_dau_dk,
+                        'ngay_ket_thuc_dk' => $ngay_ket_thuc_dk
                     ]);
                     setFlash('success', 'Cập nhật thông tin lớp học phần thành công.');
                 }
@@ -117,7 +129,9 @@ class ClassController extends Controller {
                         'si_so_toi_da' => $si_so_toi_da,
                         'ngay_bat_dau' => $ngay_bat_dau,
                         'ngay_ket_thuc' => $ngay_ket_thuc,
-                        'trang_thai_mo_lop' => $trang_thai_mo_lop
+                        'trang_thai_mo_lop' => $trang_thai_mo_lop,
+                        'ngay_bat_dau_dk' => $ngay_bat_dau_dk,
+                        'ngay_ket_thuc_dk' => $ngay_ket_thuc_dk
                     ]);
                     setFlash('success', 'Tạo lớp học phần mới thành công.');
                 }
@@ -163,6 +177,35 @@ class ClassController extends Controller {
         $res = $this->scheduleModel->optimizeSchedules($hk, $nh);
         setFlash($res['status'], $res['message']);
         
+        $this->redirect('/admin/lop-hoc-phan');
+    }
+
+    public function batchOpen() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->redirect('/admin/lop-hoc-phan');
+        }
+
+        $nganh = trim($_POST['nganh'] ?? '');
+        $hocKy = max(1, min(8, (int)($_POST['hoc_ky'] ?? 1)));
+        $namHoc = trim($_POST['nam_hoc'] ?? NAM_HOC_HIEN_TAI);
+        
+        $ngay_bat_dau_dk = trim($_POST['ngay_bat_dau_dk'] ?? '');
+        $ngay_ket_thuc_dk = trim($_POST['ngay_ket_thuc_dk'] ?? '');
+        
+        $ngay_bat_dau_dk = $ngay_bat_dau_dk !== '' ? $ngay_bat_dau_dk : null;
+        $ngay_ket_thuc_dk = $ngay_ket_thuc_dk !== '' ? $ngay_ket_thuc_dk : null;
+
+        if (empty($nganh)) {
+            setFlash('danger', 'Vui lòng chọn ngành để mở lớp.');
+        } else {
+            $result = $this->courseModel->batchOpenClasses($nganh, $hocKy, $namHoc, $ngay_bat_dau_dk, $ngay_ket_thuc_dk);
+            if ($result > 0) {
+                setFlash('success', "Mở thành công $result lớp học phần tự động cho ngành \"$nganh\" thuộc HK $hocKy năm học $namHoc.");
+            } else {
+                setFlash('warning', "Không có lớp học phần mới nào được tạo (có thể đã được mở trước đó hoặc ngành không có môn học nào thuộc học kỳ này).");
+            }
+        }
+
         $this->redirect('/admin/lop-hoc-phan');
     }
 }

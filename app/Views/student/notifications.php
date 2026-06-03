@@ -38,14 +38,14 @@
             <div class="card notification-card" 
                  data-id="<?= $n['id'] ?>"
                  data-read="<?= $is_read ? '1' : '0' ?>"
-                 style="background: <?= $bg_color ?>; border: 1px solid <?= $border_color ?>; border-left: 5px solid <?= $icon_color ?>; padding: 16px 20px; border-radius: 8px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.02);"
+                 style="background: <?= $bg_color ?>; border: 1px solid <?= $border_color ?>; border-left: none; padding: 16px 20px; border-radius: 8px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.02);"
                  onclick="viewNoticeDetail(this, <?= $n['id'] ?>, '<?= e($n['tieu_de']) ?>', '<?= e($n['nguoi_gui_ten'] ?? 'Hệ thống') ?>', '<?= date('d/m/Y H:i', strtotime($n['ngay_tao'])) ?>', <?= htmlspecialchars(json_encode($n['noi_dung'], JSON_UNESCAPED_UNICODE)) ?>, '<?= $n['loai'] ?>')"
                  onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.05)';"
                  onmouseout="this.style.transform=''; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.02)';"
                  >
               <div style="display:flex; justify-content: space-between; align-items:center; gap:15px; width:100%;">
                 <h3 style="margin: 0; font-size: 15px; color: <?= $is_read ? '#666' : '#222' ?>; display:flex; align-items:center; gap: 10px; font-weight: <?= $is_read ? '500' : '700' ?>; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;">
-                  <i class="fas <?= $icon ?>" style="color: <?= $icon_color ?>; font-size:16px;"></i> 
+                  <i class="fas <?= $icon ?>" style="font-size:16px;"></i> 
                   <?= htmlspecialchars($n['tieu_de']) ?>
                   <?php if (!$is_read): ?>
                     <span class="badge" style="background:#dc3545; color:#fff; font-size:10px; padding:2px 6px; border-radius:10px; font-weight:600;">Mới</span>

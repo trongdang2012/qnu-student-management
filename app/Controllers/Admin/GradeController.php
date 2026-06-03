@@ -190,125 +190,127 @@ class GradeController extends Controller {
             $this->redirect("/admin/diem/hoc-tap?action=edit&hoc_phan_id=$hoc_phan_id");
         }
 
+        $fileName = $_FILES['excel_file']['name'];
+        $extension = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+
+        if ($extension !== 'xlsx' && $extension !== 'csv') {
+            setFlash('danger', 'File không hợp lệ, vui lòng chọn file Excel (.xlsx) hoặc CSV (.csv)');
+            $this->redirect("/admin/diem/hoc-tap?action=edit&hoc_phan_id=$hoc_phan_id");
+        }
+
         $tmpName = $_FILES['excel_file']['tmp_name'];
+        try {
+            $rows = $this->parseExcelOrCsv($tmpName, $extension);
+            if ($rows === false || empty($rows)) {
+                setFlash('danger', 'File không hợp lệ hoặc không có dữ liệu.');
+                $this->redirect("/admin/diem/hoc-tap?action=edit&hoc_phan_id=$hoc_phan_id");
+                return;
+            }
+        } catch (\Exception $e) {
+            setFlash('danger', 'Lỗi: ' . $e->getMessage());
+            $this->redirect("/admin/diem/hoc-tap?action=edit&hoc_phan_id=$hoc_phan_id");
+            return;
+        }
+
+        // Bỏ dòng tiêu đề
+        array_shift($rows);
+
         $students = $this->gradeModel->getStudentsForGrade($hoc_phan_id);
-        
         $svMap = [];
         foreach ($students as $sv) {
             $svMap[$sv['ma_sv']] = $sv['sinh_vien_id'];
         }
 
-        $handle = fopen($tmpName, 'r');
-        if ($handle !== FALSE) {
-            $bom = fread($handle, 3);
-            if ($bom !== "\xEF\xBB\xBF") {
-                rewind($handle);
-            }
-            
-            $header = fgetcsv($handle, 1000, ",");
-            // Auto detect delimiter if it's semicolon
-            if (count($header) === 1 && strpos($header[0], ';') !== false) {
-                rewind($handle);
-                if ($bom === "\xEF\xBB\xBF") fread($handle, 3);
-                $header = fgetcsv($handle, 1000, ";");
-                $delimiter = ";";
-            } else {
-                $delimiter = ",";
-            }
-            
-            $to_save = [];
-            $errors = [];
-            $rowNum = 2;
-            
-            while (($data = fgetcsv($handle, 1000, $delimiter)) !== FALSE) {
-                if (count($data) < 5) continue;
-                
-                $ma_sv = trim($data[0]);
-                $cc_str = str_replace(',', '.', trim($data[2]));
-                $gk_str = str_replace(',', '.', trim($data[3]));
-                $ck_str = str_replace(',', '.', trim($data[4]));
-                
-                if (empty($ma_sv)) continue;
-                
-                if (!isset($svMap[$ma_sv])) {
-                    $errors[] = "Dòng $rowNum: Sinh viên có mã $ma_sv không thuộc lớp học phần này.";
-                    $rowNum++;
-                    continue;
-                }
-                
-                $sv_id = $svMap[$ma_sv];
-                
-                if ($cc_str === '' && $gk_str === '' && $ck_str === '') {
-                    $rowNum++;
-                    continue;
-                }
-                
-                if ($cc_str === '' || $gk_str === '' || $ck_str === '') {
-                    $errors[] = "Dòng $rowNum: Vui lòng nhập đủ 3 cột điểm cho sinh viên $ma_sv.";
-                    $rowNum++;
-                    continue;
-                }
+        $to_save = [];
+        $errors = [];
+        $rowNum = 2; // Dòng 2 bắt đầu sau tiêu đề
 
-                $cc = filter_var($cc_str, FILTER_VALIDATE_FLOAT);
-                $gk = filter_var($gk_str, FILTER_VALIDATE_FLOAT);
-                $ck = filter_var($ck_str, FILTER_VALIDATE_FLOAT);
+        foreach ($rows as $data) {
+            if (count($data) < 5) continue;
 
-                if ($cc === false || $cc < 0 || $cc > 10 ||
-                    $gk === false || $gk < 0 || $gk > 10 ||
-                    $ck === false || $ck < 0 || $ck > 10) {
-                    $errors[] = "Dòng $rowNum: Điểm của sinh viên $ma_sv không hợp lệ (0-10).";
-                    $rowNum++;
-                    continue;
-                }
+            $ma_sv = trim($data[0]);
+            $cc_str = str_replace(',', '.', trim($data[2]));
+            $gk_str = str_replace(',', '.', trim($data[3]));
+            $ck_str = str_replace(',', '.', trim($data[4]));
 
-                $diem_tong = round($cc * 0.1 + $gk * 0.3 + $ck * 0.6, 2);
-                $diem_chu = diemChu($diem_tong);
-                $diem_he4 = diemHe4($diem_tong);
+            if (empty($ma_sv)) continue;
 
-                $dk_info = $this->gradeModel->getRegistrationInfo($sv_id, $hoc_phan_id);
-                $hk_val = $dk_info ? (int)$dk_info['hoc_ky'] : (int)$hp['hoc_ky'];
-                $nh_val = $dk_info ? $dk_info['nam_hoc'] : $hp['nien_khoa'];
-
-                $to_save[] = [
-                    'sinh_vien_id' => $sv_id,
-                    'hoc_ky' => $hk_val,
-                    'nam_hoc' => $nh_val,
-                    'diem_cc' => $cc,
-                    'diem_gk' => $gk,
-                    'diem_ck' => $ck,
-                    'diem_tong' => $diem_tong,
-                    'diem_chu' => $diem_chu,
-                    'diem_he4' => $diem_he4
-                ];
-                
+            if (!isset($svMap[$ma_sv])) {
+                $errors[] = "Dòng $rowNum: Sinh viên có mã $ma_sv không thuộc lớp học phần này.";
                 $rowNum++;
-            }
-            fclose($handle);
-
-            if (!empty($errors)) {
-                setFlash('danger', implode('<br>', $errors));
-                $this->redirect("/admin/diem/hoc-tap?action=edit&hoc_phan_id=$hoc_phan_id");
+                continue;
             }
 
-            if (empty($to_save)) {
-                setFlash('warning', 'Không có dữ liệu điểm nào để cập nhật.');
-                $this->redirect("/admin/diem/hoc-tap?action=edit&hoc_phan_id=$hoc_phan_id");
+            $sv_id = $svMap[$ma_sv];
+
+            if ($cc_str === '' && $gk_str === '' && $ck_str === '') {
+                $rowNum++;
+                continue;
             }
 
-            try {
-                $this->gradeModel->beginTransaction();
-                foreach ($to_save as $row) {
-                    $this->gradeModel->saveAcademicGrade($row, $hoc_phan_id);
-                }
-                $this->gradeModel->commit();
-                setFlash('success', 'Nhập điểm học phần thành công!');
-            } catch (\Exception $e) {
-                $this->gradeModel->rollback();
-                setFlash('danger', 'Lỗi hệ thống khi lưu: ' . $e->getMessage());
+            if ($cc_str === '' || $gk_str === '' || $ck_str === '') {
+                $errors[] = "Dòng $rowNum: Vui lòng nhập đủ 3 cột điểm cho sinh viên $ma_sv.";
+                $rowNum++;
+                continue;
             }
 
-        } else {
-            setFlash('danger', 'Không thể đọc file.');
+            $cc = filter_var($cc_str, FILTER_VALIDATE_FLOAT);
+            $gk = filter_var($gk_str, FILTER_VALIDATE_FLOAT);
+            $ck = filter_var($ck_str, FILTER_VALIDATE_FLOAT);
+
+            if ($cc === false || $cc < 0 || $cc > 10 ||
+                $gk === false || $gk < 0 || $gk > 10 ||
+                $ck === false || $ck < 0 || $ck > 10) {
+                $errors[] = "Dòng $rowNum: Điểm của sinh viên $ma_sv không hợp lệ (0-10).";
+                $rowNum++;
+                continue;
+            }
+
+            $diem_tong = round($cc * 0.1 + $gk * 0.3 + $ck * 0.6, 2);
+            $diem_chu = diemChu($diem_tong);
+            $diem_he4 = diemHe4($diem_tong);
+
+            $dk_info = $this->gradeModel->getRegistrationInfo($sv_id, $hoc_phan_id);
+            $hk_val = $dk_info ? (int)$dk_info['hoc_ky'] : (int)$hp['hoc_ky'];
+            $nh_val = $dk_info ? $dk_info['nam_hoc'] : $hp['nien_khoa'];
+
+            $to_save[] = [
+                'sinh_vien_id' => $sv_id,
+                'hoc_ky' => $hk_val,
+                'nam_hoc' => $nh_val,
+                'diem_cc' => $cc,
+                'diem_gk' => $gk,
+                'diem_ck' => $ck,
+                'diem_tong' => $diem_tong,
+                'diem_chu' => $diem_chu,
+                'diem_he4' => $diem_he4
+            ];
+
+            $rowNum++;
+        }
+
+        if (!empty($errors)) {
+            setFlash('danger', implode('<br>', $errors));
+            $this->redirect("/admin/diem/hoc-tap?action=edit&hoc_phan_id=$hoc_phan_id");
+            return;
+        }
+
+        if (empty($to_save)) {
+            setFlash('warning', 'Không có dữ liệu điểm nào để cập nhật.');
+            $this->redirect("/admin/diem/hoc-tap?action=edit&hoc_phan_id=$hoc_phan_id");
+            return;
+        }
+
+        try {
+            $this->gradeModel->beginTransaction();
+            foreach ($to_save as $row) {
+                $this->gradeModel->saveAcademicGrade($row, $hoc_phan_id);
+            }
+            $this->gradeModel->commit();
+            setFlash('success', 'Nhập điểm học phần thành công!');
+        } catch (\Exception $e) {
+            $this->gradeModel->rollback();
+            setFlash('danger', 'Lỗi hệ thống khi lưu: ' . $e->getMessage());
         }
 
         $this->redirect("/admin/diem/hoc-tap?action=edit&hoc_phan_id=$hoc_phan_id");
@@ -527,6 +529,10 @@ class GradeController extends Controller {
 
     private function parseExcelOrCsv($tmpName, $extension) {
         if ($extension === 'xlsx') {
+            if (!class_exists('ZipArchive')) {
+                throw new \Exception('PHP Extension ZipArchive chưa được bật.');
+            }
+
             $zip = new \ZipArchive();
             if ($zip->open($tmpName) === TRUE) {
                 // Get shared strings
@@ -547,21 +553,41 @@ class GradeController extends Controller {
                     $rows = [];
                     $xml = simplexml_load_string($sheetEntry);
                     if ($xml && isset($xml->sheetData->row)) {
-                        foreach ($xml->sheetData->row as $row) {
-                            $rowData = [];
-                            foreach ($row->c as $cell) {
+                        foreach ($xml->sheetData->row as $rowNode) {
+                            $row = [];
+                            foreach ($rowNode->c as $cellNode) {
+                                $r = (string)$cellNode['r'];
+                                preg_match('/^[A-Z]+/', $r, $matches);
+                                $colName = $matches[0] ?? '';
+                                
+                                $colIndex = 0;
+                                $len = strlen($colName);
+                                for ($i = 0; $i < $len; $i++) {
+                                    $colIndex = $colIndex * 26 + (ord($colName[$i]) - 64);
+                                }
+                                $colIndex = $colIndex - 1; // 0-based
+
                                 $value = '';
-                                if (isset($cell->v)) {
-                                    $value = (string)$cell->v;
-                                    if (isset($cell['t']) && (string)$cell['t'] === 's') {
-                                        $value = $sharedStrings[(int)$value] ?? '';
+                                if (isset($cellNode->v)) {
+                                    $val = (string)$cellNode->v;
+                                    if (isset($cellNode['t']) && (string)$cellNode['t'] === 's') {
+                                        $value = $sharedStrings[(int)$val] ?? '';
+                                    } else {
+                                        $value = $val;
                                     }
                                 }
-                                $rowData[] = $value;
+                                $row[$colIndex] = $value;
                             }
-                            // Only add if not entirely empty
-                            if (array_filter($rowData, function($v) { return trim($v) !== ''; })) {
-                                $rows[] = $rowData;
+
+                            if (!empty($row)) {
+                                $maxIndex = max(array_keys($row));
+                                for ($i = 0; $i <= $maxIndex; $i++) {
+                                    if (!isset($row[$i])) {
+                                        $row[$i] = '';
+                                    }
+                                }
+                                ksort($row);
+                                $rows[] = $row;
                             }
                         }
                     }
@@ -570,6 +596,7 @@ class GradeController extends Controller {
                 }
                 $zip->close();
             }
+            return false;
         }
 
         // Fallback to CSV parsing (in case it is a CSV renamed to .xlsx or actual CSV)

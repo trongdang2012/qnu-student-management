@@ -83,21 +83,20 @@ class AdminGradeModel {
     }
 
     public function saveAcademicGrade($row, $hoc_phan_id) {
-        $exists = $this->db->fetch("SELECT id FROM diem_hoc_tap WHERE sinh_vien_id = :sv_id AND hoc_phan_id = :hp_id AND hoc_ky = :hk AND nam_hoc = :nh", [
+        $exists = $this->db->fetch("SELECT id FROM diem_hoc_tap WHERE sinh_vien_id = :sv_id AND hoc_phan_id = :hp_id", [
             'sv_id' => $row['sinh_vien_id'],
-            'hp_id' => $hoc_phan_id,
-            'hk' => $row['hoc_ky'],
-            'nh' => $row['nam_hoc']
+            'hp_id' => $hoc_phan_id
         ]);
         
         if ($exists) {
             $this->db->query("
                 UPDATE diem_hoc_tap 
-                SET diem_cc = :cc, diem_gk = :gk, diem_ck = :ck, diem_tong = :tong, diem_chu = :chu, diem_he4 = :he4
+                SET diem_cc = :cc, diem_gk = :gk, diem_ck = :ck, diem_tong = :tong, diem_chu = :chu, diem_he4 = :he4, hoc_ky = :hk, nam_hoc = :nh
                 WHERE id = :id
             ", [
                 'cc' => $row['diem_cc'], 'gk' => $row['diem_gk'], 'ck' => $row['diem_ck'],
                 'tong' => $row['diem_tong'], 'chu' => $row['diem_chu'], 'he4' => $row['diem_he4'],
+                'hk' => $row['hoc_ky'], 'nh' => $row['nam_hoc'],
                 'id' => $exists['id']
             ]);
         } else {

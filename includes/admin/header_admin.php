@@ -284,7 +284,7 @@ $_base = BASE_URL;
       background: white;
       padding: 20px;
       border-radius: 8px;
-      border-left: 4px solid var(--primary);
+      border-left: none;
       box-shadow: 0 2px 4px rgba(0,0,0,0.08);
       display: flex;
       align-items: flex-start;

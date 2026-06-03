@@ -19,43 +19,43 @@
           <div class="stat-value"><?= (int)$stats['total_students'] ?></div>
         </div>
       </div>
-      <div class="stat-card" style="border-left-color:#28a745">
-        <i class="fas fa-book" style="color:#28a745"></i>
+      <div class="stat-card">
+        <i class="fas fa-book"></i>
         <div>
           <h3>Học phần</h3>
           <div class="stat-value"><?= (int)$stats['total_hoc_phan'] ?></div>
         </div>
       </div>
-      <div class="stat-card" style="border-left-color:#e83e8c">
-        <i class="fas fa-chalkboard-teacher" style="color:#e83e8c"></i>
+      <div class="stat-card">
+        <i class="fas fa-chalkboard-teacher"></i>
         <div>
           <h3>Giảng viên</h3>
           <div class="stat-value"><?= (int)$stats['total_giang_vien'] ?></div>
         </div>
       </div>
-      <div class="stat-card" style="border-left-color:#6f42c1">
-        <i class="fas fa-sitemap" style="color:#6f42c1"></i>
+      <div class="stat-card">
+        <i class="fas fa-sitemap"></i>
         <div>
           <h3>Khoa</h3>
           <div class="stat-value"><?= (int)$stats['total_khoa'] ?></div>
         </div>
       </div>
-      <div class="stat-card" style="border-left-color:#fd7e14">
-        <i class="fas fa-chalkboard" style="color:#fd7e14"></i>
+      <div class="stat-card">
+        <i class="fas fa-chalkboard"></i>
         <div>
           <h3>Lớp học</h3>
           <div class="stat-value"><?= (int)$stats['total_lop'] ?></div>
         </div>
       </div>
-      <div class="stat-card" style="border-left-color:#ffc107">
-        <i class="fas fa-calendar-alt" style="color:#ffc107"></i>
+      <div class="stat-card">
+        <i class="fas fa-calendar-alt"></i>
         <div>
           <h3>Thời khóa biểu</h3>
           <div class="stat-value"><?= (int)$stats['total_schedule'] ?></div>
         </div>
       </div>
-      <div class="stat-card" style="border-left-color:#17a2b8">
-        <i class="fas fa-check-square" style="color:#17a2b8"></i>
+      <div class="stat-card">
+        <i class="fas fa-check-square"></i>
         <div>
           <h3>Đã duyệt</h3>
           <div class="stat-value"><?= (int)$stats['total_registrations'] ?></div>

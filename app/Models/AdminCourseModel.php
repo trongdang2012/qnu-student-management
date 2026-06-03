@@ -8,6 +8,21 @@ class AdminCourseModel {
 
     public function __construct() {
         $this->db = Database::getInstance();
+        $this->autoCloseExpiredClasses();
+    }
+
+    private function autoCloseExpiredClasses() {
+        try {
+            $this->db->query("
+                UPDATE lop_hoc_phan 
+                SET trang_thai_mo_lop = 'Đã đóng' 
+                WHERE trang_thai_mo_lop = 'Đang mở' 
+                  AND ngay_ket_thuc_dk IS NOT NULL 
+                  AND ngay_ket_thuc_dk < NOW()
+            ");
+        } catch (\Exception $e) {
+            // Bỏ qua lỗi nếu có
+        }
     }
 
     // ==========================================
@@ -230,8 +245,8 @@ class AdminCourseModel {
     }
 
     public function addClass($data) {
-        $sql = 'INSERT INTO lop_hoc_phan (ma_lop_hp, hoc_phan_id, giang_vien, hoc_ky, nam_hoc, si_so_toi_da, si_so_hien_tai, ngay_bat_dau, ngay_ket_thuc, trang_thai_mo_lop) 
-                VALUES (:ma_lop_hp, :hoc_phan_id, :giang_vien, :hoc_ky, :nam_hoc, :si_so_toi_da, 0, :ngay_bat_dau, :ngay_ket_thuc, :trang_thai_mo_lop)';
+        $sql = 'INSERT INTO lop_hoc_phan (ma_lop_hp, hoc_phan_id, giang_vien, hoc_ky, nam_hoc, si_so_toi_da, si_so_hien_tai, ngay_bat_dau, ngay_ket_thuc, trang_thai_mo_lop, ngay_bat_dau_dk, ngay_ket_thuc_dk) 
+                VALUES (:ma_lop_hp, :hoc_phan_id, :giang_vien, :hoc_ky, :nam_hoc, :si_so_toi_da, 0, :ngay_bat_dau, :ngay_ket_thuc, :trang_thai_mo_lop, :ngay_bat_dau_dk, :ngay_ket_thuc_dk)';
         return $this->db->query($sql, $data);
     }
 
@@ -242,7 +257,9 @@ class AdminCourseModel {
                 si_so_toi_da = :si_so_toi_da, 
                 ngay_bat_dau = :ngay_bat_dau, 
                 ngay_ket_thuc = :ngay_ket_thuc, 
-                trang_thai_mo_lop = :trang_thai_mo_lop 
+                trang_thai_mo_lop = :trang_thai_mo_lop,
+                ngay_bat_dau_dk = :ngay_bat_dau_dk,
+                ngay_ket_thuc_dk = :ngay_ket_thuc_dk
                 WHERE id = :id';
         return $this->db->query($sql, $data);
     }
@@ -262,5 +279,96 @@ class AdminCourseModel {
         } catch (\Exception $e) {
             return false;
         }
+    }
+
+    public function getNganhListInCtdt() {
+        return $this->db->fetchAll("SELECT DISTINCT nganh FROM ctdt_chi_tiet WHERE COALESCE(nganh,'') <> '' ORDER BY nganh ASC");
+    }
+
+    public function duplicateCtdt($nganhNguon, $nganhDich) {
+        $checkSource = $this->db->fetch("SELECT COUNT(*) as total FROM ctdt_chi_tiet WHERE nganh = :nganh", ['nganh' => $nganhNguon]);
+        if (!$checkSource || (int)$checkSource['total'] === 0) {
+            return false;
+        }
+        
+        $sql = "INSERT INTO ctdt_chi_tiet (nganh, hoc_phan_id, hoc_ky)
+                SELECT :nganh_dich, hoc_phan_id, hoc_ky
+                FROM ctdt_chi_tiet
+                WHERE nganh = :nganh_nguon
+                  AND hoc_phan_id NOT IN (
+                      SELECT hoc_phan_id FROM ctdt_chi_tiet WHERE nganh = :nganh_dich_sub
+                  )";
+        return $this->db->query($sql, [
+            'nganh_dich' => $nganhDich,
+            'nganh_nguon' => $nganhNguon,
+            'nganh_dich_sub' => $nganhDich
+        ]);
+    }
+
+    public function batchOpenClasses($nganh, $hocKy, $namHoc, $ngayBatDauDk = null, $ngayKetThucDk = null) {
+        $years = explode('-', $namHoc);
+        $yearStart = (int)($years[0] ?? date('Y'));
+        
+        if ($hocKy % 2 !== 0) {
+            $ngay_bat_dau = $yearStart . '-09-05';
+            $ngay_ket_thuc = ($yearStart + 1) . '-01-15';
+        } else {
+            $ngay_bat_dau = ($yearStart + 1) . '-01-15';
+            $ngay_ket_thuc = ($yearStart + 1) . '-05-30';
+        }
+
+        $sql = "SELECT hp.id, hp.ma_hp
+                FROM ctdt_chi_tiet ctdt
+                JOIN hoc_phan hp ON ctdt.hoc_phan_id = hp.id
+                WHERE ctdt.nganh = :nganh AND ctdt.hoc_ky = :hk AND hp.trang_thai_hoat_dong = 1";
+        $courses = $this->db->fetchAll($sql, ['nganh' => $nganh, 'hk' => $hocKy]);
+
+        if (empty($courses)) {
+            return 0;
+        }
+
+        $successCount = 0;
+        foreach ($courses as $course) {
+            $hpId = $course['id'];
+            $maHp = $course['ma_hp'];
+            $maLopHp = $maHp . '-L01';
+
+            // Chỉ kiểm tra sự tồn tại của ma_lop_hp trên toàn bảng vì nó là UNIQUE
+            $exists = $this->db->fetch(
+                "SELECT id FROM lop_hoc_phan WHERE ma_lop_hp = :ma_lop_hp LIMIT 1",
+                ['ma_lop_hp' => $maLopHp]
+            );
+
+            if ($exists) {
+                continue;
+            }
+
+            $giangViens = [
+                'TS. Nguyễn Văn Hùng', 'ThS. Trần Thị Lan', 'TS. Lê Văn Minh', 'ThS. Hoàng Văn E', 
+                'ThS. Phạm Thị Hoa', 'TS. Hoàng Quang Trung', 'ThS. Nguyễn Thị F', 'TS. Trần Văn G'
+            ];
+            $gv = $giangViens[array_rand($giangViens)];
+
+            // Sử dụng thời gian được chọn hoặc gán mặc định
+            $ngay_bat_dau_dk = ($ngayBatDauDk !== null) ? $ngayBatDauDk : date('Y-m-d H:i:s');
+            $ngay_ket_thuc_dk = ($ngayKetThucDk !== null) ? $ngayKetThucDk : ($ngay_bat_dau . ' 00:00:00');
+
+            $this->addClass([
+                'ma_lop_hp' => $maLopHp,
+                'hoc_phan_id' => $hpId,
+                'giang_vien' => $gv,
+                'hoc_ky' => $hocKy,
+                'nam_hoc' => $namHoc,
+                'si_so_toi_da' => 80,
+                'ngay_bat_dau' => $ngay_bat_dau,
+                'ngay_ket_thuc' => $ngay_ket_thuc,
+                'trang_thai_mo_lop' => 'Đang mở',
+                'ngay_bat_dau_dk' => $ngay_bat_dau_dk,
+                'ngay_ket_thuc_dk' => $ngay_ket_thuc_dk
+            ]);
+            $successCount++;
+        }
+
+        return $successCount;
     }
 }

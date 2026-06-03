@@ -21,22 +21,22 @@
           <div class="stat-value"><?= (int)$totals['students'] ?></div>
         </div>
       </div>
-      <div class="stat-card" style="border-left-color:#007bff">
-        <i class="fas fa-wallet" style="color:#007bff"></i>
+      <div class="stat-card">
+        <i class="fas fa-wallet"></i>
         <div>
           <h3>Tổng học phí</h3>
           <div class="stat-value"><?= formatMoney((float)$totals['total_fee']) ?></div>
         </div>
       </div>
-      <div class="stat-card" style="border-left-color:#28a745">
-        <i class="fas fa-hand-holding-usd" style="color:#28a745"></i>
+      <div class="stat-card">
+        <i class="fas fa-hand-holding-usd"></i>
         <div>
           <h3>Đã nộp</h3>
           <div class="stat-value"><?= formatMoney((float)$totals['total_paid']) ?></div>
         </div>
       </div>
-      <div class="stat-card" style="border-left-color:#dc3545">
-        <i class="fas fa-exclamation-triangle" style="color:#dc3545"></i>
+      <div class="stat-card">
+        <i class="fas fa-exclamation-triangle"></i>
         <div>
           <h3>Còn nợ</h3>
           <div class="stat-value"><?= formatMoney((float)$totals['total_owed']) ?></div>
@@ -52,15 +52,15 @@
           <div class="stat-value"><?= (int)$statusCounts['paid_count'] ?></div>
         </div>
       </div>
-      <div class="stat-card" style="border-left-color:#ffc107">
-        <i class="fas fa-clock" style="color:#ffc107"></i>
+      <div class="stat-card">
+        <i class="fas fa-clock"></i>
         <div>
           <h3>Chưa đóng</h3>
           <div class="stat-value"><?= (int)$statusCounts['unpaid_count'] ?></div>
         </div>
       </div>
-      <div class="stat-card" style="border-left-color:#dc3545">
-        <i class="fas fa-heart-broken" style="color:#dc3545"></i>
+      <div class="stat-card">
+        <i class="fas fa-heart-broken"></i>
         <div>
           <h3>Đang nợ</h3>
           <div class="stat-value"><?= (int)$statusCounts['owing_count'] ?></div>

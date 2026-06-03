@@ -120,26 +120,101 @@ h4 { font-size: 16px; font-weight: 500; }
 .card-footer { padding: 14px 20px; border-top: 1px solid var(--border); background: #fafafa; }
 
 /* ── Tables ────────────────────────────────────────────────── */
-.table-wrap { overflow-x: auto; }
+.table-wrap {
+  overflow-x: auto;
+  border-radius: var(--radius);
+  border: 1px solid #e9ecef;
+  margin-top: 10px;
+}
 
 table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 15px;
+  font-size: 14.5px;
+  background: var(--white);
 }
+
 table th, table td {
-  padding: 11px 14px;
+  padding: 14px 16px;
   text-align: left;
-  border: 1px solid var(--border);
+  border-bottom: 1px solid #e9ecef;
+  border-right: 1px solid #e9ecef;
   vertical-align: middle;
 }
-table thead tr {
-  background: var(--primary);
-  color: #fff;
+
+table th:last-child, table td:last-child {
+  border-right: none;
 }
-table thead th { font-weight: 500; }
-table tbody tr:nth-child(even) { background: #f9fbff; }
-table tbody tr:hover { background: #e8f0fb; transition: background .15s; }
+
+table thead tr {
+  background: #f8f9fa !important;
+  color: #495057 !important;
+  border-bottom: 2px solid #dee2e6 !important;
+}
+
+table thead th {
+  font-weight: 600 !important;
+  font-size: 12.5px;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  color: #495057;
+}
+
+table tbody tr:nth-child(even) {
+  background: #fafbfc;
+}
+
+table tbody tr:hover {
+  background: #f1f5fe;
+  transition: background .15s ease;
+}
+
+/* Actions buttons inside table */
+.btn-edit-action {
+  background: #e7f5ff !important;
+  color: #228be6 !important;
+  padding: 6px 12px !important;
+  font-size: 12.5px !important;
+  font-weight: 500 !important;
+  border-radius: 4px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  transition: all 0.2s ease !important;
+  border: none !important;
+  cursor: pointer !important;
+  text-decoration: none !important;
+}
+.btn-edit-action:hover {
+  background: #d0ebff !important;
+  color: #1c7ed6 !important;
+}
+.btn-edit-action i {
+  color: #228be6 !important;
+}
+
+.btn-delete-action {
+  background: #fff5f5 !important;
+  color: #fa5252 !important;
+  padding: 6px 12px !important;
+  font-size: 12.5px !important;
+  font-weight: 500 !important;
+  border-radius: 4px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  transition: all 0.2s ease !important;
+  border: none !important;
+  cursor: pointer !important;
+  text-decoration: none !important;
+}
+.btn-delete-action:hover {
+  background: #ffe3e3 !important;
+  color: #e03131 !important;
+}
+.btn-delete-action i {
+  color: #fa5252 !important;
+}
 
 /* ── Forms ─────────────────────────────────────────────────── */
 .form-group { margin-bottom: 18px; }
@@ -251,7 +326,7 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
   display: flex;
   align-items: center;
   gap: 16px;
-  border-left: 4px solid transparent;
+  border-left: none; /* Removed border-left */
   transition: transform var(--transition), box-shadow var(--transition);
 }
 .stat-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
@@ -261,13 +336,54 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
   display: flex; align-items: center; justify-content: center;
   font-size: 22px;
   flex-shrink: 0;
+  background: #f4f6f9 !important; /* Uniform B&W */
+  color: #333 !important; /* Uniform B&W */
+  border: 1px solid #dee2e6 !important;
 }
-.stat-icon.blue   { background: #e8f0fb; color: var(--primary); }
-.stat-icon.green  { background: #d4edda; color: var(--success); }
-.stat-icon.red    { background: #f8d7da; color: var(--danger);  }
-.stat-icon.yellow { background: #fff3cd; color: #856404; }
 .stat-value { font-size: 26px; font-weight: 700; line-height: 1; margin-bottom: 4px; }
 .stat-label { font-size: 13px; color: var(--text-muted); }
+
+/* Global Icon outline and black-and-white overrides */
+.fas, .fa-solid, .far, .fa-regular, .fa {
+  -webkit-text-fill-color: transparent !important;
+  -webkit-text-stroke: 1.5px currentColor !important;
+}
+
+/* Make icons black/gray on light backgrounds */
+.stat-card i, 
+.stat-icon i,
+.card-header h3 i, 
+.card-header h2 i,
+.page-title h1 i,
+.btn i,
+table i,
+.form-group label i {
+  color: #333 !important;
+}
+
+/* For dark backgrounds or buttons, inherit text color */
+.admin-navbar-menu .nav-link i,
+.admin-navbar-brand i,
+.navbar-nav .nav-link i,
+.navbar-user i,
+.btn-primary i,
+.btn-success i,
+.btn-danger i,
+.btn-secondary i,
+.welcome-banner i,
+.badge i {
+  color: inherit !important;
+}
+
+/* Student dashboard quick links grayscale styling */
+.card.mt-16.fade-in a {
+  background: #f4f6f9 !important;
+  border: 1px solid #dee2e6 !important;
+}
+.card.mt-16.fade-in a i {
+  color: #333 !important;
+}
+
 
 /* ── Progress Bar ───────────────────────────────────────────── */
 .progress {
@@ -337,4 +453,26 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 }
 @media (max-width: 480px) {
   .stat-grid { grid-template-columns: 1fr; }
+}
+
+/* ── Resizable Table Columns ───────────────────────────────── */
+table.resizable th {
+  position: relative;
+}
+table.resizable th .resizer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  user-select: none;
+  z-index: 5;
+  transition: background 0.15s ease;
+}
+table.resizable th .resizer:hover,
+table.resizable th .resizer.resizing {
+  background: var(--primary);
+  opacity: 0.35;
+  width: 4px;
 }

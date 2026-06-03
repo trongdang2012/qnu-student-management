@@ -95,20 +95,29 @@ $router->post('/admin/sinh-vien/add', 'Admin\StudentController@processAdd');
 $router->get('/admin/sinh-vien/edit', 'Admin\StudentController@edit');
 $router->post('/admin/sinh-vien/edit', 'Admin\StudentController@processEdit');
 $router->get('/admin/sinh-vien/delete', 'Admin\StudentController@delete');
+$router->post('/admin/sinh-vien/import', 'Admin\StudentController@import');
 
 $router->get('/admin/hoc-phan', 'Admin\CourseController@index');
 $router->post('/admin/hoc-phan/save', 'Admin\CourseController@save');
 $router->post('/admin/hoc-phan/delete', 'Admin\CourseController@delete');
+$router->post('/admin/hoc-phan/duplicate-ctdt', 'Admin\CourseController@duplicateCtdt');
 
 $router->get('/admin/lop-hoc-phan', 'Admin\ClassController@index');
 $router->post('/admin/lop-hoc-phan/save', 'Admin\ClassController@save');
 $router->post('/admin/lop-hoc-phan/delete', 'Admin\ClassController@delete');
 $router->get('/admin/lop-hoc-phan/optimize', 'Admin\ClassController@optimize');
+$router->post('/admin/lop-hoc-phan/batch-open', 'Admin\ClassController@batchOpen');
 
 $router->get('/admin/diem/hoc-tap', 'Admin\GradeController@academic');
 $router->post('/admin/diem/hoc-tap/save', 'Admin\GradeController@academicSave');
+$router->get('/admin/diem/hoc-tap/export-template', 'Admin\GradeController@academicExportTemplate');
+$router->post('/admin/diem/hoc-tap/import', 'Admin\GradeController@academicImport');
 $router->get('/admin/diem/ren-luyen', 'Admin\GradeController@training');
 $router->post('/admin/diem/ren-luyen/save', 'Admin\GradeController@trainingSave');
+$router->get('/admin/diem/ren-luyen/departments', 'Admin\GradeController@getDepartments');
+$router->get('/admin/diem/ren-luyen/classes', 'Admin\GradeController@getClasses');
+$router->get('/admin/diem/ren-luyen/export-template', 'Admin\GradeController@trainingExportTemplate');
+$router->post('/admin/diem/ren-luyen/import', 'Admin\GradeController@trainingImport');
 $router->get('/admin/diem/bao-cao', 'Admin\GradeController@report');
 
 $router->get('/admin/thoi-khoa-bieu', 'Admin\ScheduleController@index');
@@ -138,6 +147,7 @@ $router->get('/admin/hoc-phi/cap-nhat', 'Admin\TuitionController@update');
 $router->post('/admin/hoc-phi/cap-nhat/save', 'Admin\TuitionController@saveUpdate');
 $router->get('/admin/hoc-phi/xac-nhan', 'Admin\TuitionController@confirm');
 $router->post('/admin/hoc-phi/xac-nhan/save', 'Admin\TuitionController@processConfirm');
+$router->post('/admin/hoc-phi/tinh-tu-dong', 'Admin\TuitionController@autoCalculate');
 
 $router->get('/admin/data-sync', 'Admin\DataSyncController@index');
 $router->get('/admin/data-sync/export', 'Admin\DataSyncController@export');

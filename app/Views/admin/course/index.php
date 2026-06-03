@@ -27,8 +27,8 @@
           <div class="stat-value"><?= (int)$totalItems ?></div>
         </div>
       </div>
-      <div class="stat-card" style="border-left-color:#28a745">
-        <i class="fas fa-award" style="color:#28a745"></i>
+      <div class="stat-card">
+        <i class="fas fa-award"></i>
         <div>
           <h3>Trang hiện tại</h3>
           <div class="stat-value"><?= (int)$page ?> / <?= (int)$totalPages ?></div>
@@ -191,6 +191,7 @@
           </div>
           <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Lọc</button>
           <a href="<?= BASE_URL ?>/admin/hoc-phan" class="btn btn-secondary"><i class="fas fa-rotate-left"></i> Xóa lọc</a>
+          <button type="button" class="btn btn-warning" onclick="showDuplicateModal()"><i class="fas fa-copy"></i> Nhân bản CTĐT</button>
           <button type="button" class="btn btn-success" onclick="showAddForm()"><i class="fas fa-plus"></i> Thêm học phần</button>
         </form>
       </div>
@@ -287,6 +288,39 @@
 
 <?php require_once ROOT . '/includes/admin/footer_admin.php'; ?>
 
+    <!-- Modal Nhân bản CTĐT -->
+    <div class="modal" id="duplicateModal">
+      <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-header">
+          <h2>Nhân bản Chương trình đào tạo</h2>
+          <button class="modal-close" type="button" onclick="closeDuplicateModal()">&times;</button>
+        </div>
+        <form method="POST" action="<?= BASE_URL ?>/admin/hoc-phan/duplicate-ctdt">
+          <div class="form-group">
+            <label>Ngành nguồn (Đang có CTĐT) <span style="color:red">*</span></label>
+            <select name="nganh_nguon" class="form-control" required>
+              <option value="">-- Chọn ngành nguồn --</option>
+              <?php if (isset($nganhList)): ?>
+                <?php foreach ($nganhList as $n): ?>
+                  <option value="<?= e($n['nganh']) ?>"><?= e($n['nganh']) ?></option>
+                <?php endforeach; ?>
+              <?php endif; ?>
+            </select>
+          </div>
+          <div class="form-group" style="margin-top:15px">
+            <label>Ngành đích (Cần nhân bản đến) <span style="color:red">*</span></label>
+            <input type="text" name="nganh_dich" class="form-control" required placeholder="VD: Ngôn ngữ Trung Quốc">
+            <small style="color:var(--text-muted);font-size:11px;display:block;margin-top:5px">Hệ thống sẽ sao chép toàn bộ liên kết học phần từ ngành nguồn sang ngành đích này (chỉ sao chép những môn chưa có ở ngành đích).</small>
+          </div>
+
+          <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px">
+            <button type="button" class="btn btn-secondary" onclick="closeDuplicateModal()">Hủy</button>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-copy"></i> Thực hiện nhân bản</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
 <script>
 function closeModal() {
   document.getElementById('formModal').classList.remove('active');
@@ -296,5 +330,11 @@ function closeModal() {
 }
 function showAddForm() {
   document.getElementById('formModal').classList.add('active');
+}
+function showDuplicateModal() {
+  document.getElementById('duplicateModal').classList.add('active');
+}
+function closeDuplicateModal() {
+  document.getElementById('duplicateModal').classList.remove('active');
 }
 </script>

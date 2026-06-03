@@ -206,7 +206,7 @@ $_menu = $active_menu ?? '';
 <!-- MODAL XEM CHI TIẾT THÔNG BÁO (DÙNG CHUNG) -->
 <!-- ========================================================================= -->
 <div id="noticeDetailModal" class="modal-backdrop" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 99999; align-items: center; justify-content: center;">
-  <div class="modal-card card fade-in" id="modal_notice_card" style="width: 520px; max-width: 90%; box-shadow: 0 15px 40px rgba(0,0,0,0.25); border-radius: 12px; overflow: hidden; border-left: 5px solid var(--primary); background:#fff;">
+  <div class="modal-card card fade-in" id="modal_notice_card" style="width: 520px; max-width: 90%; box-shadow: 0 15px 40px rgba(0,0,0,0.25); border-radius: 12px; overflow: hidden; border-left: none; background:#fff;">
     <div class="card-header" style="padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; background: #f8f9fa; border-bottom: 1px solid var(--border);">
       <h3 id="modal_notice_title" style="margin: 0; font-size: 15.5px; color: var(--text); font-weight:700; line-height:1.4;">Tiêu đề thông báo</h3>
       <span style="cursor: pointer; font-size: 24px; font-weight: bold; line-height: 1; color:#888;" onclick="closeNoticeDetailModal()">&times;</span>
@@ -347,14 +347,7 @@ function openNoticeDetailModal(id, tieuDe, nguoiGui, thoiGian, noiDung, loai) {
         mSender.innerText = nguoiGui;
         mContent.innerText = noiDung;
         
-        // Đổi màu border-left theo loại thông báo
-        let borderLeftColor = 'var(--primary)';
-        if (loai === 'warning') {
-            borderLeftColor = '#ffc107';
-        } else if (loai === 'success') {
-            borderLeftColor = '#28a745';
-        }
-        mCard.style.borderLeftColor = borderLeftColor;
+
         
         modal.style.display = 'flex';
     }

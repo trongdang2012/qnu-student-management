@@ -42,10 +42,12 @@ class CourseController extends Controller {
 
         // Lấy danh sách các môn học để làm môn tiên quyết gợi ý
         $allCoursesForPrereq = $this->courseModel->getCourses('', 0, '', '', 1000, 0);
+        $nganhList = $this->courseModel->getNganhListInCtdt();
 
         $this->view('admin/course/index', [
             'list' => $list,
             'allCoursesForPrereq' => $allCoursesForPrereq,
+            'nganhList' => $nganhList,
             'search' => $search,
             'hocKyFilter' => $hoc_ky,
             'loaiFilter' => $loai,
@@ -175,5 +177,26 @@ class CourseController extends Controller {
             $url .= '?search=' . urlencode($search_keep);
         }
         $this->redirect($url);
+    }
+
+    public function duplicateCtdt() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->redirect('/admin/hoc-phan');
+        }
+
+        $nganhNguon = trim($_POST['nganh_nguon'] ?? '');
+        $nganhDich = trim($_POST['nganh_dich'] ?? '');
+
+        if (empty($nganhNguon) || empty($nganhDich)) {
+            setFlash('danger', 'Vui lòng chọn ngành nguồn và nhập tên ngành đích.');
+        } else {
+            $result = $this->courseModel->duplicateCtdt($nganhNguon, $nganhDich);
+            if ($result) {
+                setFlash('success', "Nhân bản CTĐT từ ngành \"$nganhNguon\" sang \"$nganhDich\" thành công.");
+            } else {
+                setFlash('danger', "Có lỗi xảy ra hoặc ngành nguồn không có dữ liệu CTĐT.");
+            }
+        }
+        $this->redirect('/admin/hoc-phan');
     }
 }

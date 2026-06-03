@@ -83,22 +83,22 @@ require_once ROOT . '/includes/admin/header_admin.php';
           <div class="stat-value"><?= $summary['total'] ?></div>
         </div>
       </div>
-      <div class="stat-card" style="border-left:4px solid #28a745;">
-        <i class="fas fa-check-circle" style="color:#28a745"></i>
+      <div class="stat-card">
+        <i class="fas fa-check-circle"></i>
         <div>
           <h3>Đã đóng</h3>
           <div class="stat-value"><?= $summary['paid'] ?></div>
         </div>
       </div>
-      <div class="stat-card" style="border-left:4px solid #ffc107;">
-        <i class="fas fa-exclamation-circle" style="color:#ffc107"></i>
+      <div class="stat-card">
+        <i class="fas fa-exclamation-circle"></i>
         <div>
           <h3>Còn nợ</h3>
           <div class="stat-value"><?= $summary['owing'] ?></div>
         </div>
       </div>
-      <div class="stat-card" style="border-left:4px solid #dc3545;">
-        <i class="fas fa-times-circle" style="color:#dc3545"></i>
+      <div class="stat-card">
+        <i class="fas fa-times-circle"></i>
         <div>
           <h3>Chưa đóng</h3>
           <div class="stat-value"><?= $summary['unpaid'] ?></div>

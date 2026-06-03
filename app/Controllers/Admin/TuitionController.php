@@ -197,4 +197,28 @@ class TuitionController extends Controller {
         }
         $this->redirect('/admin/hoc-phi/xac-nhan');
     }
+
+    public function autoCalculate() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->redirect('/admin/hoc-phi/cap-nhat');
+        }
+
+        $hocKy = max(1, min(8, (int)($_POST['hoc_ky'] ?? 0)));
+        $namHoc = trim($_POST['nam_hoc'] ?? '');
+        $donGia = max(0, (float)($_POST['don_gia'] ?? 0));
+        $hanNop = trim($_POST['han_nop'] ?? '');
+
+        if ($donGia <= 0 || $hocKy <= 0 || $namHoc === '') {
+            setFlash('danger', 'Vui lòng chọn học kỳ, nhập năm học và đơn giá hợp lệ.');
+        } else {
+            $result = $this->tuitionModel->autoCalculateTuition($hocKy, $namHoc, $donGia, $hanNop);
+            if ($result > 0) {
+                setFlash('success', "Tính học phí tự động thành công cho $result đăng ký học phần thuộc HK $hocKy năm học $namHoc.");
+            } else {
+                setFlash('warning', "Không tìm thấy đăng ký học phần đã duyệt nào phù hợp trong học kỳ/năm học đã chọn.");
+            }
+        }
+
+        $this->redirect('/admin/hoc-phi/cap-nhat');
+    }
 }

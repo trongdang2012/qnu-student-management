@@ -8,6 +8,21 @@ class CourseModel {
 
     public function __construct() {
         $this->db = Database::getInstance();
+        $this->autoCloseExpiredClasses();
+    }
+
+    private function autoCloseExpiredClasses() {
+        try {
+            $this->db->query("
+                UPDATE lop_hoc_phan 
+                SET trang_thai_mo_lop = 'Đã đóng' 
+                WHERE trang_thai_mo_lop = 'Đang mở' 
+                  AND ngay_ket_thuc_dk IS NOT NULL 
+                  AND ngay_ket_thuc_dk < NOW()
+            ");
+        } catch (\Exception $e) {
+            // Bỏ qua lỗi nếu có
+        }
     }
 
     public function getProgramDetails($studentId, $nganh) {
@@ -127,6 +142,7 @@ class CourseModel {
     public function getRegisteredCourses($studentId, $hk, $nh) {
         return $this->db->fetchAll("
             SELECT dk.*, hp.ten_hp, hp.ma_hp, hp.so_tin_chi, l.ma_lop_hp, l.giang_vien, l.si_so_toi_da, l.si_so_hien_tai, hp.ma_hp_tien_quyet,
+                   l.trang_thai_mo_lop, l.ngay_bat_dau_dk, l.ngay_ket_thuc_dk,
                    t.thu, t.tiet_bat_dau, t.so_tiet, t.phong_hoc
             FROM dang_ky_hp dk
             JOIN lop_hoc_phan l ON l.id = dk.lop_hoc_phan_id
@@ -157,6 +173,8 @@ class CourseModel {
               AND l.hoc_ky = :hk_hien_tai
               AND l.nam_hoc = :nh_hien_tai
               AND l.trang_thai_mo_lop = 'Đang mở'
+              AND (l.ngay_bat_dau_dk IS NULL OR NOW() >= l.ngay_bat_dau_dk)
+              AND (l.ngay_ket_thuc_dk IS NULL OR NOW() <= l.ngay_ket_thuc_dk)
               AND l.id NOT IN ($id_str)
               AND NOT EXISTS (
                   SELECT 1 FROM diem_hoc_tap d
@@ -173,107 +191,160 @@ class CourseModel {
     }
 
     public function registerCourse($studentId, $lhpId, $hk, $nh) {
-        // Lấy thông tin lớp học phần
-        $class = $this->db->fetch("
-            SELECT l.*, hp.id AS hoc_phan_id, hp.ma_hp, hp.ten_hp, hp.ma_hp_tien_quyet 
-            FROM lop_hoc_phan l
-            JOIN hoc_phan hp ON l.hoc_phan_id = hp.id
-            WHERE l.id = :id
-        ", ['id' => $lhpId]);
-        if (!$class) return ['type' => 'danger', 'text' => 'Lớp học phần không tồn tại.'];
+        $pdo = $this->db->getConnection();
+        $pdo->beginTransaction();
 
-        $hpId = $class['hoc_phan_id'];
-        $ma_hp = $class['ma_hp'];
-        $si_so_toi_da = (int)$class['si_so_toi_da'];
-        $si_so_hien_tai = (int)$class['si_so_hien_tai'];
-        $prereq_ma = $class['ma_hp_tien_quyet'];
+        try {
+            // Lấy thông tin lớp học phần và khóa dòng bằng FOR UPDATE để tránh race condition về sĩ số
+            $class = $this->db->fetch("
+                SELECT l.*, hp.id AS hoc_phan_id, hp.ma_hp, hp.ten_hp, hp.ma_hp_tien_quyet 
+                FROM lop_hoc_phan l
+                JOIN hoc_phan hp ON l.hoc_phan_id = hp.id
+                WHERE l.id = :id
+                FOR UPDATE
+            ", ['id' => $lhpId]);
 
-        // 0. Kiểm tra môn đã đạt điểm hệ 4 >= 1.0 (D trở lên)
-        $passed = $this->db->fetch("SELECT id FROM diem_hoc_tap WHERE sinh_vien_id = :sid AND hoc_phan_id = :hpId AND diem_he4 >= 1.0", 
-            ['sid' => $studentId, 'hpId' => $hpId]);
-        if ($passed) {
-            return ['type' => 'danger', 'text' => 'Bạn đã hoàn thành đạt học phần này trước đó (không được đăng ký lại).'];
-        }
-
-        // 1. Kiểm tra đã đăng ký bất kỳ lớp học phần nào của môn học này trong học kỳ này chưa
-        $chk = $this->db->fetch("
-            SELECT dk.id FROM dang_ky_hp dk
-            JOIN lop_hoc_phan lhp ON lhp.id = dk.lop_hoc_phan_id
-            WHERE dk.sinh_vien_id = :sid 
-              AND lhp.hoc_phan_id = :hpId 
-              AND dk.hoc_ky = :hk 
-              AND dk.nam_hoc = :nh 
-              AND dk.trang_thai IN ('Chờ duyệt', 'Đã duyệt')
-        ", ['sid' => $studentId, 'hpId' => $hpId, 'hk' => (string)$hk, 'nh' => $nh]);
-        if ($chk) return ['type' => 'warning', 'text' => 'Bạn đã đăng ký một lớp học phần của môn này trong học kỳ hiện tại.'];
-
-        // 2. Kiểm tra sĩ số lớp học phần
-        if ($si_so_hien_tai >= $si_so_toi_da) return ['type' => 'danger', 'text' => 'Lớp học phần đã đủ sĩ số tối đa.'];
-
-        // 3. Kiểm tra môn tiên quyết
-        if (!empty($prereq_ma)) {
-            $prereq = $this->db->fetch("SELECT id FROM hoc_phan WHERE ma_hp = :ma", ['ma' => $prereq_ma]);
-            if ($prereq) {
-                $passedPrereq = $this->db->fetch("SELECT id FROM diem_hoc_tap WHERE sinh_vien_id = :sid AND hoc_phan_id = :pid AND diem_he4 >= 1.0", 
-                    ['sid' => $studentId, 'pid' => $prereq['id']]);
-                if (!$passedPrereq) return ['type' => 'danger', 'text' => 'Không đủ điều kiện đăng ký. Bạn chưa học đạt học phần tiên quyết: ' . $prereq_ma];
+            if (!$class) {
+                $pdo->rollBack();
+                return ['type' => 'danger', 'text' => 'Lớp học phần không tồn tại.'];
             }
-        }
 
-        // 4. Kiểm tra trùng lịch học cá nhân của sinh viên
-        // Lấy lịch học của lớp chuẩn bị đăng ký
-        $targetSchedules = $this->db->fetchAll("SELECT thu, tiet_bat_dau, so_tiet FROM thoi_khoa_bieu WHERE lop_hoc_phan_id = :lhpId", ['lhpId' => $lhpId]);
-        
-        // Lấy lịch học của các lớp đã đăng ký
-        $activeSchedules = $this->db->fetchAll("
-            SELECT hp.ten_hp, t.thu, t.tiet_bat_dau, t.so_tiet
-            FROM dang_ky_hp dk
-            JOIN lop_hoc_phan l ON l.id = dk.lop_hoc_phan_id
-            JOIN thoi_khoa_bieu t ON t.lop_hoc_phan_id = l.id
-            JOIN hoc_phan hp ON hp.id = l.hoc_phan_id
-            WHERE dk.sinh_vien_id = :sid AND dk.hoc_ky = :hk AND dk.nam_hoc = :nh AND dk.trang_thai IN ('Chờ duyệt', 'Đã duyệt')
-        ", ['sid' => $studentId, 'hk' => (string)$hk, 'nh' => $nh]);
+            // Kiểm tra thời gian đăng ký
+            $now = date('Y-m-d H:i:s');
+            if ($class['trang_thai_mo_lop'] !== 'Đang mở') {
+                $pdo->rollBack();
+                return ['type' => 'danger', 'text' => 'Lớp học phần này đã đóng hoặc chưa mở.'];
+            }
+            if ($class['ngay_bat_dau_dk'] !== null && $now < $class['ngay_bat_dau_dk']) {
+                $pdo->rollBack();
+                return ['type' => 'danger', 'text' => 'Chưa đến thời gian mở đăng ký lớp học phần này (Bắt đầu từ: ' . date('d/m/Y H:i', strtotime($class['ngay_bat_dau_dk'])) . ').'];
+            }
+            if ($class['ngay_ket_thuc_dk'] !== null && $now > $class['ngay_ket_thuc_dk']) {
+                $pdo->rollBack();
+                return ['type' => 'danger', 'text' => 'Đã hết thời gian đăng ký lớp học phần này (Kết thúc vào: ' . date('d/m/Y H:i', strtotime($class['ngay_ket_thuc_dk'])) . ').'];
+            }
 
-        foreach ($targetSchedules as $tar) {
-            $tar_thu = $tar['thu'];
-            $tar_start = $tar['tiet_bat_dau'];
-            $tar_count = $tar['so_tiet'];
+            $hpId = $class['hoc_phan_id'];
+            $ma_hp = $class['ma_hp'];
+            $si_so_toi_da = (int)$class['si_so_toi_da'];
+            $si_so_hien_tai = (int)$class['si_so_hien_tai'];
+            $prereq_ma = $class['ma_hp_tien_quyet'];
 
-            foreach ($activeSchedules as $act) {
-                $act_thu = $act['thu'];
-                $act_start = $act['tiet_bat_dau'];
-                $act_count = $act['so_tiet'];
+            // 0. Kiểm tra môn đã đạt điểm hệ 4 >= 1.0 (D trở lên)
+            $passed = $this->db->fetch("SELECT id FROM diem_hoc_tap WHERE sinh_vien_id = :sid AND hoc_phan_id = :hpId AND diem_he4 >= 1.0", 
+                ['sid' => $studentId, 'hpId' => $hpId]);
+            if ($passed) {
+                $pdo->rollBack();
+                return ['type' => 'danger', 'text' => 'Bạn đã hoàn thành đạt học phần này trước đó (không được đăng ký lại).'];
+            }
 
-                if ($act_thu == $tar_thu) {
-                    // Kiểm tra giao tiết học
-                    if ($tar_start < $act_start + $act_count && $act_start < $tar_start + $tar_count) {
-                        return ['type' => 'danger', 'text' => 'Trùng lịch học vào Thứ ' . $tar_thu . ' (tiết ' . $act_start . '-' . ($act_start + $act_count - 1) . ') với lớp: ' . $act['ten_hp']];
+            // 1. Kiểm tra đã đăng ký bất kỳ lớp học phần nào của môn học này trong học kỳ này chưa
+            $chk = $this->db->fetch("
+                SELECT dk.id FROM dang_ky_hp dk
+                JOIN lop_hoc_phan lhp ON lhp.id = dk.lop_hoc_phan_id
+                WHERE dk.sinh_vien_id = :sid 
+                  AND lhp.hoc_phan_id = :hpId 
+                  AND dk.hoc_ky = :hk 
+                  AND dk.nam_hoc = :nh 
+                  AND dk.trang_thai IN ('Chờ duyệt', 'Đã duyệt')
+            ", ['sid' => $studentId, 'hpId' => $hpId, 'hk' => (string)$hk, 'nh' => $nh]);
+            if ($chk) {
+                $pdo->rollBack();
+                return ['type' => 'warning', 'text' => 'Bạn đã đăng ký một lớp học phần của môn này trong học kỳ hiện tại.'];
+            }
+
+            // 2. Kiểm tra sĩ số lớp học phần
+            if ($si_so_hien_tai >= $si_so_toi_da) {
+                $pdo->rollBack();
+                return ['type' => 'danger', 'text' => 'Lớp học phần đã đủ sĩ số tối đa.'];
+            }
+
+            // 3. Kiểm tra môn tiên quyết
+            if (!empty($prereq_ma)) {
+                $prereq = $this->db->fetch("SELECT id FROM hoc_phan WHERE ma_hp = :ma", ['ma' => $prereq_ma]);
+                if ($prereq) {
+                    $passedPrereq = $this->db->fetch("SELECT id FROM diem_hoc_tap WHERE sinh_vien_id = :sid AND hoc_phan_id = :pid AND diem_he4 >= 1.0", 
+                        ['sid' => $studentId, 'pid' => $prereq['id']]);
+                    if (!$passedPrereq) {
+                        $pdo->rollBack();
+                        return ['type' => 'danger', 'text' => 'Không đủ điều kiện đăng ký. Bạn chưa học đạt học phần tiên quyết: ' . $prereq_ma];
                     }
                 }
             }
-        }
 
-        // Thực hiện đăng ký
-        try {
+            // 4. Kiểm tra trùng lịch học cá nhân của sinh viên
+            // Lấy lịch học của lớp chuẩn bị đăng ký
+            $targetSchedules = $this->db->fetchAll("SELECT thu, tiet_bat_dau, so_tiet FROM thoi_khoa_bieu WHERE lop_hoc_phan_id = :lhpId", ['lhpId' => $lhpId]);
+            
+            // Lấy lịch học của các lớp đã đăng ký
+            $activeSchedules = $this->db->fetchAll("
+                SELECT hp.ten_hp, t.thu, t.tiet_bat_dau, t.so_tiet
+                FROM dang_ky_hp dk
+                JOIN lop_hoc_phan l ON l.id = dk.lop_hoc_phan_id
+                JOIN thoi_khoa_bieu t ON t.lop_hoc_phan_id = l.id
+                JOIN hoc_phan hp ON hp.id = l.hoc_phan_id
+                WHERE dk.sinh_vien_id = :sid AND dk.hoc_ky = :hk AND dk.nam_hoc = :nh AND dk.trang_thai IN ('Chờ duyệt', 'Đã duyệt')
+            ", ['sid' => $studentId, 'hk' => (string)$hk, 'nh' => $nh]);
+
+            foreach ($targetSchedules as $tar) {
+                $tar_thu = $tar['thu'];
+                $tar_start = $tar['tiet_bat_dau'];
+                $tar_count = $tar['so_tiet'];
+
+                foreach ($activeSchedules as $act) {
+                    $act_thu = $act['thu'];
+                    $act_start = $act['tiet_bat_dau'];
+                    $act_count = $act['so_tiet'];
+
+                    if ($act_thu == $tar_thu) {
+                        // Kiểm tra giao tiết học
+                        if ($tar_start < $act_start + $act_count && $act_start < $tar_start + $tar_count) {
+                            $pdo->rollBack();
+                            return ['type' => 'danger', 'text' => 'Trùng lịch học vào Thứ ' . $tar_thu . ' (tiết ' . $act_start . '-' . ($act_start + $act_count - 1) . ') với lớp: ' . $act['ten_hp']];
+                        }
+                    }
+                }
+            }
+
+            // Thực hiện đăng ký
             $this->db->query("
                 INSERT INTO dang_ky_hp (sinh_vien_id, lop_hoc_phan_id, hoc_phan_id, hoc_ky, nam_hoc, trang_thai) 
-                VALUES (:sid, :lhpId, :hpId, :hk, :nh, 'Chờ duyệt')
+                VALUES (:sid, :lhpId, :hpId, :hk, :nh, 'Đã duyệt')
             ", ['sid' => $studentId, 'lhpId' => $lhpId, 'hpId' => $hpId, 'hk' => (string)$hk, 'nh' => $nh]);
             
             $this->db->query("UPDATE lop_hoc_phan SET si_so_hien_tai = si_so_hien_tai + 1 WHERE id = :lhpId", ['lhpId' => $lhpId]);
 
+            $pdo->commit();
             return ['type' => 'success', 'text' => 'Đăng ký lớp học phần thành công!'];
         } catch (\Exception $e) {
+            $pdo->rollBack();
             return ['type' => 'danger', 'text' => 'Lỗi hệ thống, vui lòng thử lại sau.'];
         }
     }
 
     public function cancelCourse($studentId, $lhpId, $hk, $nh) {
         try {
-            // Kiểm tra sự tồn tại của đăng ký ở trạng thái 'Chờ duyệt'
+            // Lấy thông tin lớp học phần để kiểm tra thời gian
+            $class = $this->db->fetch("SELECT * FROM lop_hoc_phan WHERE id = :id", ['id' => $lhpId]);
+            if (!$class) {
+                return ['type' => 'danger', 'text' => 'Lớp học phần không tồn tại.'];
+            }
+            
+            $now = date('Y-m-d H:i:s');
+            if ($class['trang_thai_mo_lop'] !== 'Đang mở') {
+                return ['type' => 'danger', 'text' => 'Lớp học phần đã đóng, không thể hủy đăng ký.'];
+            }
+            if ($class['ngay_bat_dau_dk'] !== null && $now < $class['ngay_bat_dau_dk']) {
+                return ['type' => 'danger', 'text' => 'Chưa đến thời gian đăng ký lớp học phần này, không thể hủy.'];
+            }
+            if ($class['ngay_ket_thuc_dk'] !== null && $now > $class['ngay_ket_thuc_dk']) {
+                return ['type' => 'danger', 'text' => 'Đã hết thời gian đăng ký lớp học phần này, không thể hủy.'];
+            }
+
+            // Kiểm tra sự tồn tại của đăng ký ở trạng thái 'Chờ duyệt' hoặc 'Đã duyệt'
             $chk = $this->db->fetch("
                 SELECT id FROM dang_ky_hp 
-                WHERE sinh_vien_id = :sid AND lop_hoc_phan_id = :lhpId AND hoc_ky = :hk AND nam_hoc = :nh AND trang_thai = 'Chờ duyệt'
+                WHERE sinh_vien_id = :sid AND lop_hoc_phan_id = :lhpId AND hoc_ky = :hk AND nam_hoc = :nh AND trang_thai IN ('Chờ duyệt', 'Đã duyệt')
             ", ['sid' => $studentId, 'lhpId' => $lhpId, 'hk' => (string)$hk, 'nh' => $nh]);
                 
             if ($chk) {
@@ -281,7 +352,7 @@ class CourseModel {
                  $this->db->query("UPDATE lop_hoc_phan SET si_so_hien_tai = GREATEST(0, si_so_hien_tai - 1) WHERE id = :lhpId", ['lhpId' => $lhpId]);
                  return ['type' => 'success', 'text' => 'Đã hủy đăng ký lớp học phần thành công.'];
             } else {
-                 return ['type' => 'warning', 'text' => 'Không thể hủy. Lớp học phần đã được duyệt hoặc đã bị hủy.'];
+                 return ['type' => 'warning', 'text' => 'Không thể hủy. Lớp học phần đã bị hủy.'];
             }
         } catch (\Exception $e) {
             return ['type' => 'danger', 'text' => 'Lỗi hệ thống, vui lòng thử lại sau.'];

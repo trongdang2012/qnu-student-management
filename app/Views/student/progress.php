@@ -90,7 +90,7 @@
 
     <?php if (count($progressInfo['no_mon_list']) > 0): ?>
     <!-- Đề xuất môn học (Môn nợ) -->
-    <div class="card mb-20 fade-in" style="border-left: 4px solid #ef4444;">
+    <div class="card mb-20 fade-in">
       <div class="card-header">
         <h3 style="color: #ef4444;"><i class="fas fa-lightbulb"></i> Đề xuất đăng ký học lại</h3>
       </div>

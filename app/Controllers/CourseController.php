@@ -118,17 +118,17 @@ class CourseController extends Controller {
         $nh = NAM_HOC_HIEN_TAI;
 
         $action = $_POST['action'] ?? '';
-        $hpId = (int)($_POST['hoc_phan_id'] ?? 0);
+        $lhpId = (int)($_POST['lop_hoc_phan_id'] ?? 0);
 
-        if ($hpId <= 0) {
+        if ($lhpId <= 0) {
             return $this->json(['type' => 'danger', 'text' => 'Dữ liệu không hợp lệ.']);
         }
 
         if ($action === 'dang_ky') {
-            $result = $courseModel->registerCourse($sv['id'], $hpId, $hk, $nh);
+            $result = $courseModel->registerCourse($sv['id'], $lhpId, $hk, $nh);
             return $this->json($result);
         } elseif ($action === 'huy') {
-            $result = $courseModel->cancelCourse($sv['id'], $hpId, $hk, $nh);
+            $result = $courseModel->cancelCourse($sv['id'], $lhpId, $hk, $nh);
             return $this->json($result);
         }
 

@@ -27,18 +27,18 @@
           <div class="stat-value"><?= count($list) ?> ca</div>
         </div>
       </div>
-      <div class="stat-card" style="border-left-color:#ffc107">
-        <i class="fas fa-school" style="color:#ffc107"></i>
+      <div class="stat-card">
+        <i class="fas fa-school"></i>
         <div>
           <h3>Số phòng học sử dụng</h3>
           <div class="stat-value"><?= count($phongsList) ?> phòng</div>
         </div>
       </div>
-      <div class="stat-card" style="border-left-color:#28a745; cursor:pointer" onclick="if(confirm('Xếp lại toàn bộ lịch học tự động cho các lớp trong kỳ này? Lịch cũ sẽ bị xóa.')) location.href='<?= BASE_URL ?>/admin/thoi-khoa-bieu/optimize?hoc_ky=<?= $hocKy ?>&nam_hoc=<?= urlencode($namHoc) ?>'">
-        <i class="fas fa-wand-magic-sparkles" style="color:#28a745"></i>
+      <div class="stat-card" style="cursor:pointer" onclick="if(confirm('Xếp lại toàn bộ lịch học tự động cho các lớp trong kỳ này? Lịch cũ sẽ bị xóa.')) location.href='<?= BASE_URL ?>/admin/thoi-khoa-bieu/optimize?hoc_ky=<?= $hocKy ?>&nam_hoc=<?= urlencode($namHoc) ?>'">
+        <i class="fas fa-wand-magic-sparkles"></i>
         <div>
           <h3>Xếp TKB tự động</h3>
-          <div class="stat-value" style="font-size:16px; color:#28a745">⚡ Tự động phân lịch tối ưu</div>
+          <div class="stat-value" style="font-size:16px;">⚡ Tự động phân lịch tối ưu</div>
         </div>
       </div>
     </div>

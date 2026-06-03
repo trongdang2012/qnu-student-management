@@ -109,7 +109,13 @@ function dkBadge(string $tt): string {
                 </td>
                 <td style="text-align:center"><?= dkBadge($dk['trang_thai']) ?></td>
                 <td style="text-align:center">
-                  <?php if ($dk['trang_thai'] === 'Chờ duyệt'): ?>
+                  <?php 
+                    $now = date('Y-m-d H:i:s');
+                    $is_registration_active = ($dk['trang_thai_mo_lop'] === 'Đang mở')
+                      && ($dk['ngay_bat_dau_dk'] === null || $now >= $dk['ngay_bat_dau_dk'])
+                      && ($dk['ngay_ket_thuc_dk'] === null || $now <= $dk['ngay_ket_thuc_dk']);
+                  ?>
+                  <?php if (($dk['trang_thai'] === 'Chờ duyệt' || $dk['trang_thai'] === 'Đã duyệt') && $is_registration_active): ?>
                     <form class="ajax-form-dk" method="POST" style="display:inline" data-confirm="Bạn có chắc chắn muốn hủy đăng ký Lớp học phần này?">
                       <input type="hidden" name="action" value="huy">
                       <input type="hidden" name="lop_hoc_phan_id" value="<?= (int)$dk['lop_hoc_phan_id'] ?>">
@@ -118,7 +124,7 @@ function dkBadge(string $tt): string {
                       </button>
                     </form>
                   <?php else: ?>
-                    <span style="color:var(--text-muted);font-size:13px">—</span>
+                    <span style="color:var(--text-muted);font-size:13px" title="Hết thời gian đăng ký hoặc lớp đã đóng."><i class="fas fa-lock"></i> Đã khóa</span>
                   <?php endif; ?>
                 </td>
               </tr>
@@ -182,7 +188,7 @@ function dkBadge(string $tt): string {
                   <?php endif; ?>
                 </td>
                 <td style="text-align:center">
-                  <form class="ajax-form-dk" method="POST" style="display:inline" data-confirm="<?= $is_full ? 'Lớp học phần đã đủ số lượng, bạn có chắc chắn muốn thử xếp hàng đăng ký?' : 'Bạn có chắc chắn muốn đăng ký lớp học phần này: ' . e($hp['ma_lop_hp']) . '?' ?>">
+                  <form class="ajax-form-dk" method="POST" style="display:inline" data-confirm="Bạn có chắc chắn muốn đăng ký lớp học phần này: <?= e($hp['ma_lop_hp']) ?>?">
                     <input type="hidden" name="action" value="dang_ky">
                     <input type="hidden" name="lop_hoc_phan_id" value="<?= (int)$hp['lop_hoc_phan_id'] ?>">
                     <?php if ($is_full): ?>
@@ -214,8 +220,9 @@ function dkBadge(string $tt): string {
         <ul style="font-size:14px;color:var(--text-muted);line-height:2;padding-left:20px">
           <li>Mỗi sinh viên đăng ký học tập trực tuyến thông qua việc chọn đăng ký vào các **Lớp học phần** đang mở tương ứng.</li>
           <li>Hệ thống tự động kiểm tra trùng lịch học cá nhân ngay khi bạn bấm nút Đăng ký lớp học phần. Nếu trùng lịch học, hệ thống sẽ chặn và hiển thị thông báo.</li>
-          <li>Khi đăng ký thành công, trạng thái sẽ là **Chờ duyệt** và sĩ số lớp học sẽ tự động tăng lên 1. Bạn chỉ có thể hủy lớp học phần khi trạng thái là **Chờ duyệt**.</li>
-          <li>Trong trường hợp lớp học phần đã đầy sĩ số tối đa, nút đăng ký sẽ tự động chuyển sang trạng thái khóa.</li>
+          <li>Khi đăng ký thành công, hệ thống sẽ tự động phê duyệt ngay lập tức (trạng thái hiển thị là **Đã duyệt**) và sĩ số lớp học phần sẽ tự động tăng lên 1.</li>
+          <li>Bạn có thể tự hủy lớp học phần đã đăng ký (ở trạng thái **Đã duyệt**) bất cứ lúc nào trong thời gian đợt đăng ký tín chỉ còn mở.</li>
+          <li>Trong trường hợp lớp học phần đã đầy sĩ số tối đa, hệ thống sẽ khóa và không cho phép đăng ký thêm nữa.</li>
         </ul>
       </div>
     </div>

@@ -27,18 +27,18 @@
           <div class="stat-value"><?= (int)$totalItems ?> lớp</div>
         </div>
       </div>
-      <div class="stat-card" style="border-left-color: #007bff">
-        <i class="fas fa-calendar-check" style="color: #007bff"></i>
+      <div class="stat-card">
+        <i class="fas fa-calendar-check"></i>
         <div>
           <h3>Học kỳ hiện hành</h3>
           <div class="stat-value">HK<?= HOC_KY_HIEN_TAI ?> (<?= NAM_HOC_HIEN_TAI ?>)</div>
         </div>
       </div>
-      <div class="stat-card" style="border-left-color: #e0a800; cursor: pointer;" onclick="location.href='<?= BASE_URL ?>/admin/lop-hoc-phan/optimize'">
-        <i class="fas fa-magic" style="color: #e0a800"></i>
+      <div class="stat-card" style="cursor: pointer;" onclick="location.href='<?= BASE_URL ?>/admin/lop-hoc-phan/optimize'">
+        <i class="fas fa-magic"></i>
         <div>
           <h3>TKB tự động</h3>
-          <div class="stat-value" style="font-size: 16px; color:#e0a800">⚡ Xếp TKB tối ưu</div>
+          <div class="stat-value" style="font-size: 16px;">⚡ Xếp TKB tối ưu</div>
         </div>
       </div>
     </div>
@@ -109,12 +109,23 @@
 
           <div class="form-row">
             <div class="form-group">
-              <label>Ngày bắt đầu <span style="color:red">*</span></label>
+              <label>Ngày bắt đầu học <span style="color:red">*</span></label>
               <input type="date" name="ngay_bat_dau" class="form-control" value="<?= e($item['ngay_bat_dau'] ?? '') ?>" required>
             </div>
             <div class="form-group">
-              <label>Ngày kết thúc <span style="color:red">*</span></label>
+              <label>Ngày kết thúc học <span style="color:red">*</span></label>
               <input type="date" name="ngay_ket_thuc" class="form-control" value="<?= e($item['ngay_ket_thuc'] ?? '') ?>" required>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Bắt đầu đăng ký HP</label>
+              <input type="datetime-local" name="ngay_bat_dau_dk" class="form-control" value="<?= (!empty($item['ngay_bat_dau_dk'])) ? date('Y-m-d\TH:i', strtotime($item['ngay_bat_dau_dk'])) : '' ?>">
+            </div>
+            <div class="form-group">
+              <label>Kết thúc đăng ký HP</label>
+              <input type="datetime-local" name="ngay_ket_thuc_dk" class="form-control" value="<?= (!empty($item['ngay_ket_thuc_dk'])) ? date('Y-m-d\TH:i', strtotime($item['ngay_ket_thuc_dk'])) : '' ?>">
             </div>
           </div>
 
@@ -167,6 +178,7 @@
           </div>
           <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Lọc</button>
           <a href="<?= BASE_URL ?>/admin/lop-hoc-phan" class="btn btn-secondary"><i class="fas fa-rotate-left"></i> Xóa lọc</a>
+          <button type="button" class="btn btn-warning" onclick="showBatchOpenModal()"><i class="fas fa-magic"></i> Mở lớp tự động</button>
           <button type="button" class="btn btn-success" onclick="showAddForm()"><i class="fas fa-plus"></i> Mở lớp mới</button>
         </form>
       </div>
@@ -192,7 +204,7 @@
                   <th style="text-align:center">Năm học</th>
                   <th style="text-align:center">Sĩ số tối đa</th>
                   <th style="text-align:center">Đã đăng ký</th>
-                  <th style="text-align:center">Thời gian học</th>
+                  <th>Thời gian học & ĐK</th>
                   <th style="text-align:center">Trạng thái</th>
                   <th style="text-align:center">Hành động</th>
                 </tr>
@@ -214,9 +226,17 @@
                         <?= (int)$row['si_so_hien_tai'] ?> SV
                       </span>
                     </td>
-                    <td style="font-size:12px">
+                    <td style="font-size:12px; line-height: 1.4;">
+                      <span class="badge" style="background:#e8f4fd;color:#0056B3;margin-bottom:3px;display:inline-block;padding:2px 6px;">Học tập</span><br>
                       Từ: <?= date('d/m/Y', strtotime($row['ngay_bat_dau'])) ?><br>
-                      Đến: <?= date('d/m/Y', strtotime($row['ngay_ket_thuc'])) ?>
+                      Đến: <?= date('d/m/Y', strtotime($row['ngay_ket_thuc'])) ?><br>
+                      <span class="badge" style="background:#fff3cd;color:#856404;margin-top:5px;margin-bottom:3px;display:inline-block;padding:2px 6px;">Đăng ký HP</span><br>
+                      <?php if (!empty($row['ngay_bat_dau_dk']) || !empty($row['ngay_ket_thuc_dk'])): ?>
+                        Mở: <?= !empty($row['ngay_bat_dau_dk']) ? date('d/m H:i', strtotime($row['ngay_bat_dau_dk'])) : '—' ?><br>
+                        Hạn: <?= !empty($row['ngay_ket_thuc_dk']) ? date('d/m H:i', strtotime($row['ngay_ket_thuc_dk'])) : '—' ?>
+                      <?php else: ?>
+                        <span class="text-muted">Không giới hạn</span>
+                      <?php endif; ?>
                     </td>
                     <td style="text-align:center">
                       <?php if ($row['trang_thai_mo_lop'] === 'Đang mở'): ?>
@@ -276,6 +296,55 @@
 
 <?php require_once ROOT . '/includes/admin/footer_admin.php'; ?>
 
+    <!-- Modal Mở lớp học phần tự động hàng loạt -->
+    <div class="modal" id="batchOpenModal">
+      <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-header">
+          <h2>Mở Lớp Học Phần Tự Động</h2>
+          <button class="modal-close" type="button" onclick="closeBatchOpenModal()">&times;</button>
+        </div>
+        <form method="POST" action="<?= BASE_URL ?>/admin/lop-hoc-phan/batch-open">
+          <div class="form-group">
+            <label>Ngành đào tạo <span style="color:red">*</span></label>
+            <select name="nganh" class="form-control" required>
+              <option value="">-- Chọn ngành đào tạo --</option>
+              <?php if (isset($nganhList)): ?>
+                <?php foreach ($nganhList as $n): ?>
+                  <option value="<?= e($n['nganh']) ?>"><?= e($n['nganh']) ?></option>
+                <?php endforeach; ?>
+              <?php endif; ?>
+            </select>
+          </div>
+          <div class="form-row" style="margin-top:15px">
+            <div class="form-group">
+              <label>Học kỳ <span style="color:red">*</span></label>
+              <input type="number" name="hoc_ky" class="form-control" value="<?= HOC_KY_HIEN_TAI ?>" min="1" max="8" required>
+            </div>
+            <div class="form-group">
+              <label>Năm học <span style="color:red">*</span></label>
+              <input type="text" name="nam_hoc" class="form-control" value="<?= NAM_HOC_HIEN_TAI ?>" required placeholder="VD: 2025-2026">
+            </div>
+          </div>
+          <div class="form-row" style="margin-top:15px">
+            <div class="form-group">
+              <label>Bắt đầu đăng ký HP</label>
+              <input type="datetime-local" name="ngay_bat_dau_dk" class="form-control" value="<?= date('Y-m-d\T00:00') ?>">
+            </div>
+            <div class="form-group">
+              <label>Kết thúc đăng ký HP</label>
+              <input type="datetime-local" name="ngay_ket_thuc_dk" class="form-control" value="<?= date('Y-m-d\T23:59', strtotime('+14 days')) ?>">
+            </div>
+          </div>
+          <small style="color:var(--text-muted);font-size:11px;display:block;margin-top:10px">Hệ thống sẽ lấy toàn bộ học phần của ngành đã chọn trong học kỳ đề xuất tương ứng từ CTĐT và mở các lớp học phần mặc định (sĩ số 80, trạng thái Đang mở) nếu lớp đó chưa tồn tại.</small>
+
+          <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px">
+            <button type="button" class="btn btn-secondary" onclick="closeBatchOpenModal()">Hủy</button>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-magic"></i> Tạo các lớp</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
 <script>
 function closeModal() {
   document.getElementById('formModal').classList.remove('active');
@@ -285,5 +354,11 @@ function closeModal() {
 }
 function showAddForm() {
   document.getElementById('formModal').classList.add('active');
+}
+function showBatchOpenModal() {
+  document.getElementById('batchOpenModal').classList.add('active');
+}
+function closeBatchOpenModal() {
+  document.getElementById('batchOpenModal').classList.remove('active');
 }
 </script>

@@ -574,7 +574,7 @@
 
 .tkb-subject {
   background: var(--primary-light);
-  border-left: 3px solid var(--primary);
+  border-left: none; /* Removed border-left */
   border-radius: 4px;
   padding: 6px 8px;
   height: 100%;

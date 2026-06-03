@@ -346,4 +346,68 @@ class AdminTuitionModel {
         $sql .= ' ORDER BY sv.khoa, sv.nganh, sv.lop, hf.nam_hoc DESC, hf.hoc_ky DESC';
         return $this->db->fetchAll($sql, $params);
     }
+
+    public function autoCalculateTuition($hocKy, $namHoc, $donGia, $hanNop) {
+        $sql = "SELECT dk.sinh_vien_id, lhp.hoc_phan_id, hp.so_tin_chi
+                FROM dang_ky_hp dk
+                JOIN lop_hoc_phan lhp ON dk.lop_hoc_phan_id = lhp.id
+                JOIN hoc_phan hp ON lhp.hoc_phan_id = hp.id
+                WHERE dk.trang_thai = 'Đã duyệt'
+                  AND dk.hoc_ky = :hk
+                  AND dk.nam_hoc = :nh";
+        $registrations = $this->db->fetchAll($sql, ['hk' => $hocKy, 'nh' => $namHoc]);
+        
+        if (empty($registrations)) {
+            return 0;
+        }
+
+        $successCount = 0;
+        foreach ($registrations as $reg) {
+            $studentId = (int)$reg['sinh_vien_id'];
+            $courseId = (int)$reg['hoc_phan_id'];
+            $soTinChi = (int)$reg['so_tin_chi'];
+            $feeAmount = (float)$soTinChi * (float)$donGia;
+
+            $existing = $this->db->fetch(
+                'SELECT id, da_nop FROM hoc_phi WHERE sinh_vien_id = :sid AND hoc_ky = :hk AND nam_hoc = :nh AND hoc_phan_id = :hp LIMIT 1',
+                ['sid' => $studentId, 'hk' => $hocKy, 'nh' => $namHoc, 'hp' => $courseId]
+            );
+
+            $status = 'Chưa nộp';
+            $paidAmount = $existing ? (float)$existing['da_nop'] : 0;
+            if ($paidAmount >= $feeAmount && $feeAmount > 0) {
+                $status = 'Đã nộp';
+            } elseif ($paidAmount > 0) {
+                $status = 'Nợ';
+            }
+
+            if ($existing) {
+                $this->db->query(
+                    'UPDATE hoc_phi SET so_tien = :so_tien, han_nop = :han_nop, trang_thai = :trang_thai WHERE id = :id',
+                    [
+                        'so_tien' => $feeAmount,
+                        'han_nop' => $han_nop,
+                        'trang_thai' => $status,
+                        'id' => $existing['id']
+                    ]
+                );
+            } else {
+                $this->db->query(
+                    'INSERT INTO hoc_phi (sinh_vien_id, hoc_phan_id, hoc_ky, nam_hoc, so_tien, da_nop, han_nop, trang_thai) VALUES (:sid, :hp, :hk, :nh, :so_tien, 0, :han_nop, :trang_thai)',
+                    [
+                        'sid' => $studentId,
+                        'hp' => $courseId,
+                        'hk' => $hocKy,
+                        'nh' => $namHoc,
+                        'so_tien' => $feeAmount,
+                        'han_nop' => $han_nop,
+                        'trang_thai' => $status
+                    ]
+                );
+            }
+            $successCount++;
+        }
+
+        return $successCount;
+    }
 }
