@@ -133,20 +133,36 @@ function statusBadge(string $tt): string {
           </td>
         </tr>
         <?php if ($showRegisteredCourses): ?>
-        <tr style="background:#f9f9f9;border-bottom:1px solid var(--border)">
-          <td colspan="8" style="padding:12px 14px">
-            <div style="font-weight:600;color:var(--text-dark);margin-bottom:8px;font-size:13px">
-              <i class="fas fa-book"></i> Các học phần đã đăng ký cho HK <?= (int)$hp['hoc_ky'] ?>:
+        <tr style="background:#fcfcfc;border-bottom:1px solid var(--border)">
+          <td colspan="8" style="padding:15px 20px">
+            <div style="font-weight:600;color:var(--text-dark);margin-bottom:10px;font-size:14px">
+              <i class="fas fa-book" style="color:var(--primary)"></i> Danh sách học phần đã đăng ký học kỳ <?= (int)$hp['hoc_ky'] ?>:
             </div>
-            <div style="display:flex;flex-wrap:wrap;gap:8px;padding-left:20px">
+            <div style="padding-left:10px">
               <?php if (empty($hp['registered_courses'])): ?>
-              <span style="color:var(--text-muted);font-size:13px">Chưa có dữ liệu học phần cho học kỳ này.</span>
+              <p style="color:var(--text-muted);font-size:13px;margin:0;">Chưa có dữ liệu học phần cho học kỳ này.</p>
               <?php else: ?>
-              <?php foreach ($hp['registered_courses'] as $course): ?>
-              <span style="display:inline-block;background:#e3f2fd;border:1px solid #90caf9;border-radius:4px;padding:4px 10px;font-size:12px;color:#1565c0;font-weight:500">
-                <?= e($course['ma_hp']) ?> - <?= e($course['ten_hp']) ?> (<?= (int)$course['so_tin_chi'] ?> TC)
-              </span>
-              <?php endforeach; ?>
+              <table style="width:100%;max-width:750px;border-collapse:collapse;margin:5px 0;font-size:13px;background:#ffffff;box-shadow:0 1px 3px rgba(0,0,0,0.05);border-radius:6px;overflow:hidden">
+                <thead>
+                  <tr style="background:#f4f6f9;color:var(--text-dark);text-align:left;font-weight:600;border-bottom:1px solid #e9ecef">
+                    <th style="padding:8px 12px;width:60px;text-align:center;border:1px solid #e9ecef">STT</th>
+                    <th style="padding:8px 12px;width:150px;border:1px solid #e9ecef">Mã học phần</th>
+                    <th style="padding:8px 12px;border:1px solid #e9ecef">Tên học phần</th>
+                    <th style="padding:8px 12px;width:120px;text-align:center;border:1px solid #e9ecef">Số tín chỉ</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <?php $stt = 1; ?>
+                  <?php foreach ($hp['registered_courses'] as $course): ?>
+                  <tr style="border-bottom:1px solid #f1f3f5">
+                    <td style="padding:8px 12px;text-align:center;color:var(--text-muted);border:1px solid #e9ecef"><?= $stt++ ?></td>
+                    <td style="padding:8px 12px;font-family:monospace;font-weight:600;color:#1565c0;border:1px solid #e9ecef"><?= e($course['ma_hp']) ?></td>
+                    <td style="padding:8px 12px;color:#2c3e50;font-weight:500;border:1px solid #e9ecef"><?= e($course['ten_hp']) ?></td>
+                    <td style="padding:8px 12px;text-align:center;font-weight:600;color:#2c3e50;border:1px solid #e9ecef"><?= (int)$course['so_tin_chi'] ?> TC</td>
+                  </tr>
+                  <?php endforeach; ?>
+                </tbody>
+              </table>
               <?php endif; ?>
             </div>
           </td>
