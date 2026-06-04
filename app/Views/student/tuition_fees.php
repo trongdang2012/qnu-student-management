@@ -85,7 +85,6 @@ function statusBadge(string $tt): string {
         <thead><tr>
           <th>Năm học</th>
           <th style="text-align:center">Học kỳ</th>
-          <th>Học phần</th>
           <th style="text-align:right">Học phí</th>
           <th style="text-align:right">Đã nộp</th>
           <th style="text-align:right">Còn nợ</th>
@@ -95,18 +94,19 @@ function statusBadge(string $tt): string {
         </tr></thead>
         <tbody>
         <?php if (empty($tuitionFeesInfo['hp_list'])): ?>
-          <tr><td colspan="7" style="text-align:center;padding:30px;color:var(--text-muted)">Chưa có dữ liệu học phí.</td></tr>
+          <tr><td colspan="8" style="text-align:center;padding:30px;color:var(--text-muted)">Chưa có dữ liệu học phí.</td></tr>
         <?php else: ?>
+        <?php $displayedCourseTerms = []; ?>
         <?php foreach ($tuitionFeesInfo['hp_list'] as $hp):
           $no    = $hp['so_tien'] - $hp['da_nop'];
           $qua_han = !empty($hp['han_nop']) && strtotime($hp['han_nop']) < time() && $hp['trang_thai'] !== 'Đã nộp';
+          $courseTermKey = $hp['nam_hoc'] . '|' . $hp['hoc_ky'];
+          $showRegisteredCourses = !isset($displayedCourseTerms[$courseTermKey]);
+          $displayedCourseTerms[$courseTermKey] = true;
         ?>
         <tr <?= $qua_han ? 'style="background:#fff5f5"' : '' ?>>
           <td><?= e($hp['nam_hoc']) ?></td>
           <td style="text-align:center">HK <?= (int)$hp['hoc_ky'] ?></td>
-          <td>
-            <?= e((isset($hp['ma_hp']) && $hp['ma_hp']) ? $hp['ma_hp'] . ' - ' . ($hp['ten_hp'] ?? '') : 'Học phí kỳ') ?>
-          </td>
           <td style="text-align:right;font-weight:500"><?= formatMoney((float)$hp['so_tien']) ?></td>
           <td style="text-align:right;color:var(--success);font-weight:500"><?= formatMoney((float)$hp['da_nop']) ?></td>
           <td style="text-align:right;font-weight:700;color:<?= $no > 0 ? 'var(--danger)' : 'var(--success)' ?>">
@@ -132,6 +132,26 @@ function statusBadge(string $tt): string {
             <?php endif; ?>
           </td>
         </tr>
+        <?php if ($showRegisteredCourses): ?>
+        <tr style="background:#f9f9f9;border-bottom:1px solid var(--border)">
+          <td colspan="8" style="padding:12px 14px">
+            <div style="font-weight:600;color:var(--text-dark);margin-bottom:8px;font-size:13px">
+              <i class="fas fa-book"></i> Các học phần đã đăng ký cho HK <?= (int)$hp['hoc_ky'] ?>:
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;padding-left:20px">
+              <?php if (empty($hp['registered_courses'])): ?>
+              <span style="color:var(--text-muted);font-size:13px">Chưa có dữ liệu học phần cho học kỳ này.</span>
+              <?php else: ?>
+              <?php foreach ($hp['registered_courses'] as $course): ?>
+              <span style="display:inline-block;background:#e3f2fd;border:1px solid #90caf9;border-radius:4px;padding:4px 10px;font-size:12px;color:#1565c0;font-weight:500">
+                <?= e($course['ma_hp']) ?> - <?= e($course['ten_hp']) ?> (<?= (int)$course['so_tin_chi'] ?> TC)
+              </span>
+              <?php endforeach; ?>
+              <?php endif; ?>
+            </div>
+          </td>
+        </tr>
+        <?php endif; ?>
         <?php endforeach; ?>
         <?php endif; ?>
         </tbody>
@@ -143,7 +163,7 @@ function statusBadge(string $tt): string {
             <td style="border:1px solid var(--border);text-align:right;color:<?= $tuitionFeesInfo['tong_no'] > 0 ? 'var(--danger)' : 'var(--success)' ?>">
               <?= formatMoney($tuitionFeesInfo['tong_no']) ?>
             </td>
-            <td colspan="2" style="border:1px solid var(--border)"></td>
+            <td colspan="3" style="border:1px solid var(--border)"></td>
           </tr>
         </tfoot>
       </table>

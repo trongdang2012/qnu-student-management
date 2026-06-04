@@ -273,6 +273,95 @@ class StudentModel {
             ORDER BY nam_hoc, hoc_ky
         ", ['sid' => $studentId]);
 
+        $registeredCoursesByTerm = [];
+        if (!empty($hp_list)) {
+            $registeredCourses = $this->db->fetchAll("
+                SELECT DISTINCT
+                       dk.hoc_ky,
+                       dk.nam_hoc,
+                       hp.id AS hoc_phan_id,
+                       hp.ma_hp,
+                       hp.ten_hp,
+                       hp.so_tin_chi,
+                       l.ma_lop_hp,
+                       dk.trang_thai
+                FROM dang_ky_hp dk
+                LEFT JOIN lop_hoc_phan l ON l.id = dk.lop_hoc_phan_id
+                JOIN hoc_phan hp ON hp.id = COALESCE(dk.hoc_phan_id, l.hoc_phan_id)
+                WHERE dk.sinh_vien_id = :sid
+                ORDER BY dk.nam_hoc, dk.hoc_ky, hp.ma_hp
+            ", ['sid' => $studentId]);
+
+            foreach ($registeredCourses as $course) {
+                $key = $course['nam_hoc'] . '|' . $course['hoc_ky'];
+                $courseKey = (int)$course['hoc_phan_id'];
+                $registeredCoursesByTerm[$key][$courseKey] = $course;
+            }
+
+            $tuitionCourses = $this->db->fetchAll("
+                SELECT DISTINCT
+                       hf.hoc_ky,
+                       hf.nam_hoc,
+                       hp.id AS hoc_phan_id,
+                       hp.ma_hp,
+                       hp.ten_hp,
+                       hp.so_tin_chi,
+                       NULL AS ma_lop_hp,
+                       NULL AS trang_thai
+                FROM hoc_phi hf
+                JOIN hoc_phan hp ON hp.id = hf.hoc_phan_id
+                WHERE hf.sinh_vien_id = :sid
+                  AND hf.hoc_phan_id IS NOT NULL
+                ORDER BY hf.nam_hoc, hf.hoc_ky, hp.ma_hp
+            ", ['sid' => $studentId]);
+
+            foreach ($tuitionCourses as $course) {
+                $key = $course['nam_hoc'] . '|' . $course['hoc_ky'];
+                $courseKey = (int)$course['hoc_phan_id'];
+                $registeredCoursesByTerm[$key][$courseKey] = $course;
+            }
+
+            $student = $this->db->fetch("
+                SELECT nganh FROM sinh_vien
+                WHERE id = :sid
+                LIMIT 1
+            ", ['sid' => $studentId]);
+
+            $programCoursesBySemester = [];
+            if (!empty($student['nganh'])) {
+                $programCourses = $this->db->fetchAll("
+                    SELECT DISTINCT
+                           c.hoc_ky,
+                           hp.id AS hoc_phan_id,
+                           hp.ma_hp,
+                           hp.ten_hp,
+                           hp.so_tin_chi,
+                           NULL AS ma_lop_hp,
+                           NULL AS trang_thai
+                    FROM ctdt_chi_tiet c
+                    JOIN hoc_phan hp ON hp.id = c.hoc_phan_id
+                    WHERE c.nganh = :nganh
+                    ORDER BY c.hoc_ky, hp.ma_hp
+                ", ['nganh' => $student['nganh']]);
+
+                foreach ($programCourses as $course) {
+                    $semester = (string)$course['hoc_ky'];
+                    $courseKey = (int)$course['hoc_phan_id'];
+                    $programCoursesBySemester[$semester][$courseKey] = $course;
+                }
+            }
+
+            foreach ($hp_list as &$hp) {
+                $key = $hp['nam_hoc'] . '|' . $hp['hoc_ky'];
+                $courses = $registeredCoursesByTerm[$key] ?? [];
+                if (empty($courses)) {
+                    $courses = $programCoursesBySemester[(string)$hp['hoc_ky']] ?? [];
+                }
+                $hp['registered_courses'] = array_values($courses);
+            }
+            unset($hp);
+        }
+
         $tong_no    = 0;
         $tong_da_nop= 0;
         $tong_hoc_phi = 0;
@@ -288,6 +377,58 @@ class StudentModel {
             'tong_no' => $tong_no,
             'tong_da_nop' => $tong_da_nop,
             'tong_hoc_phi' => $tong_hoc_phi
+        ];
+    }
+
+    public function payTuition($studentId, $tuitionId) {
+        $tuition = $this->db->fetch("
+            SELECT id, sinh_vien_id, hoc_ky, nam_hoc, so_tien, da_nop, trang_thai
+            FROM hoc_phi
+            WHERE id = :id AND sinh_vien_id = :sid
+            LIMIT 1
+        ", ['id' => $tuitionId, 'sid' => $studentId]);
+
+        if (!$tuition) {
+            return [
+                'success' => false,
+                'message' => 'Không tìm thấy khoản học phí cần nộp.'
+            ];
+        }
+
+        $soTien = (float)$tuition['so_tien'];
+        $daNop = (float)$tuition['da_nop'];
+        if ($soTien <= 0) {
+            return [
+                'success' => false,
+                'message' => 'Khoản học phí này chưa có số tiền hợp lệ.'
+            ];
+        }
+
+        if ($daNop >= $soTien && $tuition['trang_thai'] === 'Đã nộp') {
+            return [
+                'success' => true,
+                'message' => 'Khoản học phí này đã được xác nhận trước đó.'
+            ];
+        }
+
+        $stmt = $this->db->query("
+            UPDATE hoc_phi
+            SET da_nop = so_tien, trang_thai = 'Đã nộp'
+            WHERE id = :id
+              AND sinh_vien_id = :sid
+              AND trang_thai IN ('Chưa nộp', 'Nợ')
+        ", ['id' => $tuitionId, 'sid' => $studentId]);
+
+        if ($stmt->rowCount() <= 0) {
+            return [
+                'success' => false,
+                'message' => 'Không thể cập nhật trạng thái học phí. Vui lòng thử lại hoặc liên hệ phòng tài chính.'
+            ];
+        }
+
+        return [
+            'success' => true,
+            'message' => 'Nộp học phí thành công. Khoản học phí đã được tự động xác nhận.'
         ];
     }
 
