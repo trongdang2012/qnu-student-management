@@ -10,7 +10,7 @@ class AdminStudentModel {
         $this->db = Database::getInstance();
     }
 
-    public function getTotalStudents($search = '', $khoa = '', $lop = '') {
+    public function getTotalStudents($search = '', $khoa = '', $nganh = '', $lop = '') {
         $where = "1=1";
         $params = [];
         if (!empty($search)) {
@@ -23,6 +23,10 @@ class AdminStudentModel {
             $where .= " AND khoa = :khoa";
             $params['khoa'] = $khoa;
         }
+        if (!empty($nganh)) {
+            $where .= " AND nganh = :nganh";
+            $params['nganh'] = $nganh;
+        }
         if (!empty($lop)) {
             $where .= " AND lop = :lop";
             $params['lop'] = $lop;
@@ -31,7 +35,7 @@ class AdminStudentModel {
         return $this->db->fetch($sql, $params)['total'];
     }
 
-    public function getStudents($search = '', $limit = 15, $offset = 0, $khoa = '', $lop = '', $sort_by = 'ma_sv', $sort_dir = 'asc') {
+    public function getStudents($search = '', $limit = 15, $offset = 0, $khoa = '', $nganh = '', $lop = '', $sort_by = 'ma_sv', $sort_dir = 'asc') {
         $where = "1=1";
         $params = [];
         if (!empty($search)) {
@@ -43,6 +47,10 @@ class AdminStudentModel {
         if (!empty($khoa)) {
             $where .= " AND sv.khoa = :khoa";
             $params['khoa'] = $khoa;
+        }
+        if (!empty($nganh)) {
+            $where .= " AND sv.nganh = :nganh";
+            $params['nganh'] = $nganh;
         }
         if (!empty($lop)) {
             $where .= " AND sv.lop = :lop";
@@ -62,12 +70,12 @@ class AdminStudentModel {
     }
 
     public function getFacultiesAndClasses() {
-        $sql = "SELECT DISTINCT khoa, lop FROM sinh_vien WHERE khoa IS NOT NULL AND khoa != '' AND lop IS NOT NULL AND lop != '' ORDER BY khoa, lop";
+        $sql = "SELECT DISTINCT khoa, nganh, lop FROM sinh_vien WHERE khoa IS NOT NULL AND khoa != '' AND nganh IS NOT NULL AND nganh != '' AND lop IS NOT NULL AND lop != '' ORDER BY khoa, nganh, lop";
         $rows = $this->db->fetchAll($sql);
         
         $tree = [];
         foreach ($rows as $row) {
-            $tree[$row['khoa']][] = $row['lop'];
+            $tree[$row['khoa']][$row['nganh']][] = $row['lop'];
         }
         return $tree;
     }

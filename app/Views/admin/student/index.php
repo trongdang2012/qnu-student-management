@@ -1,5 +1,5 @@
 <?php
-function sortUrl($col, $current_sort, $current_order, $search, $khoa, $lop) {
+function sortUrl($col, $current_sort, $current_order, $search, $khoa, $nganh, $lop) {
     $order = ($current_sort === $col && $current_order === 'asc') ? 'desc' : 'asc';
     $params = [
         'sort' => $col,
@@ -7,6 +7,7 @@ function sortUrl($col, $current_sort, $current_order, $search, $khoa, $lop) {
     ];
     if (!empty($search)) $params['search'] = $search;
     if (!empty($khoa)) $params['khoa'] = $khoa;
+    if (!empty($nganh)) $params['nganh'] = $nganh;
     if (!empty($lop)) $params['lop'] = $lop;
     return '?' . http_build_query($params);
 }
@@ -53,26 +54,31 @@ function sortIcon($col, $current_sort, $current_order) {
           <ul class="tree-menu" style="list-style: none; padding: 0; margin: 0;">
             <!-- Tất cả sinh viên -->
             <li style="margin-bottom: 8px;">
-              <a href="?search=<?= urlencode($search) ?>&sort=<?= urlencode($sort) ?>&order=<?= urlencode($order) ?>" class="tree-item <?= (empty($khoa) && empty($lop)) ? 'active' : '' ?>" 
+              <a href="?search=<?= urlencode($search) ?>&sort=<?= urlencode($sort) ?>&order=<?= urlencode($order) ?>" class="tree-item <?= (empty($khoa) && empty($nganh) && empty($lop)) ? 'active' : '' ?>" 
                  style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: var(--radius-sm); text-decoration: none; color: var(--text); font-weight: 600; transition: all 0.2s;">
                 <i class="fas fa-users" style="color: var(--primary);"></i> Tất cả sinh viên
               </a>
             </li>
             
-            <?php foreach ($facultiesClassesTree as $fName => $classes): ?>
+            <?php foreach ($facultiesClassesTree as $fName => $majors): ?>
               <?php 
-                $isCurrentFaculty = ($khoa === $fName && empty($lop));
-                $hasActiveChild = false;
-                foreach ($classes as $cName) {
-                    if ($lop === $cName) { $hasActiveChild = true; break; }
+                $hasActiveMajorOrClass = false;
+                foreach ($majors as $mName => $classes) {
+                    if ($nganh === $mName) {
+                        $hasActiveMajorOrClass = true;
+                        break;
+                    }
+                    foreach ($classes as $cName) {
+                        if ($lop === $cName) { $hasActiveMajorOrClass = true; break 2; }
+                    }
                 }
-                $isOpen = ($khoa === $fName || $hasActiveChild);
+                $isOpen = ($khoa === $fName || $hasActiveMajorOrClass);
               ?>
               <li class="tree-node <?= $isOpen ? 'open' : '' ?>" style="margin-bottom: 8px;">
                 <!-- Tên Khoa -->
-                <div class="tree-faculty-header" style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border-radius: var(--radius-sm); cursor: pointer; transition: all 0.2s; background: <?= ($khoa === $fName && empty($lop)) ? 'var(--primary-light)' : 'transparent' ?>;"
+                <div class="tree-faculty-header" style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border-radius: var(--radius-sm); cursor: pointer; transition: all 0.2s; background: <?= ($khoa === $fName && empty($nganh) && empty($lop)) ? 'var(--primary-light)' : 'transparent' ?>;"
                      onclick="toggleTreeNode(this)">
-                  <a href="?khoa=<?= urlencode($fName) ?>&search=<?= urlencode($search) ?>&sort=<?= urlencode($sort) ?>&order=<?= urlencode($order) ?>" class="tree-faculty-link" style="text-decoration: none; color: <?= ($khoa === $fName && empty($lop)) ? 'var(--primary)' : 'var(--text)' ?>; font-weight: 600; display: flex; align-items: center; gap: 8px; flex: 1;"
+                  <a href="?khoa=<?= urlencode($fName) ?>&search=<?= urlencode($search) ?>&sort=<?= urlencode($sort) ?>&order=<?= urlencode($order) ?>" class="tree-faculty-link" style="text-decoration: none; color: <?= ($khoa === $fName && empty($nganh) && empty($lop)) ? 'var(--primary)' : 'var(--text)' ?>; font-weight: 600; display: flex; align-items: center; gap: 8px; flex: 1;"
                      onclick="event.stopPropagation();">
                     <i class="fas fa-folder-open" style="color: #ffc107; font-size: 15px;"></i> 
                     <span style="font-size: 13.5px;" title="<?= e($fName) ?>"><?= e(mb_strimwidth($fName, 0, 24, '...')) ?></span>
@@ -80,15 +86,35 @@ function sortIcon($col, $current_sort, $current_order) {
                   <i class="fas fa-chevron-right toggle-icon" style="font-size: 10px; color: var(--text-muted); transition: transform 0.2s; transform: <?= $isOpen ? 'rotate(90deg)' : 'none' ?>;"></i>
                 </div>
                 
-                <!-- Danh sách Lớp -->
+                <!-- Danh sách Ngành -->
                 <ul class="tree-classes-list" style="list-style: none; padding-left: 20px; margin-top: 4px; display: <?= $isOpen ? 'block' : 'none' ?>;">
-                  <?php foreach ($classes as $cName): ?>
-                    <li style="margin-top: 4px;">
-                      <a href="?khoa=<?= urlencode($fName) ?>&lop=<?= urlencode($cName) ?>&search=<?= urlencode($search) ?>&sort=<?= urlencode($sort) ?>&order=<?= urlencode($order) ?>" 
-                         class="tree-item <?= ($lop === $cName) ? 'active' : '' ?>" 
-                         style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: var(--radius-sm); text-decoration: none; color: var(--text-muted); font-size: 13px; font-weight: 500; transition: all 0.2s;">
-                        <i class="fas fa-graduation-cap" style="font-size: 12px; opacity: 0.7;"></i> <?= e($cName) ?>
-                      </a>
+                  <?php foreach ($majors as $mName => $classes): ?>
+                    <?php
+                       $hasActiveClass = false;
+                       foreach ($classes as $cName) {
+                           if ($lop === $cName) { $hasActiveClass = true; break; }
+                       }
+                       $isMajorOpen = ($nganh === $mName || $hasActiveClass);
+                    ?>
+                    <li class="tree-node <?= $isMajorOpen ? 'open' : '' ?>" style="margin-bottom: 4px;">
+                        <div class="tree-faculty-header" style="display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; border-radius: var(--radius-sm); cursor: pointer; transition: all 0.2s; background: <?= ($nganh === $mName && empty($lop)) ? 'var(--primary-light)' : 'transparent' ?>;" onclick="toggleTreeNode(this)">
+                            <a href="?khoa=<?= urlencode($fName) ?>&nganh=<?= urlencode($mName) ?>&search=<?= urlencode($search) ?>&sort=<?= urlencode($sort) ?>&order=<?= urlencode($order) ?>" class="tree-faculty-link" style="text-decoration: none; color: <?= ($nganh === $mName && empty($lop)) ? 'var(--primary)' : 'var(--text-muted)' ?>; font-weight: 500; font-size: 13.5px; display: flex; align-items: center; gap: 8px; flex: 1;" onclick="event.stopPropagation();">
+                                <i class="fas fa-book-open" style="color: #17a2b8; font-size: 13px;"></i>
+                                <span title="<?= e($mName) ?>"><?= e(mb_strimwidth($mName, 0, 20, '...')) ?></span>
+                            </a>
+                            <i class="fas fa-chevron-right toggle-icon" style="font-size: 10px; color: var(--text-muted); transition: transform 0.2s; transform: <?= $isMajorOpen ? 'rotate(90deg)' : 'none' ?>;"></i>
+                        </div>
+                        
+                        <!-- Danh sách Lớp -->
+                        <ul class="tree-classes-list" style="list-style: none; padding-left: 20px; margin-top: 2px; display: <?= $isMajorOpen ? 'block' : 'none' ?>;">
+                            <?php foreach ($classes as $cName): ?>
+                                <li style="margin-top: 2px;">
+                                    <a href="?khoa=<?= urlencode($fName) ?>&nganh=<?= urlencode($mName) ?>&lop=<?= urlencode($cName) ?>&search=<?= urlencode($search) ?>&sort=<?= urlencode($sort) ?>&order=<?= urlencode($order) ?>" class="tree-item <?= ($lop === $cName) ? 'active' : '' ?>" style="display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: var(--radius-sm); text-decoration: none; color: var(--text-muted); font-size: 13px; font-weight: 400; transition: all 0.2s;">
+                                        <i class="fas fa-graduation-cap" style="font-size: 12px; opacity: 0.7;"></i> <?= e($cName) ?>
+                                    </a>
+                                </li>
+                            <?php endforeach; ?>
+                        </ul>
                     </li>
                   <?php endforeach; ?>
                 </ul>
@@ -105,6 +131,8 @@ function sortIcon($col, $current_sort, $current_order) {
             <i class="fas fa-list"></i> 
             <?php if (!empty($lop)): ?>
               Danh sách lớp <span style="color: var(--primary); font-weight: 700;"><?= e($lop) ?></span> (<?= $total ?> sinh viên)
+            <?php elseif (!empty($nganh)): ?>
+              Danh sách ngành <span style="color: var(--primary); font-weight: 700;"><?= e($nganh) ?></span> (<?= $total ?> sinh viên)
             <?php elseif (!empty($khoa)): ?>
               Danh sách khoa <span style="color: var(--primary); font-weight: 700;"><?= e($khoa) ?></span> (<?= $total ?> sinh viên)
             <?php else: ?>
@@ -132,6 +160,9 @@ function sortIcon($col, $current_sort, $current_order) {
               <?php if (!empty($khoa)): ?>
                 <input type="hidden" name="khoa" value="<?= e($khoa) ?>">
               <?php endif; ?>
+              <?php if (!empty($nganh)): ?>
+                <input type="hidden" name="nganh" value="<?= e($nganh) ?>">
+              <?php endif; ?>
               <?php if (!empty($lop)): ?>
                 <input type="hidden" name="lop" value="<?= e($lop) ?>">
               <?php endif; ?>
@@ -147,7 +178,7 @@ function sortIcon($col, $current_sort, $current_order) {
               <button type="submit" class="btn btn-primary btn-sm" style="padding: 0 20px;">
                 <i class="fas fa-search"></i> Tìm kiếm
               </button>
-              <?php if (!empty($search) || !empty($khoa) || !empty($lop)): ?>
+              <?php if (!empty($search) || !empty($khoa) || !empty($nganh) || !empty($lop)): ?>
                 <a href="<?= BASE_URL ?>/admin/sinh-vien" class="btn btn-secondary btn-sm" style="padding: 0 15px; display: flex; align-items: center; justify-content: center;">
                   <i class="fas fa-times"></i> Hủy lọc
                 </a>
@@ -162,28 +193,28 @@ function sortIcon($col, $current_sort, $current_order) {
                 <thead>
                   <tr style="border-bottom: 2px solid var(--primary);">
                     <th style="padding: 12px; text-align: left; font-weight: 600; width: 120px;">
-                      <a href="<?= sortUrl('ma_sv', $sort, $order, $search, $khoa, $lop) ?>" style="text-decoration: none; color: var(--text); display: inline-flex; align-items: center;">
+                      <a href="<?= sortUrl('ma_sv', $sort, $order, $search, $khoa, $nganh, $lop) ?>" style="text-decoration: none; color: var(--text); display: inline-flex; align-items: center;">
                         Mã SV <?= sortIcon('ma_sv', $sort, $order) ?>
                       </a>
                     </th>
                     <th style="padding: 12px; text-align: left; font-weight: 600;">
-                      <a href="<?= sortUrl('ho_ten', $sort, $order, $search, $khoa, $lop) ?>" style="text-decoration: none; color: var(--text); display: inline-flex; align-items: center;">
+                      <a href="<?= sortUrl('ho_ten', $sort, $order, $search, $khoa, $nganh, $lop) ?>" style="text-decoration: none; color: var(--text); display: inline-flex; align-items: center;">
                         Họ tên <?= sortIcon('ho_ten', $sort, $order) ?>
                       </a>
                     </th>
                     <th style="padding: 12px; text-align: left; font-weight: 600; color: var(--text-muted); cursor: default;">Email</th>
                     <th style="padding: 12px; text-align: left; font-weight: 600; width: 100px;">
-                      <a href="<?= sortUrl('lop', $sort, $order, $search, $khoa, $lop) ?>" style="text-decoration: none; color: var(--text); display: inline-flex; align-items: center;">
+                      <a href="<?= sortUrl('lop', $sort, $order, $search, $khoa, $nganh, $lop) ?>" style="text-decoration: none; color: var(--text); display: inline-flex; align-items: center;">
                         Lớp <?= sortIcon('lop', $sort, $order) ?>
                       </a>
                     </th>
                     <th style="padding: 12px; text-align: left; font-weight: 600;">
-                      <a href="<?= sortUrl('nganh', $sort, $order, $search, $khoa, $lop) ?>" style="text-decoration: none; color: var(--text); display: inline-flex; align-items: center;">
+                      <a href="<?= sortUrl('nganh', $sort, $order, $search, $khoa, $nganh, $lop) ?>" style="text-decoration: none; color: var(--text); display: inline-flex; align-items: center;">
                         Ngành <?= sortIcon('nganh', $sort, $order) ?>
                       </a>
                     </th>
                     <th style="padding: 12px; text-align: left; font-weight: 600; width: 110px;">
-                      <a href="<?= sortUrl('trang_thai', $sort, $order, $search, $khoa, $lop) ?>" style="text-decoration: none; color: var(--text); display: inline-flex; align-items: center;">
+                      <a href="<?= sortUrl('trang_thai', $sort, $order, $search, $khoa, $nganh, $lop) ?>" style="text-decoration: none; color: var(--text); display: inline-flex; align-items: center;">
                         Trạng thái <?= sortIcon('trang_thai', $sort, $order) ?>
                       </a>
                     </th>
@@ -265,6 +296,7 @@ function sortIcon($col, $current_sort, $current_order) {
                 $url_params = '';
                 if (!empty($search)) $url_params .= '&search=' . urlencode($search);
                 if (!empty($khoa)) $url_params .= '&khoa=' . urlencode($khoa);
+                if (!empty($nganh)) $url_params .= '&nganh=' . urlencode($nganh);
                 if (!empty($lop)) $url_params .= '&lop=' . urlencode($lop);
                 if (!empty($sort)) $url_params .= '&sort=' . urlencode($sort);
                 if (!empty($order)) $url_params .= '&order=' . urlencode($order);

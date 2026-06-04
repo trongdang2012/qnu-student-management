@@ -18,15 +18,16 @@ class StudentController extends Controller {
         $page = (int)($_GET['page'] ?? 1);
         $search = trim($_GET['search'] ?? '');
         $khoa = trim($_GET['khoa'] ?? '');
+        $nganh = trim($_GET['nganh'] ?? '');
         $lop = trim($_GET['lop'] ?? '');
         $sort = trim($_GET['sort'] ?? 'ma_sv');
         $order = trim($_GET['order'] ?? 'asc');
         $per_page = 15;
         $offset = ($page - 1) * $per_page;
 
-        $total = $this->studentModel->getTotalStudents($search, $khoa, $lop);
+        $total = $this->studentModel->getTotalStudents($search, $khoa, $nganh, $lop);
         $total_pages = ceil($total / $per_page);
-        $students = $this->studentModel->getStudents($search, $per_page, $offset, $khoa, $lop, $sort, $order);
+        $students = $this->studentModel->getStudents($search, $per_page, $offset, $khoa, $nganh, $lop, $sort, $order);
         $facultiesClassesTree = $this->studentModel->getFacultiesAndClasses();
 
         $this->view('admin/student/index', [
@@ -36,6 +37,7 @@ class StudentController extends Controller {
             'total_pages' => $total_pages,
             'search' => $search,
             'khoa' => $khoa,
+            'nganh' => $nganh,
             'lop' => $lop,
             'sort' => $sort,
             'order' => $order,
