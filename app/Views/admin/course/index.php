@@ -19,6 +19,56 @@
       </div>
     <?php endif; ?>
 
+    <?php
+      $courseStats = $courseStats ?? [];
+      $coursesWithoutClasses = $coursesWithoutClasses ?? [];
+      $activeTotal = (int)($courseStats['active_total'] ?? 0);
+      $creditTotal = (int)($courseStats['credit_total'] ?? 0);
+      $withoutClassesTotal = (int)($courseStats['without_classes'] ?? 0);
+    ?>
+
+    <style>
+      .ops-panel{display:grid;grid-template-columns:1.4fr 1fr;gap:16px;margin-bottom:20px}
+      .ops-card{background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:16px;box-shadow:0 1px 2px rgba(15,23,42,.04)}
+      .ops-card h3{margin:0 0 12px;font-size:16px;color:#111827;display:flex;align-items:center;gap:8px}
+      .ops-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+      .ops-metric{background:#f8fafc;border:1px solid #e5e7eb;border-radius:6px;padding:12px}
+      .ops-metric span{display:block;font-size:12px;color:#6b7280;margin-bottom:6px}
+      .ops-metric strong{font-size:22px;color:#111827}
+      .ops-list{display:grid;gap:8px;margin:0;padding:0;list-style:none}
+      .ops-list li{display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid #f1f5f9;padding:8px 0;font-size:13px}
+      .ops-list li:last-child{border-bottom:0}
+      .ops-tag{display:inline-flex;align-items:center;border-radius:999px;padding:2px 8px;font-size:12px;background:#eef2ff;color:#3730a3;white-space:nowrap}
+      @media (max-width: 900px){.ops-panel{grid-template-columns:1fr}.ops-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    </style>
+
+    <div class="ops-panel fade-in">
+      <div class="ops-card">
+        <h3><i class="fas fa-chart-line"></i> Tổng quan danh mục học phần</h3>
+        <div class="ops-metrics">
+          <div class="ops-metric"><span>Đang hoạt động</span><strong><?= $activeTotal ?></strong></div>
+          <div class="ops-metric"><span>Tổng tín chỉ</span><strong><?= $creditTotal ?></strong></div>
+          <div class="ops-metric"><span>Có tiên quyết</span><strong><?= (int)($courseStats['prerequisite_total'] ?? 0) ?></strong></div>
+          <div class="ops-metric"><span>Chưa mở lớp</span><strong><?= $withoutClassesTotal ?></strong></div>
+        </div>
+      </div>
+      <div class="ops-card">
+        <h3><i class="fas fa-triangle-exclamation"></i> Cần rà soát trước kỳ đăng ký</h3>
+        <?php if (empty($coursesWithoutClasses)): ?>
+          <p style="margin:0;color:#16a34a;font-size:13px">Tất cả học phần hoạt động đã có ít nhất một lớp học phần.</p>
+        <?php else: ?>
+          <ul class="ops-list">
+            <?php foreach ($coursesWithoutClasses as $c): ?>
+              <li>
+                <span><strong><?= e($c['ma_hp']) ?></strong> - <?= e($c['ten_hp']) ?></span>
+                <span class="ops-tag">HK<?= (int)$c['hoc_ky'] ?></span>
+              </li>
+            <?php endforeach; ?>
+          </ul>
+        <?php endif; ?>
+      </div>
+    </div>
+
     <div class="admin-grid fade-in">
       <div class="stat-card">
         <i class="fas fa-layer-group"></i>

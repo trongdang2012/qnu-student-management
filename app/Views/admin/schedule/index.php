@@ -19,6 +19,75 @@
       </div>
     <?php endif; ?>
 
+    <?php
+      $scheduleStats = $scheduleStats ?? [];
+      $unscheduledClasses = $unscheduledClasses ?? [];
+      $roomUtilization = $roomUtilization ?? [];
+      $scheduledPercent = (float)($scheduleStats['scheduled_percent'] ?? 0);
+    ?>
+
+    <style>
+      .ops-panel{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:16px;margin-bottom:20px}
+      .ops-card{background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:16px;box-shadow:0 1px 2px rgba(15,23,42,.04)}
+      .ops-card h3{margin:0 0 12px;font-size:16px;color:#111827;display:flex;align-items:center;gap:8px}
+      .ops-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+      .ops-metric{background:#f8fafc;border:1px solid #e5e7eb;border-radius:6px;padding:12px}
+      .ops-metric span{display:block;font-size:12px;color:#6b7280;margin-bottom:6px}
+      .ops-metric strong{font-size:22px;color:#111827}
+      .ops-list{display:grid;gap:8px;margin:0;padding:0;list-style:none}
+      .ops-list li{border-bottom:1px solid #f1f5f9;padding:8px 0;font-size:13px}
+      .ops-list li:last-child{border-bottom:0}
+      .ops-tag{display:inline-flex;align-items:center;border-radius:999px;padding:2px 8px;font-size:12px;background:#eef2ff;color:#3730a3;margin-top:4px}
+      .capacity-bar{height:8px;background:#e5e7eb;border-radius:999px;overflow:hidden;margin-top:8px}
+      .capacity-bar span{display:block;height:100%;background:#16a34a}
+      @media (max-width: 1100px){.ops-panel{grid-template-columns:1fr}.ops-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    </style>
+
+    <div class="ops-panel fade-in">
+      <div class="ops-card">
+        <h3><i class="fas fa-chart-pie"></i> Tiến độ xếp thời khóa biểu</h3>
+        <div class="ops-metrics">
+          <div class="ops-metric"><span>Lớp đã có lịch</span><strong><?= (int)($scheduleStats['scheduled_class_total'] ?? 0) ?>/<?= (int)($scheduleStats['class_total'] ?? 0) ?></strong></div>
+          <div class="ops-metric"><span>Chưa xếp lịch</span><strong><?= (int)($scheduleStats['unscheduled_total'] ?? 0) ?></strong></div>
+          <div class="ops-metric"><span>Phòng đang dùng</span><strong><?= (int)($scheduleStats['room_total'] ?? 0) ?></strong></div>
+          <div class="ops-metric"><span>Tổng tiết/tuần</span><strong><?= (int)($scheduleStats['period_total'] ?? 0) ?></strong></div>
+        </div>
+        <div class="capacity-bar"><span style="width:<?= min(100, $scheduledPercent) ?>%"></span></div>
+        <p style="margin:8px 0 0;color:#6b7280;font-size:12px"><?= $scheduledPercent ?>% lớp học phần trong kỳ đã có lịch.</p>
+      </div>
+      <div class="ops-card">
+        <h3><i class="fas fa-calendar-xmark"></i> Lớp chưa có lịch</h3>
+        <?php if (empty($unscheduledClasses)): ?>
+          <p style="margin:0;color:#16a34a;font-size:13px">Tất cả lớp trong kỳ đã có thời khóa biểu.</p>
+        <?php else: ?>
+          <ul class="ops-list">
+            <?php foreach ($unscheduledClasses as $c): ?>
+              <li>
+                <strong><?= e($c['ma_lop_hp']) ?></strong> - <?= e($c['ten_hp']) ?><br>
+                <span class="ops-tag"><?= (int)$c['si_so_hien_tai'] ?>/<?= (int)$c['si_so_toi_da'] ?> SV</span>
+                <?php if (empty($c['giang_vien'])): ?><span class="ops-tag">Thiếu giảng viên</span><?php endif; ?>
+              </li>
+            <?php endforeach; ?>
+          </ul>
+        <?php endif; ?>
+      </div>
+      <div class="ops-card">
+        <h3><i class="fas fa-door-open"></i> Phòng dùng nhiều</h3>
+        <?php if (empty($roomUtilization)): ?>
+          <p style="margin:0;color:#6b7280;font-size:13px">Chưa có dữ liệu sử dụng phòng.</p>
+        <?php else: ?>
+          <ul class="ops-list">
+            <?php foreach ($roomUtilization as $r): ?>
+              <li>
+                <strong><?= e($r['phong_hoc']) ?></strong>
+                <span class="ops-tag"><?= (int)$r['period_total'] ?> tiết / <?= (int)$r['schedule_total'] ?> ca</span>
+              </li>
+            <?php endforeach; ?>
+          </ul>
+        <?php endif; ?>
+      </div>
+    </div>
+
     <div class="admin-grid fade-in">
       <div class="stat-card">
         <i class="fas fa-clock"></i>

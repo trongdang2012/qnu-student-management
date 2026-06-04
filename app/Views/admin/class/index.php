@@ -19,6 +19,61 @@
       </div>
     <?php endif; ?>
 
+    <?php
+      $classStats = $classStats ?? [];
+      $classAlerts = $classAlerts ?? [];
+      $capacityTotal = max(0, (int)($classStats['capacity_total'] ?? 0));
+      $enrolledTotal = max(0, (int)($classStats['enrolled_total'] ?? 0));
+      $fillRate = $capacityTotal > 0 ? round(($enrolledTotal / $capacityTotal) * 100, 1) : 0;
+    ?>
+
+    <style>
+      .ops-panel{display:grid;grid-template-columns:1.4fr 1fr;gap:16px;margin-bottom:20px}
+      .ops-card{background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:16px;box-shadow:0 1px 2px rgba(15,23,42,.04)}
+      .ops-card h3{margin:0 0 12px;font-size:16px;color:#111827;display:flex;align-items:center;gap:8px}
+      .ops-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+      .ops-metric{background:#f8fafc;border:1px solid #e5e7eb;border-radius:6px;padding:12px}
+      .ops-metric span{display:block;font-size:12px;color:#6b7280;margin-bottom:6px}
+      .ops-metric strong{font-size:22px;color:#111827}
+      .ops-list{display:grid;gap:8px;margin:0;padding:0;list-style:none}
+      .ops-list li{border-bottom:1px solid #f1f5f9;padding:8px 0;font-size:13px}
+      .ops-list li:last-child{border-bottom:0}
+      .ops-tag{display:inline-flex;align-items:center;border-radius:999px;padding:2px 8px;font-size:12px;background:#fff7ed;color:#9a3412;margin-top:4px}
+      .capacity-bar{height:8px;background:#e5e7eb;border-radius:999px;overflow:hidden;margin-top:8px}
+      .capacity-bar span{display:block;height:100%;background:#2563eb}
+      @media (max-width: 900px){.ops-panel{grid-template-columns:1fr}.ops-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    </style>
+
+    <div class="ops-panel fade-in">
+      <div class="ops-card">
+        <h3><i class="fas fa-gauge-high"></i> Điều hành lớp học phần</h3>
+        <div class="ops-metrics">
+          <div class="ops-metric"><span>Đang mở</span><strong><?= (int)($classStats['open_total'] ?? 0) ?></strong></div>
+          <div class="ops-metric"><span>Tỷ lệ lấp đầy</span><strong><?= $fillRate ?>%</strong></div>
+          <div class="ops-metric"><span>Thiếu giảng viên</span><strong><?= (int)($classStats['missing_teacher_total'] ?? 0) ?></strong></div>
+          <div class="ops-metric"><span>Đã đủ chỗ</span><strong><?= (int)($classStats['full_total'] ?? 0) ?></strong></div>
+        </div>
+        <div class="capacity-bar"><span style="width:<?= min(100, $fillRate) ?>%"></span></div>
+        <p style="margin:8px 0 0;color:#6b7280;font-size:12px"><?= $enrolledTotal ?> / <?= $capacityTotal ?> chỗ đã có sinh viên đăng ký.</p>
+      </div>
+      <div class="ops-card">
+        <h3><i class="fas fa-clipboard-check"></i> Việc cần xử lý</h3>
+        <?php if (empty($classAlerts)): ?>
+          <p style="margin:0;color:#16a34a;font-size:13px">Chưa có lớp thiếu dữ liệu vận hành quan trọng.</p>
+        <?php else: ?>
+          <ul class="ops-list">
+            <?php foreach ($classAlerts as $c): ?>
+              <li>
+                <strong><?= e($c['ma_lop_hp']) ?></strong> - <?= e($c['ten_hp']) ?><br>
+                <?php if (empty($c['giang_vien'])): ?><span class="ops-tag">Chưa phân công giảng viên</span><?php endif; ?>
+                <?php if ((int)$c['si_so_hien_tai'] >= (int)$c['si_so_toi_da']): ?><span class="ops-tag">Đã đủ sĩ số</span><?php endif; ?>
+              </li>
+            <?php endforeach; ?>
+          </ul>
+        <?php endif; ?>
+      </div>
+    </div>
+
     <div class="admin-grid fade-in">
       <div class="stat-card">
         <i class="fas fa-university"></i>
@@ -298,12 +353,19 @@
 
     <!-- Modal Mở lớp học phần tự động hàng loạt -->
     <div class="modal" id="batchOpenModal">
-      <div class="modal-content" style="max-width: 500px;">
+      <div class="modal-content" style="max-width: 600px;">
         <div class="modal-header">
-          <h2>Mở Lớp Học Phần Tự Động</h2>
+          <h2><i class="fas fa-magic"></i> Mở Lớp Học Phần Tự Động</h2>
           <button class="modal-close" type="button" onclick="closeBatchOpenModal()">&times;</button>
         </div>
         <form method="POST" action="<?= BASE_URL ?>/admin/lop-hoc-phan/batch-open">
+          <div class="alert alert-info" style="margin-bottom:15px">
+            <strong>📌 Lưu ý quan trọng:</strong><br>
+            • <strong>HK CTDT</strong>: Học kỳ theo Chương trình đào tạo (dùng để lấy danh sách môn học cần mở)<br>
+            • <strong>HK Học vụ</strong>: Học kỳ học vụ hiện hành (1, 2, 3) - sẽ được lưu vào lớp học phần<br>
+            • Giảng viên sẽ để <strong>trống</strong> - Admin phải phân công sau
+          </div>
+
           <div class="form-group">
             <label>Ngành đào tạo <span style="color:red">*</span></label>
             <select name="nganh" class="form-control" required>
@@ -315,27 +377,52 @@
               <?php endif; ?>
             </select>
           </div>
-          <div class="form-row" style="margin-top:15px">
-            <div class="form-group">
-              <label>Học kỳ <span style="color:red">*</span></label>
-              <input type="number" name="hoc_ky" class="form-control" value="<?= HOC_KY_HIEN_TAI ?>" min="1" max="8" required>
+
+          <div class="form-row" style="margin-top:15px;gap:10px">
+            <div class="form-group" style="flex:1">
+              <label>HK theo CTDT (1-8) <span style="color:red">*</span></label>
+              <select name="hoc_ky_ctdt" class="form-control" required>
+                <?php for ($i = 1; $i <= 8; $i++): ?>
+                  <option value="<?= $i ?>" <?= $i == HOC_KY_HIEN_TAI ? 'selected' : '' ?>>HK<?= $i ?></option>
+                <?php endfor; ?>
+              </select>
+              <small style="color:#666">Để lấy danh sách môn</small>
             </div>
-            <div class="form-group">
-              <label>Năm học <span style="color:red">*</span></label>
-              <input type="text" name="nam_hoc" class="form-control" value="<?= NAM_HOC_HIEN_TAI ?>" required placeholder="VD: 2025-2026">
+            <div class="form-group" style="flex:1">
+              <label>HK Học vụ hiện hành (1-3) <span style="color:red">*</span></label>
+              <select name="hoc_ky_hoc_vu" class="form-control" required>
+                <option value="1" <?= HOC_KY_HIEN_TAI == 1 ? 'selected' : '' ?>>HK1</option>
+                <option value="2" <?= HOC_KY_HIEN_TAI == 2 ? 'selected' : '' ?>>HK2</option>
+                <option value="3" <?= HOC_KY_HIEN_TAI == 3 ? 'selected' : '' ?>>HK3</option>
+              </select>
+              <small style="color:#666">Để lưu vào lớp</small>
             </div>
           </div>
-          <div class="form-row" style="margin-top:15px">
-            <div class="form-group">
+
+          <div class="form-group" style="margin-top:15px">
+            <label>Năm học <span style="color:red">*</span></label>
+            <input type="text" name="nam_hoc" class="form-control" value="<?= NAM_HOC_HIEN_TAI ?>" required placeholder="VD: 2025-2026">
+          </div>
+
+          <div class="form-row" style="margin-top:15px;gap:10px">
+            <div class="form-group" style="flex:1">
               <label>Bắt đầu đăng ký HP</label>
               <input type="datetime-local" name="ngay_bat_dau_dk" class="form-control" value="<?= date('Y-m-d\T00:00') ?>">
             </div>
-            <div class="form-group">
+            <div class="form-group" style="flex:1">
               <label>Kết thúc đăng ký HP</label>
               <input type="datetime-local" name="ngay_ket_thuc_dk" class="form-control" value="<?= date('Y-m-d\T23:59', strtotime('+14 days')) ?>">
             </div>
           </div>
-          <small style="color:var(--text-muted);font-size:11px;display:block;margin-top:10px">Hệ thống sẽ lấy toàn bộ học phần của ngành đã chọn trong học kỳ đề xuất tương ứng từ CTĐT và mở các lớp học phần mặc định (sĩ số 80, trạng thái Đang mở) nếu lớp đó chưa tồn tại.</small>
+
+          <div style="background:#f8f9fa;border:1px solid #dee2e6;border-radius:4px;padding:12px;margin-top:15px;font-size:12px;line-height:1.6">
+            <strong>🎯 Cách hoạt động:</strong><br>
+            1. Chọn ngành và HK CTDT để lấy danh sách môn<br>
+            2. Hệ thống sẽ mở lớp với HK học vụ được chọn<br>
+            3. Mã lớp tự động sinh: <code>MAHP-L01</code>, <code>MAHP-L02</code>, ...<br>
+            4. Giảng viên để trống - <strong>Admin phải vào từng lớp để phân công</strong><br>
+            5. Có thể chạy lại để mở thêm lớp L02, L03, ... nếu cần
+          </div>
 
           <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px">
             <button type="button" class="btn btn-secondary" onclick="closeBatchOpenModal()">Hủy</button>

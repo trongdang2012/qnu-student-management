@@ -43,11 +43,15 @@ class CourseController extends Controller {
         // Lấy danh sách các môn học để làm môn tiên quyết gợi ý
         $allCoursesForPrereq = $this->courseModel->getCourses('', 0, '', '', 1000, 0);
         $nganhList = $this->courseModel->getNganhListInCtdt();
+        $courseStats = $this->courseModel->getCourseDashboardStats();
+        $coursesWithoutClasses = $this->courseModel->getCoursesWithoutClasses();
 
         $this->view('admin/course/index', [
             'list' => $list,
             'allCoursesForPrereq' => $allCoursesForPrereq,
             'nganhList' => $nganhList,
+            'courseStats' => $courseStats,
+            'coursesWithoutClasses' => $coursesWithoutClasses,
             'search' => $search,
             'hocKyFilter' => $hoc_ky,
             'loaiFilter' => $loai,

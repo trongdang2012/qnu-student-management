@@ -49,6 +49,9 @@ class ScheduleController extends Controller {
         // Lấy danh sách các lớp học phần để chọn
         $allClasses = $this->scheduleModel->getAllClasses($hocKy, $namHoc);
         $listNamHoc = $this->scheduleModel->getDistinctYears();
+        $scheduleStats = $this->scheduleModel->getScheduleDashboardStats($hocKy, $namHoc);
+        $unscheduledClasses = $this->scheduleModel->getUnscheduledClasses($hocKy, $namHoc);
+        $roomUtilization = $this->scheduleModel->getRoomUtilization($hocKy, $namHoc);
 
         $item = null;
         if ($action === 'edit' && $id > 0) {
@@ -71,6 +74,9 @@ class ScheduleController extends Controller {
             'lhpFilter' => $lhpFilter,
             'allClasses' => $allClasses,
             'listNamHoc' => $listNamHoc,
+            'scheduleStats' => $scheduleStats,
+            'unscheduledClasses' => $unscheduledClasses,
+            'roomUtilization' => $roomUtilization,
             'action' => $action,
             'item' => $item,
             'page_title' => 'Quản lý Thời khóa biểu',
