@@ -170,10 +170,10 @@ class AdminScheduleModel {
             'hk' => $hk, 'nh' => $nh, 'tk' => $tietKt, 'tb' => $tietBd
         ]);
         if ($conflictRoom) {
-            return "TrÃ¹ng phÃ²ng há»c {$phong} vá»›i lá»›p {$conflictRoom['ma_lop_hp']} ({$conflictRoom['ten_hp']}) táº¡i tiáº¿t {$conflictRoom['tiet_bat_dau']}-" . ($conflictRoom['tiet_bat_dau'] + $conflictRoom['so_tiet'] - 1);
+            return "Trùng phòng học {$phong} với lớp {$conflictRoom['ma_lop_hp']} ({$conflictRoom['ten_hp']}) tại tiết {$conflictRoom['tiet_bat_dau']}-" . ($conflictRoom['tiet_bat_dau'] + $conflictRoom['so_tiet'] - 1);
         }
 
-        // 2. Kiá»ƒm tra trÃ¹ng giáº£ng viÃªn
+        // 2. Kiểm tra trùng giảng viên
         $sqlGv = '
             SELECT t.*, l.ma_lop_hp, h.ten_hp
             FROM thoi_khoa_bieu t
@@ -193,10 +193,10 @@ class AdminScheduleModel {
             'hk' => $hk, 'nh' => $nh, 'tk' => $tietKt, 'tb' => $tietBd
         ]);
         if ($conflictGv) {
-            return "Giáº£ng viÃªn {$giangVien} bá»‹ trÃ¹ng lá»‹ch dáº¡y lá»›p {$conflictGv['ma_lop_hp']} ({$conflictGv['ten_hp']}) táº¡i tiáº¿t {$conflictGv['tiet_bat_dau']}-" . ($conflictGv['tiet_bat_dau'] + $conflictGv['so_tiet'] - 1);
+            return "Giảng viên {$giangVien} bị trùng lịch dạy lớp {$conflictGv['ma_lop_hp']} ({$conflictGv['ten_hp']}) tại tiết {$conflictGv['tiet_bat_dau']}-" . ($conflictGv['tiet_bat_dau'] + $conflictGv['so_tiet'] - 1);
         }
 
-        // 3. Kiá»ƒm tra trÃ¹ng lá»‹ch há»c cá»§a chÃ­nh lá»›p há»c pháº§n nÃ y
+        // 3. Kiểm tra trùng lịch học của chính lớp học phần này
         $sqlClass = '
             SELECT t.*, h.ten_hp
             FROM thoi_khoa_bieu t
@@ -216,7 +216,7 @@ class AdminScheduleModel {
             'hk' => $hk, 'nh' => $nh, 'tk' => $tietKt, 'tb' => $tietBd
         ]);
         if ($conflictClass) {
-            return "Lá»›p há»c pháº§n nÃ y Ä‘Ã£ cÃ³ lá»‹ch há»c vÃ o Thá»© {$thu}, tiáº¿t {$conflictClass['tiet_bat_dau']}-" . ($conflictClass['tiet_bat_dau'] + $conflictClass['so_tiet'] - 1);
+            return "Lớp học phần này đã có lịch học vào Thứ {$thu}, tiết {$conflictClass['tiet_bat_dau']}-" . ($conflictClass['tiet_bat_dau'] + $conflictClass['so_tiet'] - 1);
         }
 
         return false;
@@ -246,21 +246,21 @@ class AdminScheduleModel {
     }
 
     /**
-     * Xáº¿p thá»i khÃ³a biá»ƒu tá»± Ä‘á»™ng cho cÃ¡c lá»›p chÆ°a cÃ³ lá»‹ch
+     * Xếp thời khóa biểu tự động cho các lớp chưa có lịch
      *
-     * THUáº¬T TOÃN:
-     * 1. TÃ¬m táº¥t cáº£ lá»›p há»c pháº§n chÆ°a cÃ³ báº¥t ká»³ lá»‹ch nÃ o
-     * 2. Vá»›i má»—i lá»›p, xáº¿p lá»‹ch vÃ o cÃ¡c slot trá»‘ng (khÃ´ng bá»‹ xung Ä‘á»™t)
-     * 3. Æ¯u tiÃªn cÃ¡c ngÃ y trong tuáº§n (2-6), giáº£m dáº§n cho thá»© 7-CN
-     * 4. Æ¯u tiÃªn tiáº¿t sÃ¡ng (1-4) trÆ°á»›c tiáº¿t chiá»u (6-9)
-     * 5. Kiá»ƒm tra xung Ä‘á»™t vá»: phÃ²ng há»c, giáº£ng viÃªn, lá»‹ch sinh viÃªn (náº¿u cÃ³)
+     * THUẬT TOÁN:
+     * 1. Tìm tất cả lớp học phần chưa có bất kỳ lịch nào
+     * 2. Với mỗi lớp, xếp lịch vào các slot trống (không bị xung đột)
+     * 3. Ưu tiên các ngày trong tuần (2-6), giảm dần cho thứ 7-CN
+     * 4. Ưu tiên tiết sáng (1-4) trước tiết chiều (6-9)
+     * 5. Kiểm tra xung đột về: phòng học, giảng viên, lịch sinh viên (nếu có)
      *
-     * @param int $hk - Há»c ká»³ há»c vá»¥
-     * @param string $nh - NÄƒm há»c
-     * @return array Káº¿t quáº£ thá»±c hiá»‡n
+     * @param int $hk - Học kỳ học vụ
+     * @param string $nh - Năm học
+     * @return array Kết quả thực hiện
      */
     public function optimizeSchedules($hk, $nh) {
-        // Láº¥y táº¥t cáº£ lá»›p há»c pháº§n cáº§n xáº¿p lá»‹ch (nhá»¯ng lá»›p CHÆ¯A cÃ³ báº¥t ká»³ lá»‹ch nÃ o)
+        // Lấy tất cả lớp học phần cần xếp lịch (những lớp CHƯA có bất kỳ lịch nào)
         $sql = "
             SELECT l.id, l.ma_lop_hp, h.ma_hp, h.ten_hp, h.so_tin_chi, l.giang_vien, l.ngay_bat_dau, l.ngay_ket_thuc
             FROM lop_hoc_phan l
@@ -282,39 +282,39 @@ class AdminScheduleModel {
         if (empty($classes)) {
             return [
                 'status' => 'warning',
-                'message' => 'KhÃ´ng cÃ³ lá»›p há»c pháº§n nÃ o cáº§n xáº¿p lá»‹ch (táº¥t cáº£ Ä‘á»u Ä‘Ã£ cÃ³ lá»‹ch hoáº·c khÃ´ng cÃ³ lá»›p nÃ o trong há»c ká»³ nÃ y).'
+                'message' => 'Không có lớp học phần nào cần xếp lịch (tất cả đều đã có lịch hoặc không có lớp nào trong học kỳ này).'
             ];
         }
 
-        // Danh sÃ¡ch phÃ²ng há»c kháº£ dá»¥ng
+        // Danh sách phòng học khả dụng
         $phongs = [
             'A101', 'A102', 'A103', 'A201', 'A202', 'A301',
             'B101', 'B102', 'B201', 'B202', 'B203', 'B301', 'B302', 'B303', 'B304', 'B305',
-            'Lab IT', 'Lab Äiá»‡n', 'PhÃ²ng 101', 'PhÃ²ng 102', 'PhÃ²ng 103'
+            'Lab IT', 'Lab Điện', 'Phòng 101', 'Phòng 102', 'Phòng 103'
         ];
 
-        // Äá»‹nh nghÄ©a cÃ¡c slot thá»i gian Æ°u tiÃªn
+        // Định nghĩa các slot thời gian ưu tiên
         // Format: ['thu' => X (2-8), 'tiet_start' => Y, 'tiet_end' => Z]
-        // SÃ¡ng: Tiáº¿t 1-5 (7h-12h)
-        // Chiá»u: Tiáº¿t 6-10 (13h-18h)
-        // Tá»‘i: Tiáº¿t 11+ (19h+)
+        // Sáng: Tiết 1-5 (7h-12h)
+        // Chiều: Tiết 6-10 (13h-18h)
+        // Tối: Tiết 11+ (19h+)
         $slots = [];
 
-        // Thá»© 2-5 (Æ°u tiÃªn nháº¥t): SÃ¡ng (tiáº¿t 1) hoáº·c Chiá»u (tiáº¿t 6)
+        // Thứ 2-5 (ưu tiên nhất): Sáng (tiết 1) hoặc Chiều (tiết 6)
         for ($thu = 2; $thu <= 5; $thu++) {
-            $slots[] = ['thu' => $thu, 'tiet' => 1, 'priority' => 10];  // SÃ¡ng
-            $slots[] = ['thu' => $thu, 'tiet' => 6, 'priority' => 9];   // Chiá»u
+            $slots[] = ['thu' => $thu, 'tiet' => 1, 'priority' => 10];  // Sáng
+            $slots[] = ['thu' => $thu, 'tiet' => 6, 'priority' => 9];   // Chiều
         }
 
-        // Thá»© 6 (Æ°u tiÃªn káº¿ tiáº¿p)
+        // Thứ 6 (ưu tiên kế tiếp)
         $slots[] = ['thu' => 6, 'tiet' => 1, 'priority' => 8];
         $slots[] = ['thu' => 6, 'tiet' => 6, 'priority' => 7];
 
-        // Thá»© 7 (Æ°u tiÃªn tháº¥p)
+        // Thứ 7 (ưu tiên thấp)
         $slots[] = ['thu' => 7, 'tiet' => 1, 'priority' => 5];
         $slots[] = ['thu' => 7, 'tiet' => 6, 'priority' => 4];
 
-        // Chá»§ nháº­t (Æ°u tiÃªn tháº¥p nháº¥t)
+        // Chủ nhật (ưu tiên thấp nhất)
         $slots[] = ['thu' => 8, 'tiet' => 1, 'priority' => 2];
         $slots[] = ['thu' => 8, 'tiet' => 6, 'priority' => 1];
 
@@ -323,16 +323,16 @@ class AdminScheduleModel {
 
         foreach ($classes as $class) {
             $lopHpId = $class['id'];
-            $giangVien = $class['giang_vien'] ?? '(ChÆ°a phÃ¢n cÃ´ng)';
+            $giangVien = $class['giang_vien'] ?? '(Chưa phân công)';
             $soTinChi = max(1, (int)$class['so_tin_chi']);
-            $soTiet = min($soTinChi, 5); // Tá»‘i Ä‘a 5 tiáº¿t cho 1 buá»•i
+            $soTiet = min($soTinChi, 5); // Tối đa 5 tiết cho 1 buổi
 
             $placed = false;
 
-            // Shuffle phÃ²ng Ä‘á»ƒ phÃ¢n bá»• Ä‘á»u
+            // Shuffle phòng để phân bổ đều
             shuffle($phongs);
 
-            // Duyá»‡t tá»«ng slot theo Æ°u tiÃªn (cao nháº¥t trÆ°á»›c)
+            // Duyệt từng slot theo ưu tiên (cao nhất trước)
             usort($slots, function($a, $b) {
                 return $b['priority'] - $a['priority'];
             });
@@ -341,22 +341,22 @@ class AdminScheduleModel {
                 $thu = $slot['thu'];
                 $tietBd = $slot['tiet'];
 
-                // Kiá»ƒm tra xung Ä‘á»™t cho cÃ¡c tiáº¿t theo sau
+                // Kiểm tra xung đột cho các tiết theo sau
                 $tietKt = $tietBd + $soTiet - 1;
 
-                // Äáº£m báº£o khÃ´ng vÆ°á»£t quÃ¡ tiáº¿t cuá»‘i cá»§a buá»•i há»c
-                // SÃ¡ng: 1-5, Chiá»u: 6-10, Tá»‘i: 11+
+                // Đảm bảo không vượt quá tiết cuối của buổi học
+                // Sáng: 1-5, Chiều: 6-10, Tối: 11+
                 if (($tietBd <= 5 && $tietKt > 5) || ($tietBd >= 6 && $tietBd <= 10 && $tietKt > 10)) {
-                    // Bá» qua slot nÃ y vÃ¬ sáº½ vÆ°á»£t quÃ¡ giá» há»c cá»§a buá»•i
+                    // Bỏ qua slot này vì sẽ vượt quá giờ học của buổi
                     continue;
                 }
 
                 foreach ($phongs as $phong) {
-                    // Kiá»ƒm tra xung Ä‘á»™t phÃ²ng, giáº£ng viÃªn, thá»i gian
+                    // Kiểm tra xung đột phòng, giảng viên, thời gian
                     $conflict = $this->checkConflict(0, $phong, $giangVien, $lopHpId, $thu, $tietBd, $soTiet, $hk, $nh);
 
                     if ($conflict === false) {
-                        // KhÃ´ng cÃ³ xung Ä‘á»™t, thÃªm lá»‹ch há»c
+                        // Không có xung đột, thêm lịch học
                         try {
                             $this->db->query('
                                 INSERT INTO thoi_khoa_bieu (lop_hoc_phan_id, thu, tiet_bat_dau, so_tiet, phong_hoc, giang_vien, hoc_ky, nam_hoc, ngay_bat_dau, ngay_ket_thuc)
@@ -376,9 +376,9 @@ class AdminScheduleModel {
 
                             $successCount++;
                             $placed = true;
-                            break 2; // ThoÃ¡t cáº£ 2 vÃ²ng láº·p (phÃ²ng vÃ  slot)
+                            break 2; // Thoát cả 2 vòng lặp (phòng và slot)
                         } catch (\Exception $e) {
-                            // Bá» qua lá»—i vÃ  thá»­ phÃ²ng tiáº¿p theo
+                            // Bỏ qua lỗi và thử phòng tiếp theo
                             continue;
                         }
                     }
@@ -393,12 +393,12 @@ class AdminScheduleModel {
         if (empty($failedClasses)) {
             return [
                 'status' => 'success',
-                'message' => "âœ“ Xáº¿p lá»‹ch tá»± Ä‘á»™ng thÃ nh cÃ´ng! <strong>{$successCount}/" . count($classes) . " lá»›p há»c pháº§n</strong> Ä‘Ã£ Ä‘Æ°á»£c sáº¯p xáº¿p thá»i khÃ³a biá»ƒu mÃ  khÃ´ng xáº£y ra xung Ä‘á»™t."
+                'message' => "✓ Xếp lịch tự động thành công! <strong>{$successCount}/" . count($classes) . " lớp học phần</strong> đã được sắp xếp thời khóa biểu mà không xảy ra xung đột."
             ];
         } else {
             return [
                 'status' => 'warning',
-                'message' => "âš ï¸ Xáº¿p lá»‹ch hoÃ n táº¥t vá»›i <strong>{$successCount}/" . count($classes) . " lá»›p</strong>. <strong>" . count($failedClasses) . " lá»›p khÃ´ng thá»ƒ xáº¿p lá»‹ch</strong> do xung Ä‘á»™t tÃ i nguyÃªn: <br><em>" . implode(', ', $failedClasses) . "</em>"
+                'message' => "⚠️ Xếp lịch hoàn tất với <strong>{$successCount}/" . count($classes) . " lớp</strong>. <strong>" . count($failedClasses) . " lớp không thể xếp lịch</strong> do xung đột tài nguyên: <br><em>" . implode(', ', $failedClasses) . "</em>"
             ];
         }
     }

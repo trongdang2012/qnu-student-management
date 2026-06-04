@@ -186,7 +186,7 @@ class AdminCourseModel {
 
     public function deleteCourse($id) {
         if ($this->hasClasses($id)) {
-            return false; // KhÃ´ng cho xÃ³a náº¿u Ä‘Ã£ cÃ³ lá»›p há»c pháº§n liÃªn káº¿t
+            return false; // Không cho xóa nếu đã có lớp học phần liên kết
         }
         try {
             return $this->db->query('DELETE FROM hoc_phan WHERE id = :id', ['id' => $id]);
@@ -196,7 +196,7 @@ class AdminCourseModel {
     }
 
     // ==========================================
-    // 2. QUáº¢N LÃ Lá»šP Há»ŒC PHáº¦N (CLASS)
+    // 2. QUẢN LÝ LỚP HỌC PHẦN (CLASS)
     // ==========================================
 
     public function getClasses($search = '', $hoc_ky = 0, $giang_vien = '', $khoa = '', $limit = 0, $offset = 0) {
@@ -243,9 +243,9 @@ class AdminCourseModel {
         $sql = "
             SELECT
                 COUNT(*) AS total,
-                SUM(CASE WHEN trang_thai_mo_lop = 'Äang má»Ÿ' THEN 1 ELSE 0 END) AS open_total,
-                SUM(CASE WHEN trang_thai_mo_lop = 'LÃªn káº¿ hoáº¡ch' THEN 1 ELSE 0 END) AS planning_total,
-                SUM(CASE WHEN trang_thai_mo_lop = 'ÄÃ£ Ä‘Ã³ng' THEN 1 ELSE 0 END) AS closed_total,
+                SUM(CASE WHEN trang_thai_mo_lop = 'Đang mở' THEN 1 ELSE 0 END) AS open_total,
+                SUM(CASE WHEN trang_thai_mo_lop = 'Lên kế hoạch' THEN 1 ELSE 0 END) AS planning_total,
+                SUM(CASE WHEN trang_thai_mo_lop = 'Đã đóng' THEN 1 ELSE 0 END) AS closed_total,
                 SUM(CASE WHEN COALESCE(giang_vien, '') = '' THEN 1 ELSE 0 END) AS missing_teacher_total,
                 SUM(CASE WHEN si_so_hien_tai >= si_so_toi_da THEN 1 ELSE 0 END) AS full_total,
                 SUM(si_so_hien_tai) AS enrolled_total,
@@ -445,24 +445,24 @@ class AdminCourseModel {
     }
 
     /**
-     * Má»Ÿ lá»›p há»c pháº§n hÃ ng loáº¡t cho má»™t ngÃ nh/chuyÃªn ngÃ nh
+     * Mở lớp học phần hàng loạt cho một ngành/chuyên ngành
      *
-     * @param string $nganh - TÃªn ngÃ nh tá»« CTDT
-     * @param int $hocKyCtdt - Há»c ká»³ theo CTDT (1-8) Ä‘á»ƒ láº¥y danh sÃ¡ch mÃ´n há»c
-     * @param int $hocKyHocVu - Há»c ká»³ há»c vá»¥ hiá»‡n táº¡i (1-3) Ä‘á»ƒ lÆ°u vÃ o lop_hoc_phan
-     * @param string $namHoc - NÄƒm há»c (vd: 2025-2026)
-     * @param string|null $ngayBatDauDk - NgÃ y báº¯t Ä‘áº§u Ä‘Äƒng kÃ½ (máº·c Ä‘á»‹nh: hÃ´m nay)
-     * @param string|null $ngayKetThucDk - NgÃ y káº¿t thÃºc Ä‘Äƒng kÃ½ (máº·c Ä‘á»‹nh: ngÃ y báº¯t Ä‘áº§u há»c)
-     * @return int Sá»‘ lá»›p Ä‘Æ°á»£c táº¡o thÃ nh cÃ´ng
+     * @param string $nganh - Tên ngành từ CTDT
+     * @param int $hocKyCtdt - Học kỳ theo CTDT (1-8) để lấy danh sách môn học
+     * @param int $hocKyHocVu - Học kỳ học vụ hiện tại (1-3) để lưu vào lop_hoc_phan
+     * @param string $namHoc - Năm học (vd: 2025-2026)
+     * @param string|null $ngayBatDauDk - Ngày bắt đầu đăng ký (mặc định: hôm nay)
+     * @param string|null $ngayKetThucDk - Ngày kết thúc đăng ký (mặc định: ngày bắt đầu học)
+     * @return int Số lớp được tạo thành công
      */
     public function batchOpenClasses($nganh, $hocKyCtdt, $hocKyHocVu, $namHoc, $ngayBatDauDk = null, $ngayKetThucDk = null) {
-        // TÃ­nh toÃ¡n ngÃ y báº¯t Ä‘áº§u vÃ  káº¿t thÃºc dá»±a trÃªn há»c ká»³ há»c vá»¥
+        // Tính toán ngày bắt đầu và kết thúc dựa trên học kỳ học vụ
         $years = explode('-', $namHoc);
         $yearStart = (int)($years[0] ?? date('Y'));
 
-        // Há»c ká»³ há»c vá»¥ 1: thÃ¡ng 9 (nÄƒm trÆ°á»›c) - thÃ¡ng 1 (nÄƒm sau)
-        // Há»c ká»³ há»c vá»¥ 2: thÃ¡ng 1 - thÃ¡ng 5 (nÄƒm sau)
-        // Há»c ká»³ há»c vá»¥ 3: thÃ¡ng 5 - thÃ¡ng 9 (nÄƒm sau)
+        // Học kỳ học vụ 1: tháng 9 (năm trước) - tháng 1 (năm sau)
+        // Học kỳ học vụ 2: tháng 1 - tháng 5 (năm sau)
+        // Học kỳ học vụ 3: tháng 5 - tháng 9 (năm sau)
         switch ($hocKyHocVu) {
             case 2:
                 $ngay_bat_dau = ($yearStart + 1) . '-01-15';
@@ -477,7 +477,7 @@ class AdminCourseModel {
                 $ngay_ket_thuc = ($yearStart + 1) . '-01-15';
         }
 
-        // Láº¥y danh sÃ¡ch há»c pháº§n tá»« chÆ°Æ¡ng trÃ¬nh Ä‘Ã o táº¡o theo há»c ká»³ CTDT
+        // Lấy danh sách học phần từ chương trình đào tạo theo học kỳ CTDT
         $sql = "SELECT hp.id, hp.ma_hp, hp.so_tin_chi
                 FROM ctdt_chi_tiet ctdt
                 JOIN nganh n ON ctdt.nganh_id = n.id
@@ -503,26 +503,26 @@ class AdminCourseModel {
             $maHp = $course['ma_hp'];
             $soTinChi = (int)$course['so_tin_chi'];
 
-            // Sinh mÃ£ lá»›p tá»± Ä‘á»™ng: tÃ¬m sá»‘ hiá»‡u tiáº¿p theo (-L01, -L02, ...)
+            // Sinh mã lớp tự động: tìm số hiệu tiếp theo (-L01, -L02, ...)
             $nextClassNumber = $this->getNextClassNumber($maHp);
             $maLopHp = $maHp . '-L' . str_pad($nextClassNumber, 2, '0', STR_PAD_LEFT);
 
-            // XÃ¡c Ä‘á»‹nh sá»‰ sá»‘ tá»‘i Ä‘a dá»±a trÃªn loáº¡i mÃ´n
-            $si_so_toi_da = 80; // Máº·c Ä‘á»‹nh 80 cho mÃ´n ngÃ nh
+            // Xác định sĩ số tối đa dựa trên loại môn
+            $si_so_toi_da = 80; // Mặc định 80 cho môn ngành
 
-            // Náº¿u lÃ  mÃ´n Ä‘áº¡i cÆ°Æ¡ng, tÄƒng sá»‰ sá»‘ lÃªn 120-150
+            // Nếu là môn đại cương, tăng sĩ số lên 120-150
             $course_type = $this->db->fetch(
                 "SELECT loai FROM hoc_phan WHERE id = :id",
                 ['id' => $hpId]
             );
-            if ($course_type && $course_type['loai'] === 'Äáº¡i cÆ°Æ¡ng') {
+            if ($course_type && $course_type['loai'] === 'Đại cương') {
                 $si_so_toi_da = 120;
             }
 
-            // Äá»ƒ trá»‘ng tÃªn giáº£ng viÃªn - TrÆ°á»Ÿng khoa/Admin sáº½ phÃ¢n cÃ´ng sau
+            // Để trống tên giảng viên - Trưởng khoa/Admin sẽ phân công sau
             $giang_vien = '';
 
-            // Sá»­ dá»¥ng thá»i gian Ä‘Æ°á»£c chá»n hoáº·c gÃ¡n máº·c Ä‘á»‹nh
+            // Sử dụng thời gian được chọn hoặc gán mặc định
             $ngay_bat_dau_dk = ($ngayBatDauDk !== null) ? $ngayBatDauDk : date('Y-m-d H:i:s');
             $ngay_ket_thuc_dk = ($ngayKetThucDk !== null) ? $ngayKetThucDk : ($ngay_bat_dau . ' 23:59:59');
 
@@ -531,18 +531,18 @@ class AdminCourseModel {
                     'ma_lop_hp' => $maLopHp,
                     'hoc_phan_id' => $hpId,
                     'giang_vien' => $giang_vien,
-                    'hoc_ky' => $hocKyHocVu,  // LÆ¯U Ã: LÆ°u há»c ká»³ há»c vá»¥, KHÃ”NG pháº£i há»c ká»³ CTDT
+                    'hoc_ky' => $hocKyHocVu,  // LƯU Ý: Lưu học kỳ học vụ, KHÔNG phải học kỳ CTDT
                     'nam_hoc' => $namHoc,
                     'si_so_toi_da' => $si_so_toi_da,
                     'ngay_bat_dau' => $ngay_bat_dau,
                     'ngay_ket_thuc' => $ngay_ket_thuc,
-                    'trang_thai_mo_lop' => 'Äang má»Ÿ',
+                    'trang_thai_mo_lop' => 'Đang mở',
                     'ngay_bat_dau_dk' => $ngay_bat_dau_dk,
                     'ngay_ket_thuc_dk' => $ngay_ket_thuc_dk
                 ]);
                 $successCount++;
             } catch (\Exception $e) {
-                // Bá» qua lá»—i náº¿u cÃ³ (vd: duplicate key)
+                // Bỏ qua lỗi nếu có (vd: duplicate key)
                 continue;
             }
         }
@@ -551,11 +551,11 @@ class AdminCourseModel {
     }
 
     /**
-     * Láº¥y sá»‘ hiá»‡u lá»›p tiáº¿p theo cho má»™t mÃ´n há»c
-     * VD: Náº¿u Ä‘Ã£ cÃ³ CNTT001-L01, CNTT001-L02, sáº½ tráº£ vá» 3 (Ä‘á»ƒ táº¡o L03)
+     * Lấy số hiệu lớp tiếp theo cho một môn học
+     * VD: Nếu đã có CNTT001-L01, CNTT001-L02, sẽ trả về 3 (để tạo L03)
      *
-     * @param string $maHp - MÃ£ há»c pháº§n
-     * @return int Sá»‘ hiá»‡u lá»›p tiáº¿p theo
+     * @param string $maHp - Mã học phần
+     * @return int Số hiệu lớp tiếp theo
      */
     private function getNextClassNumber($maHp) {
         $sql = "SELECT CAST(SUBSTRING(ma_lop_hp, LENGTH(:ma_hp) + 3) AS UNSIGNED) as class_num
