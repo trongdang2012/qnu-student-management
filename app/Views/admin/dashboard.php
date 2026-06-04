@@ -41,6 +41,13 @@
         </div>
       </div>
       <div class="stat-card">
+        <i class="fas fa-graduation-cap"></i>
+        <div>
+          <h3>Ngành</h3>
+          <div class="stat-value"><?= (int)$stats['total_nganh'] ?></div>
+        </div>
+      </div>
+      <div class="stat-card">
         <i class="fas fa-chalkboard"></i>
         <div>
           <h3>Lớp học</h3>

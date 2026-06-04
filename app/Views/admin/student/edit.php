@@ -59,18 +59,23 @@
           </div>
 
           <div style="margin-bottom: 20px;">
-            <label style="display: block; margin-bottom: 8px; font-weight: 600;">Ngành <span style="color: var(--danger);">*</span></label>
-            <input type="text" name="nganh" value="<?= e($student['nganh'] ?? '') ?>" required style="width: 100%; padding: 12px 15px; border: 1px solid var(--border); border-radius: var(--radius-sm);">
+            <label style="display: block; margin-bottom: 8px; font-weight: 600;">Lớp sinh hoạt <span style="color: var(--danger);">*</span></label>
+            <select name="lop_sinh_hoat_id" id="lop_sinh_hoat_id" required style="width: 100%; padding: 12px 15px; border: 1px solid var(--border); border-radius: var(--radius-sm);" onchange="updateClassInfo()">
+              <option value="">-- Chọn Lớp --</option>
+              <?php foreach ($classes as $c): ?>
+                <option value="<?= $c['id'] ?>" data-nganh="<?= e($c['ten_nganh']) ?>" data-khoa="<?= e($c['ten_khoa']) ?>" <?= $student['lop_sinh_hoat_id'] == $c['id'] ? 'selected' : '' ?>><?= e($c['ten_lop']) ?></option>
+              <?php endforeach; ?>
+            </select>
           </div>
 
           <div style="margin-bottom: 20px;">
-            <label style="display: block; margin-bottom: 8px; font-weight: 600;">Lớp <span style="color: var(--danger);">*</span></label>
-            <input type="text" name="lop" value="<?= e($student['lop'] ?? '') ?>" required style="width: 100%; padding: 12px 15px; border: 1px solid var(--border); border-radius: var(--radius-sm);">
+            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #555;">Ngành học (Tự động theo Lớp)</label>
+            <input type="text" id="display_nganh" readonly style="width: 100%; padding: 12px 15px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: #eee; cursor: not-allowed;">
           </div>
 
           <div style="margin-bottom: 20px;">
-            <label style="display: block; margin-bottom: 8px; font-weight: 600;">Khóa</label>
-            <input type="text" name="khoa" value="<?= e($student['khoa'] ?? '') ?>" style="width: 100%; padding: 12px 15px; border: 1px solid var(--border); border-radius: var(--radius-sm);">
+            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #555;">Khoa (Tự động theo Lớp)</label>
+            <input type="text" id="display_khoa" readonly style="width: 100%; padding: 12px 15px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: #eee; cursor: not-allowed;">
           </div>
 
           <div style="margin-bottom: 20px;">
@@ -104,5 +109,21 @@
 
   </div>
 </div>
+
+<script>
+function updateClassInfo() {
+  const select = document.getElementById('lop_sinh_hoat_id');
+  const selectedOption = select.options[select.selectedIndex];
+  
+  if (selectedOption && selectedOption.value !== "") {
+    document.getElementById('display_nganh').value = selectedOption.getAttribute('data-nganh') || '';
+    document.getElementById('display_khoa').value = selectedOption.getAttribute('data-khoa') || '';
+  } else {
+    document.getElementById('display_nganh').value = '';
+    document.getElementById('display_khoa').value = '';
+  }
+}
+document.addEventListener('DOMContentLoaded', updateClassInfo);
+</script>
 
 <?php require_once ROOT . '/includes/admin/footer_admin.php'; ?>

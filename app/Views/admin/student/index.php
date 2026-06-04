@@ -127,28 +127,32 @@ function sortIcon($col, $current_sort, $current_order) {
       <!-- Cột phải: Bảng Sinh viên -->
       <div class="card" style="flex: 1; min-width: 0; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border-radius: var(--radius);">
         <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: var(--bg-card); border-bottom: 1px solid var(--border);">
-          <h3 style="margin: 0; font-size: 16px;">
-            <i class="fas fa-list"></i> 
-            <?php if (!empty($lop)): ?>
-              Danh sách lớp <span style="color: var(--primary); font-weight: 700;"><?= e($lop) ?></span> (<?= $total ?> sinh viên)
-            <?php elseif (!empty($nganh)): ?>
-              Danh sách ngành <span style="color: var(--primary); font-weight: 700;"><?= e($nganh) ?></span> (<?= $total ?> sinh viên)
-            <?php elseif (!empty($khoa)): ?>
-              Danh sách khoa <span style="color: var(--primary); font-weight: 700;"><?= e($khoa) ?></span> (<?= $total ?> sinh viên)
-            <?php else: ?>
-              Tất cả sinh viên (<?= $total ?> sinh viên)
-            <?php endif; ?>
+          <h3 style="margin: 0; font-size: 16px; display: flex; align-items: center; gap: 8px;">
+            <span id="btnToggleSidebarLeft" style="cursor: pointer; display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 4px; transition: background 0.2s;" title="Ẩn/Hiện cấu trúc đào tạo">
+              <i class="fas fa-bars" style="color: var(--primary);"></i>
+            </span>
+            <span>
+              <?php if (!empty($lop)): ?>
+                Danh sách lớp <span style="color: var(--primary); font-weight: 700;"><?= e($lop) ?></span> (<?= $total ?> sinh viên)
+              <?php elseif (!empty($nganh)): ?>
+                Danh sách ngành <span style="color: var(--primary); font-weight: 700;"><?= e($nganh) ?></span> (<?= $total ?> sinh viên)
+              <?php elseif (!empty($khoa)): ?>
+                Danh sách khoa <span style="color: var(--primary); font-weight: 700;"><?= e($khoa) ?></span> (<?= $total ?> sinh viên)
+              <?php else: ?>
+                Tất cả sinh viên (<?= $total ?> sinh viên)
+              <?php endif; ?>
+            </span>
           </h3>
-          <div style="display: flex; gap: 10px;">
-            <button type="button" class="btn btn-outline btn-sm" id="btnToggleSidebar" style="padding: 5px 12px; font-size: 13px; display: flex; align-items: center; gap: 6px; background: var(--bg-card); border: 1px solid var(--border); color: var(--text-muted); cursor: pointer; border-radius: var(--radius-sm); transition: all 0.2s;">
-              <i class="fas fa-eye-slash" id="toggleSidebarIcon"></i> <span id="toggleSidebarText">Ẩn cấu trúc</span>
-            </button>
-            <button type="button" class="btn btn-success btn-sm" onclick="showImportModal()" style="display: flex; align-items: center; gap: 6px;">
-              <i class="fas fa-file-excel"></i> Nhập Excel
-            </button>
-            <a href="<?= BASE_URL ?>/admin/sinh-vien/add" class="btn btn-primary btn-sm">
-              <i class="fas fa-plus"></i> Thêm sinh viên
+          <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <a href="<?= BASE_URL ?>/admin/sinh-vien/export-template" class="btn btn-secondary btn-sm" style="display: flex; align-items: center; gap: 6px;">
+              <i class="fas fa-download"></i> Tải template (Excel/CSV)
             </a>
+            <form method="POST" action="<?= BASE_URL ?>/admin/sinh-vien/import" enctype="multipart/form-data" id="importForm" style="display: flex; align-items: center; gap: 8px; margin: 0;">
+              <input type="file" name="excel_file" id="excel_file" accept=".xlsx,.csv" style="font-size: 13px; max-width: 200px;" onchange="validateFile(this)">
+              <button type="submit" class="btn btn-primary btn-sm" id="btnImport" disabled style="display: flex; align-items: center; gap: 6px; opacity: 0.6; cursor: not-allowed;">
+                <i class="fas fa-file-import"></i> Nhập/Đề sinh viên
+              </button>
+            </form>
           </div>
         </div>
 
@@ -364,9 +368,7 @@ function toggleTreeNode(el) {
 
 document.addEventListener('DOMContentLoaded', function() {
     const sidebar = document.querySelector('.sidebar-tree-card');
-    const toggleBtn = document.getElementById('btnToggleSidebar');
-    const toggleIcon = document.getElementById('toggleSidebarIcon');
-    const toggleText = document.getElementById('toggleSidebarText');
+    const toggleBtn = document.getElementById('btnToggleSidebarLeft');
     
     if (sidebar && toggleBtn) {
         // Kiểm tra trạng thái đã lưu
@@ -374,20 +376,14 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (isHidden) {
             sidebar.style.display = 'none';
-            if (toggleIcon) toggleIcon.className = 'fas fa-eye';
-            if (toggleText) toggleText.innerText = 'Hiện cấu trúc';
         }
         
         toggleBtn.addEventListener('click', function() {
             if (sidebar.style.display === 'none') {
                 sidebar.style.display = 'block';
-                if (toggleIcon) toggleIcon.className = 'fas fa-eye-slash';
-                if (toggleText) toggleText.innerText = 'Ẩn cấu trúc';
                 localStorage.setItem('student_sidebar_hidden', 'false');
             } else {
                 sidebar.style.display = 'none';
-                if (toggleIcon) toggleIcon.className = 'fas fa-eye';
-                if (toggleText) toggleText.innerText = 'Hiện cấu trúc';
                 localStorage.setItem('student_sidebar_hidden', 'true');
             }
         });
@@ -396,6 +392,10 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <style>
+  #btnToggleSidebarLeft:hover {
+    background: var(--primary-light);
+  }
+
   .hover-row:hover {
     background: #f8f9fa;
   }
@@ -437,38 +437,39 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 </style>
 
-<!-- Modal Import Excel -->
-<div class="modal" id="importModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center;">
-  <div class="modal-content" style="background: white; border-radius: 8px; padding: 30px; width: 90%; max-width: 500px; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
-    <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 15px;">
-      <h2 style="margin:0; font-size:18px;">Nhập sinh viên hàng loạt từ file Excel</h2>
-      <span style="cursor: pointer; font-size: 24px; font-weight: bold; color: #999;" onclick="closeImportModal()">&times;</span>
-    </div>
-    <form method="POST" action="<?= BASE_URL ?>/admin/sinh-vien/import" enctype="multipart/form-data">
-      <div class="form-group" style="margin-bottom: 18px;">
-        <label style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 6px;">Chọn file Excel (.xlsx) <span style="color:red">*</span></label>
-        <input type="file" name="excel_file" class="form-control" accept=".xlsx" required style="width: 100%; padding: 9px 13px; font-size: 15px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); outline: none;">
-        <p style="font-size: 12px; color: var(--text-muted); margin-top: 8px; line-height:1.5;">
-          Định dạng cột file Excel mẫu (theo thứ tự): <br>
-          <code style="background:#f4f6f9; padding:2px 4px; border-radius:3px; display:block; margin:4px 0;">Cột A: MSSV | Cột B: Họ tên | Cột C: Ngày sinh | Cột D: Giới tính | Cột E: Email | Cột F: SĐT | Cột G: Ngành | Cột H: Lớp | Cột I: Khoa | Cột J: Niên khóa | Cột K: Địa chỉ</code>
-          * Hàng đầu tiên phải là tiêu đề cột. Mật khẩu mặc định sẽ là <code>Student@123</code>.
-        </p>
-      </div>
-      <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
-        <button type="button" class="btn btn-secondary" onclick="closeImportModal()">Hủy</button>
-        <button type="submit" class="btn btn-success"><i class="fas fa-file-import"></i> Bắt đầu Nhập</button>
-      </div>
-    </form>
-  </div>
-</div>
-
 <script>
-function showImportModal() {
-    document.getElementById('importModal').style.display = 'flex';
+function validateFile(input) {
+  const btn = document.getElementById('btnImport');
+  const file = input.files[0];
+  
+  if (!file) {
+    btn.disabled = true;
+    btn.style.opacity = '0.6';
+    btn.style.cursor = 'not-allowed';
+    return;
+  }
+  
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (ext !== 'xlsx' && ext !== 'csv') {
+    alert('Chỉ chấp nhận file .xlsx hoặc .csv!\nVui lòng tải template mẫu và điền thông tin sinh viên vào đó.');
+    input.value = '';
+    btn.disabled = true;
+    btn.style.opacity = '0.6';
+    btn.style.cursor = 'not-allowed';
+    return;
+  }
+  
+  btn.disabled = false;
+  btn.style.opacity = '1';
+  btn.style.cursor = 'pointer';
 }
-function closeImportModal() {
-    document.getElementById('importModal').style.display = 'none';
-}
+
+// Xác nhận trước khi submit
+document.getElementById('importForm').addEventListener('submit', function(e) {
+  if (!confirm('Bạn có chắc chắn muốn nhập sinh viên từ file này?\n\nLưu ý:\n- File phải đúng theo template đã tải\n- Cột theo thứ tự: MSSV, Họ tên, Ngày sinh, Giới tính, Email, SĐT, Ngành, Lớp, Khoa, Niên khóa, Địa chỉ\n- Hàng đầu tiên là tiêu đề cột\n- Mật khẩu mặc định: Student@123')) {
+    e.preventDefault();
+  }
+});
 </script>
 
 <?php require_once ROOT . '/includes/admin/footer_admin.php'; ?>

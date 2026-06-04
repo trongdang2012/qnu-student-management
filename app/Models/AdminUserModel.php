@@ -10,19 +10,26 @@ class AdminUserModel {
         $this->db = Database::getInstance();
     }
 
-    public function countUsers($search = '', $khoa = '', $lop = '') {
+    public function countUsers($search = '', $khoa = '', $nganh = '', $lop = '') {
         $sql = "SELECT COUNT(u.id) as total FROM users u";
         $params = [];
         $where = "1=1";
         
-        if (!empty($khoa) || !empty($lop)) {
-            $sql .= " LEFT JOIN sinh_vien sv ON sv.user_id = u.id";
+        if (!empty($khoa) || !empty($nganh) || !empty($lop)) {
+            $sql .= " LEFT JOIN sinh_vien sv ON sv.user_id = u.id
+                      LEFT JOIN lop_sinh_hoat l ON l.id = sv.lop_sinh_hoat_id
+                      LEFT JOIN nganh n ON n.id = l.nganh_id
+                      LEFT JOIN khoa k ON k.id = n.khoa_id";
             if (!empty($khoa)) {
-                $where .= " AND sv.khoa = :khoa";
+                $where .= " AND k.ten_khoa = :khoa";
                 $params['khoa'] = $khoa;
             }
+            if (!empty($nganh)) {
+                $where .= " AND n.ten_nganh = :nganh";
+                $params['nganh'] = $nganh;
+            }
             if (!empty($lop)) {
-                $where .= " AND sv.lop = :lop";
+                $where .= " AND l.ten_lop = :lop";
                 $params['lop'] = $lop;
             }
         }
@@ -38,19 +45,26 @@ class AdminUserModel {
         return (int)$row['total'];
     }
 
-    public function getUsers($offset, $limit, $search = '', $khoa = '', $lop = '', $sort_by = 'created_at', $sort_dir = 'desc') {
+    public function getUsers($offset, $limit, $search = '', $khoa = '', $nganh = '', $lop = '', $sort_by = 'created_at', $sort_dir = 'desc') {
         $sql = "SELECT u.* FROM users u";
         $params = [];
         $where = "1=1";
         
-        if (!empty($khoa) || !empty($lop)) {
-            $sql .= " LEFT JOIN sinh_vien sv ON sv.user_id = u.id";
+        if (!empty($khoa) || !empty($nganh) || !empty($lop)) {
+            $sql .= " LEFT JOIN sinh_vien sv ON sv.user_id = u.id
+                      LEFT JOIN lop_sinh_hoat l ON l.id = sv.lop_sinh_hoat_id
+                      LEFT JOIN nganh n ON n.id = l.nganh_id
+                      LEFT JOIN khoa k ON k.id = n.khoa_id";
             if (!empty($khoa)) {
-                $where .= " AND sv.khoa = :khoa";
+                $where .= " AND k.ten_khoa = :khoa";
                 $params['khoa'] = $khoa;
             }
+            if (!empty($nganh)) {
+                $where .= " AND n.ten_nganh = :nganh";
+                $params['nganh'] = $nganh;
+            }
             if (!empty($lop)) {
-                $where .= " AND sv.lop = :lop";
+                $where .= " AND l.ten_lop = :lop";
                 $params['lop'] = $lop;
             }
         }
@@ -71,12 +85,18 @@ class AdminUserModel {
     }
 
     public function getFacultiesAndClasses() {
-        $sql = "SELECT DISTINCT khoa, lop FROM sinh_vien WHERE khoa IS NOT NULL AND khoa != '' AND lop IS NOT NULL AND lop != '' ORDER BY khoa, lop";
+        $sql = "SELECT k.ten_khoa as khoa, n.ten_nganh as nganh, l.ten_lop as lop 
+                FROM lop_sinh_hoat l 
+                LEFT JOIN nganh n ON n.id = l.nganh_id 
+                LEFT JOIN khoa k ON k.id = n.khoa_id 
+                ORDER BY k.ten_khoa, n.ten_nganh, l.ten_lop";
         $rows = $this->db->fetchAll($sql);
         
         $tree = [];
         foreach ($rows as $row) {
-            $tree[$row['khoa']][] = $row['lop'];
+            if ($row['khoa'] && $row['nganh'] && $row['lop']) {
+                $tree[$row['khoa']][$row['nganh']][] = $row['lop'];
+            }
         }
         return $tree;
     }

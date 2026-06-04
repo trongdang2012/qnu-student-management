@@ -12,15 +12,64 @@ class AdminGradeModel {
 
     // --- Điểm học tập ---
 
-    public function getCoursesWithGradeStats($search = '', $hoc_ky = 0, $loai = '') {
-        $sql = "
-            SELECT hp.*,
-                   (SELECT COUNT(*) FROM dang_ky_hp WHERE hoc_phan_id = hp.id AND trang_thai = 'Đã duyệt') AS si_so_dk,
-                   (SELECT COUNT(DISTINCT sinh_vien_id) FROM diem_hoc_tap WHERE hoc_phan_id = hp.id) AS so_sv_co_diem
-            FROM hoc_phan hp
-            WHERE 1 = 1
-        ";
+    public function getCoursesWithGradeStats($search = '', $hoc_ky = 0, $loai = '', $khoa = '', $nganh = '', $lop = '') {
         $params = [];
+        
+        $where_dk = "1 = 1";
+        $where_diem = "1 = 1";
+        
+        if ($khoa !== '') {
+            $where_dk .= " AND k.ten_khoa = :khoa_dk";
+            $where_diem .= " AND k.ten_khoa = :khoa_diem";
+            $params['khoa_dk'] = $khoa;
+            $params['khoa_diem'] = $khoa;
+        }
+        if ($nganh !== '') {
+            $where_dk .= " AND n.ten_nganh = :nganh_dk";
+            $where_diem .= " AND n.ten_nganh = :nganh_diem";
+            $params['nganh_dk'] = $nganh;
+            $params['nganh_diem'] = $nganh;
+        }
+        if ($lop !== '') {
+            $where_dk .= " AND l.ten_lop = :lop_dk";
+            $where_diem .= " AND l.ten_lop = :lop_diem";
+            $params['lop_dk'] = $lop;
+            $params['lop_diem'] = $lop;
+        }
+
+        // Nếu có bộ lọc Khoa/Ngành/Lớp, chúng ta chỉ lấy những học phần có sinh viên thỏa mãn bộ lọc đăng ký
+        $join_filter = "";
+        $where_hp_filter = "";
+        if ($khoa !== '' || $nganh !== '' || $lop !== '') {
+            $join_filter = " JOIN dang_ky_hp dk_filter ON dk_filter.hoc_phan_id = hp.id AND dk_filter.trang_thai = 'Đã duyệt'
+                             JOIN sinh_vien sv_filter ON sv_filter.id = dk_filter.sinh_vien_id
+                             LEFT JOIN lop_sinh_hoat l_filter ON sv_filter.lop_sinh_hoat_id = l_filter.id
+                             LEFT JOIN nganh n_filter ON l_filter.nganh_id = n_filter.id
+                             LEFT JOIN khoa k_filter ON n_filter.khoa_id = k_filter.id";
+            
+            $where_hp_filter = " AND 1=1";
+            if ($khoa !== '') {
+                $where_hp_filter .= " AND k_filter.ten_khoa = :khoa_hp";
+                $params['khoa_hp'] = $khoa;
+            }
+            if ($nganh !== '') {
+                $where_hp_filter .= " AND n_filter.ten_nganh = :nganh_hp";
+                $params['nganh_hp'] = $nganh;
+            }
+            if ($lop !== '') {
+                $where_hp_filter .= " AND l_filter.ten_lop = :lop_hp";
+                $params['lop_hp'] = $lop;
+            }
+        }
+
+        $sql = "
+            SELECT DISTINCT hp.*,
+                   (SELECT COUNT(*) FROM dang_ky_hp dk JOIN sinh_vien sv ON sv.id = dk.sinh_vien_id LEFT JOIN lop_sinh_hoat l ON sv.lop_sinh_hoat_id = l.id LEFT JOIN nganh n ON l.nganh_id = n.id LEFT JOIN khoa k ON n.khoa_id = k.id WHERE dk.hoc_phan_id = hp.id AND dk.trang_thai = 'Đã duyệt' AND $where_dk) AS si_so_dk,
+                   (SELECT COUNT(DISTINCT d.sinh_vien_id) FROM diem_hoc_tap d JOIN sinh_vien sv ON sv.id = d.sinh_vien_id LEFT JOIN lop_sinh_hoat l ON sv.lop_sinh_hoat_id = l.id LEFT JOIN nganh n ON l.nganh_id = n.id LEFT JOIN khoa k ON n.khoa_id = k.id WHERE d.hoc_phan_id = hp.id AND $where_diem) AS so_sv_co_diem
+            FROM hoc_phan hp
+            $join_filter
+            WHERE 1 = 1 $where_hp_filter
+        ";
         
         if ($search !== '') {
             $like = '%' . $search . '%';
@@ -44,21 +93,54 @@ class AdminGradeModel {
         return $this->db->fetchAll($sql, $params);
     }
 
+    public function getFacultiesAndClasses() {
+        $sql = "SELECT k.ten_khoa AS khoa, n.ten_nganh AS nganh, l.ten_lop AS lop 
+                FROM lop_sinh_hoat l 
+                JOIN nganh n ON l.nganh_id = n.id 
+                JOIN khoa k ON n.khoa_id = k.id 
+                ORDER BY k.ten_khoa, n.ten_nganh, l.ten_lop";
+        $rows = $this->db->fetchAll($sql);
+        
+        $tree = [];
+        foreach ($rows as $row) {
+            $tree[$row['khoa']][$row['nganh']][] = $row['lop'];
+        }
+        return $tree;
+    }
+
     public function getCourseById($id) {
         return $this->db->fetch("SELECT * FROM hoc_phan WHERE id = :id", ['id' => $id]);
     }
 
-    public function getStudentsForGrade($hoc_phan_id) {
+    public function getStudentsForGrade($hoc_phan_id, $khoa = '', $nganh = '', $lop = '') {
+        $params = ['hp_id' => $hoc_phan_id];
+        $where_sv = "";
+        if ($khoa !== '') {
+            $where_sv .= " AND k.ten_khoa = :khoa";
+            $params['khoa'] = $khoa;
+        }
+        if ($nganh !== '') {
+            $where_sv .= " AND n.ten_nganh = :nganh";
+            $params['nganh'] = $nganh;
+        }
+        if ($lop !== '') {
+            $where_sv .= " AND l.ten_lop = :lop";
+            $params['lop'] = $lop;
+        }
+
         $sql = "
-            SELECT sv.id AS sinh_vien_id, sv.ma_sv, sv.ho_ten, sv.lop, dk.hoc_ky, dk.nam_hoc,
+            SELECT sv.id AS sinh_vien_id, sv.ma_sv, sv.ho_ten, l.ten_lop AS lop, dk.hoc_ky, dk.nam_hoc,
                    d.diem_cc, d.diem_gk, d.diem_ck, d.diem_tong, d.diem_chu, d.diem_he4
             FROM dang_ky_hp dk
             JOIN sinh_vien sv ON sv.id = dk.sinh_vien_id
+            LEFT JOIN lop_sinh_hoat l ON sv.lop_sinh_hoat_id = l.id
+            LEFT JOIN nganh n ON l.nganh_id = n.id
+            LEFT JOIN khoa k ON n.khoa_id = k.id
             LEFT JOIN diem_hoc_tap d ON d.sinh_vien_id = sv.id AND d.hoc_phan_id = dk.hoc_phan_id
-            WHERE dk.hoc_phan_id = :hp_id AND dk.trang_thai = 'Đã duyệt'
+            WHERE dk.hoc_phan_id = :hp_id AND dk.trang_thai = 'Đã duyệt' $where_sv
             ORDER BY sv.ma_sv ASC
         ";
-        return $this->db->fetchAll($sql, ['hp_id' => $hoc_phan_id]);
+        return $this->db->fetchAll($sql, $params);
     }
 
     public function getStudentInfoForGradeError($sv_id) {
@@ -67,7 +149,12 @@ class AdminGradeModel {
 
     public function getStudentInfoForGradeErrorByCode($ma_sv, $khoa, $nganh, $lop) {
         return $this->db->fetch(
-            "SELECT id AS sinh_vien_id, ho_ten, ma_sv FROM sinh_vien WHERE ma_sv = :ma_sv AND khoa = :khoa AND nganh = :nganh AND lop = :lop",
+            "SELECT sv.id AS sinh_vien_id, sv.ho_ten, sv.ma_sv 
+             FROM sinh_vien sv 
+             LEFT JOIN lop_sinh_hoat l ON sv.lop_sinh_hoat_id = l.id
+             LEFT JOIN nganh n ON l.nganh_id = n.id
+             LEFT JOIN khoa k ON n.khoa_id = k.id
+             WHERE sv.ma_sv = :ma_sv AND k.ten_khoa = :khoa AND n.ten_nganh = :nganh AND l.ten_lop = :lop",
             [
                 'ma_sv' => $ma_sv,
                 'khoa' => $khoa,
@@ -129,26 +216,26 @@ class AdminGradeModel {
     // --- Điểm rèn luyện ---
 
     public function getKhoaList() {
-        return $this->db->fetchAll("SELECT DISTINCT khoa FROM sinh_vien WHERE khoa IS NOT NULL AND khoa != '' ORDER BY khoa ASC");
+        return $this->db->fetchAll("SELECT ten_khoa as khoa FROM khoa ORDER BY ten_khoa ASC");
     }
 
     public function getNganhListByKhoa($khoa) {
-        return $this->db->fetchAll("SELECT DISTINCT nganh FROM sinh_vien WHERE khoa = :khoa AND nganh IS NOT NULL AND nganh != '' ORDER BY nganh ASC", ['khoa' => $khoa]);
+        return $this->db->fetchAll("SELECT DISTINCT n.ten_nganh as nganh FROM nganh n JOIN khoa k ON n.khoa_id = k.id WHERE k.ten_khoa = :khoa ORDER BY n.ten_nganh ASC", ['khoa' => $khoa]);
     }
 
     // Get all departments regardless of faculty
     public function getAllNganhList() {
-        return $this->db->fetchAll("SELECT DISTINCT nganh FROM sinh_vien WHERE nganh IS NOT NULL AND nganh != '' ORDER BY nganh ASC");
+        return $this->db->fetchAll("SELECT ten_nganh as nganh FROM nganh ORDER BY ten_nganh ASC");
     }
 
     public function getLopList() {
-        return $this->db->fetchAll("SELECT DISTINCT lop FROM sinh_vien WHERE lop IS NOT NULL AND lop != '' ORDER BY lop ASC");
+        return $this->db->fetchAll("SELECT ten_lop as lop FROM lop_sinh_hoat ORDER BY ten_lop ASC");
     }
 
     // Get list of classes filtered by faculty (khoa) and department (nganh)
     public function getLopListByKhoaAndNganh($khoa, $nganh) {
         return $this->db->fetchAll(
-            "SELECT DISTINCT lop FROM sinh_vien WHERE khoa = :khoa AND nganh = :nganh AND lop IS NOT NULL AND lop != '' ORDER BY lop ASC",
+            "SELECT DISTINCT l.ten_lop as lop FROM lop_sinh_hoat l JOIN nganh n ON l.nganh_id = n.id JOIN khoa k ON n.khoa_id = k.id WHERE k.ten_khoa = :khoa AND n.ten_nganh = :nganh ORDER BY l.ten_lop ASC",
             ['khoa' => $khoa, 'nganh' => $nganh]
         );
     }
@@ -157,9 +244,12 @@ class AdminGradeModel {
 
     public function getTrainingGrades($hoc_ky, $nam_hoc, $search = '', $khoa = '', $nganh = '', $lop_filter = '') {
         $sql = "
-            SELECT sv.id AS sinh_vien_id, sv.ma_sv, sv.ho_ten, sv.lop, sv.nganh, sv.khoa,
+            SELECT sv.id AS sinh_vien_id, sv.ma_sv, sv.ho_ten, l.ten_lop AS lop, n.ten_nganh AS nganh, k.ten_khoa AS khoa,
                    drl.diem, drl.xep_loai, drl.ghi_chu
             FROM sinh_vien sv
+            LEFT JOIN lop_sinh_hoat l ON sv.lop_sinh_hoat_id = l.id
+            LEFT JOIN nganh n ON l.nganh_id = n.id
+            LEFT JOIN khoa k ON n.khoa_id = k.id
             LEFT JOIN diem_ren_luyen drl 
                    ON drl.sinh_vien_id = sv.id 
                   AND drl.hoc_ky = :hk 
@@ -175,19 +265,19 @@ class AdminGradeModel {
         }
 
         if ($khoa !== '') {
-            $sql .= " AND sv.khoa = :khoa";
+            $sql .= " AND k.ten_khoa = :khoa";
             $params['khoa'] = $khoa;
         }
         if ($nganh !== '') {
-            $sql .= " AND sv.nganh = :nganh";
+            $sql .= " AND n.ten_nganh = :nganh";
             $params['nganh'] = $nganh;
         }
         if ($lop_filter !== '') {
-            $sql .= " AND sv.lop = :lop";
+            $sql .= " AND l.ten_lop = :lop";
             $params['lop'] = $lop_filter;
         }
 
-        $sql .= " ORDER BY sv.lop ASC, sv.ma_sv ASC";
+        $sql .= " ORDER BY l.ten_lop ASC, sv.ma_sv ASC";
         return $this->db->fetchAll($sql, $params);
     }
 

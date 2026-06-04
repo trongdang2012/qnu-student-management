@@ -18,16 +18,17 @@ class UserController extends Controller {
         $page = (int)($_GET['page'] ?? 1);
         $search = trim($_GET['search'] ?? '');
         $khoa = trim($_GET['khoa'] ?? '');
+        $nganh = trim($_GET['nganh'] ?? '');
         $lop = trim($_GET['lop'] ?? '');
         $sort = trim($_GET['sort'] ?? 'created_at');
         $order = trim($_GET['order'] ?? 'desc');
         $per_page = 15;
         $offset = ($page - 1) * $per_page;
 
-        $total = $this->userModel->countUsers($search, $khoa, $lop);
+        $total = $this->userModel->countUsers($search, $khoa, $nganh, $lop);
         $total_pages = ceil($total / $per_page);
 
-        $users = $this->userModel->getUsers($offset, $per_page, $search, $khoa, $lop, $sort, $order);
+        $users = $this->userModel->getUsers($offset, $per_page, $search, $khoa, $nganh, $lop, $sort, $order);
         $facultiesClassesTree = $this->userModel->getFacultiesAndClasses();
 
         $this->view('admin/users/index', [
@@ -37,6 +38,7 @@ class UserController extends Controller {
             'page' => $page,
             'search' => $search,
             'khoa' => $khoa,
+            'nganh' => $nganh,
             'lop' => $lop,
             'sort' => $sort,
             'order' => $order,

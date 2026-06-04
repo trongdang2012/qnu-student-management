@@ -282,26 +282,49 @@ class AdminCourseModel {
     }
 
     public function getNganhListInCtdt() {
-        return $this->db->fetchAll("SELECT DISTINCT nganh FROM ctdt_chi_tiet WHERE COALESCE(nganh,'') <> '' ORDER BY nganh ASC");
+        return $this->db->fetchAll("SELECT DISTINCT n.ten_nganh as nganh FROM ctdt_chi_tiet c JOIN nganh n ON c.nganh_id = n.id ORDER BY n.ten_nganh ASC");
     }
 
     public function duplicateCtdt($nganhNguon, $nganhDich) {
-        $checkSource = $this->db->fetch("SELECT COUNT(*) as total FROM ctdt_chi_tiet WHERE nganh = :nganh", ['nganh' => $nganhNguon]);
+        $sourceNganh = $this->db->fetch("SELECT id FROM nganh WHERE ten_nganh = :name", ['name' => $nganhNguon]);
+        if (!$sourceNganh) {
+            return false;
+        }
+        $sourceId = $sourceNganh['id'];
+
+        $destNganh = $this->db->fetch("SELECT id FROM nganh WHERE ten_nganh = :name", ['name' => $nganhDich]);
+        if (!$destNganh) {
+            $sourceNganhDetail = $this->db->fetch("SELECT khoa_id FROM nganh WHERE id = :id", ['id' => $sourceId]);
+            if (!$sourceNganhDetail) {
+                return false;
+            }
+            $khoaId = $sourceNganhDetail['khoa_id'];
+            
+            $this->db->query("INSERT INTO nganh (ten_nganh, khoa_id) VALUES (:ten_nganh, :khoa_id)", [
+                'ten_nganh' => $nganhDich,
+                'khoa_id' => $khoaId
+            ]);
+            $destId = $this->db->lastInsertId();
+        } else {
+            $destId = $destNganh['id'];
+        }
+
+        $checkSource = $this->db->fetch("SELECT COUNT(*) as total FROM ctdt_chi_tiet WHERE nganh_id = :nganh_id", ['nganh_id' => $sourceId]);
         if (!$checkSource || (int)$checkSource['total'] === 0) {
             return false;
         }
         
-        $sql = "INSERT INTO ctdt_chi_tiet (nganh, hoc_phan_id, hoc_ky)
-                SELECT :nganh_dich, hoc_phan_id, hoc_ky
+        $sql = "INSERT INTO ctdt_chi_tiet (nganh_id, hoc_phan_id, hoc_ky)
+                SELECT :nganh_dich_id, hoc_phan_id, hoc_ky
                 FROM ctdt_chi_tiet
-                WHERE nganh = :nganh_nguon
+                WHERE nganh_id = :nganh_nguon_id
                   AND hoc_phan_id NOT IN (
-                      SELECT hoc_phan_id FROM ctdt_chi_tiet WHERE nganh = :nganh_dich_sub
+                      SELECT hoc_phan_id FROM ctdt_chi_tiet WHERE nganh_id = :nganh_dich_id_sub
                   )";
         return $this->db->query($sql, [
-            'nganh_dich' => $nganhDich,
-            'nganh_nguon' => $nganhNguon,
-            'nganh_dich_sub' => $nganhDich
+            'nganh_dich_id' => $destId,
+            'nganh_nguon_id' => $sourceId,
+            'nganh_dich_id_sub' => $destId
         ]);
     }
 
@@ -319,8 +342,9 @@ class AdminCourseModel {
 
         $sql = "SELECT hp.id, hp.ma_hp
                 FROM ctdt_chi_tiet ctdt
+                JOIN nganh n ON ctdt.nganh_id = n.id
                 JOIN hoc_phan hp ON ctdt.hoc_phan_id = hp.id
-                WHERE ctdt.nganh = :nganh AND ctdt.hoc_ky = :hk AND hp.trang_thai_hoat_dong = 1";
+                WHERE n.ten_nganh = :nganh AND ctdt.hoc_ky = :hk AND hp.trang_thai_hoat_dong = 1";
         $courses = $this->db->fetchAll($sql, ['nganh' => $nganh, 'hk' => $hocKy]);
 
         if (empty($courses)) {

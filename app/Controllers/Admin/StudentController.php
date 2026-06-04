@@ -47,66 +47,21 @@ class StudentController extends Controller {
         ]);
     }
 
-    public function add() {
-        $this->view('admin/student/add', [
-            'page_title' => 'Thêm Sinh viên',
-            'active_menu' => 'sinh_vien'
-        ]);
-    }
+    public function exportTemplate() {
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename="template_nhap_sinh_vien.csv"');
+        echo "\xEF\xBB\xBF"; // BOM UTF-8
+        $output = fopen('php://output', 'w');
 
-    public function processAdd() {
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            $this->redirect('/admin/sinh-vien/add');
-        }
+        // Header row - đúng format mà hàm import yêu cầu
+        fputcsv($output, ['MSSV', 'Họ và tên', 'Ngày sinh', 'Giới tính', 'Email', 'SĐT', 'Ngành', 'Lớp', 'Khoa', 'Niên khóa', 'Địa chỉ'], ",");
 
-        $ma_sv = trim($_POST['ma_sv'] ?? '');
-        $ho_ten = trim($_POST['ho_ten'] ?? '');
-        $ngay_sinh = trim($_POST['ngay_sinh'] ?? '');
-        $gioi_tinh = trim($_POST['gioi_tinh'] ?? 'Nam');
-        $email = trim($_POST['email'] ?? '');
-        $so_dien_thoai = trim($_POST['so_dien_thoai'] ?? '');
-        $nganh = trim($_POST['nganh'] ?? '');
-        $lop = trim($_POST['lop'] ?? '');
-        $khoa = trim($_POST['khoa'] ?? '');
-        $nien_khoa = trim($_POST['nien_khoa'] ?? NAM_HOC_HIEN_TAI);
-        $dia_chi = trim($_POST['dia_chi'] ?? '');
+        // 2 dòng mẫu để admin tham khảo
+        fputcsv($output, ['4051052001', 'Nguyễn Văn A', '2002-05-15', 'Nam', 'nguyenvana@student.qnu.edu.vn', '0905123456', 'Công nghệ thông tin', 'CNTT47A', 'Kỹ thuật - Công nghệ', '2024-2028', '123 Trần Hưng Đạo, Quy Nhơn'], ",");
+        fputcsv($output, ['4051052002', 'Trần Thị B', '2003-01-20', 'Nữ', '', '0912345678', 'Kỹ thuật phần mềm', 'KTPM47A', 'Kỹ thuật - Công nghệ', '2024-2028', '456 Nguyễn Huệ, Quy Nhơn'], ",");
 
-        if (empty($ma_sv) || empty($ho_ten) || empty($nganh) || empty($lop)) {
-            setFlash('danger', 'Vui lòng điền các trường bắt buộc');
-            $this->redirect('/admin/sinh-vien/add');
-        }
-
-        if ($this->studentModel->getStudentByMaSv($ma_sv)) {
-            setFlash('danger', 'Mã sinh viên đã tồn tại');
-            $this->redirect('/admin/sinh-vien/add');
-        }
-
-        $ngay_sinh_db = !empty($ngay_sinh) ? $ngay_sinh : null;
-
-        $data = [
-            'user_id' => 0,
-            'ma_sv' => $ma_sv,
-            'ho_ten' => $ho_ten,
-            'ngay_sinh' => $ngay_sinh_db,
-            'gioi_tinh' => $gioi_tinh,
-            'email' => $email,
-            'so_dien_thoai' => $so_dien_thoai,
-            'nganh' => $nganh,
-            'lop' => $lop,
-            'khoa' => $khoa,
-            'nien_khoa' => $nien_khoa,
-            'dia_chi' => $dia_chi,
-            'trang_thai' => 'Đang học'
-        ];
-
-        try {
-            $this->studentModel->addStudent($data);
-            setFlash('success', 'Thêm sinh viên thành công!');
-            $this->redirect('/admin/sinh-vien');
-        } catch (\Exception $e) {
-            setFlash('danger', 'Lỗi: ' . $e->getMessage());
-            $this->redirect('/admin/sinh-vien/add');
-        }
+        fclose($output);
+        exit;
     }
 
     public function edit() {
@@ -118,8 +73,12 @@ class StudentController extends Controller {
             $this->redirect('/admin/sinh-vien');
         }
 
+        $classModel = new \App\Models\ClassStudentModel();
+        $classes = $classModel->getAllClasses();
+
         $this->view('admin/student/edit', [
             'student' => $student,
+            'classes' => $classes,
             'page_title' => 'Sửa Sinh viên',
             'active_menu' => 'sinh_vien'
         ]);
@@ -130,20 +89,18 @@ class StudentController extends Controller {
             $this->redirect('/admin/sinh-vien');
         }
 
-        $id = (int)($_POST['id'] ?? 0);
+        $id = (int)$_POST['id'] ?? 0;
         $ho_ten = trim($_POST['ho_ten'] ?? '');
         $ngay_sinh = trim($_POST['ngay_sinh'] ?? '');
         $gioi_tinh = trim($_POST['gioi_tinh'] ?? 'Nam');
         $email = trim($_POST['email'] ?? '');
         $so_dien_thoai = trim($_POST['so_dien_thoai'] ?? '');
-        $nganh = trim($_POST['nganh'] ?? '');
-        $lop = trim($_POST['lop'] ?? '');
-        $khoa = trim($_POST['khoa'] ?? '');
+        $lop_sinh_hoat_id = isset($_POST['lop_sinh_hoat_id']) ? (int)$_POST['lop_sinh_hoat_id'] : 0;
         $nien_khoa = trim($_POST['nien_khoa'] ?? '');
         $dia_chi = trim($_POST['dia_chi'] ?? '');
         $trang_thai = trim($_POST['trang_thai'] ?? 'Đang học');
 
-        if (empty($ho_ten) || empty($nganh) || empty($lop) || empty($trang_thai)) {
+        if (empty($ho_ten) || $lop_sinh_hoat_id <= 0 || empty($trang_thai)) {
             setFlash('danger', 'Vui lòng điền các trường bắt buộc');
             $this->redirect("/admin/sinh-vien/edit?id=$id");
         }
@@ -154,9 +111,7 @@ class StudentController extends Controller {
             'gioi_tinh' => $gioi_tinh,
             'email' => $email,
             'so_dien_thoai' => $so_dien_thoai,
-            'nganh' => $nganh,
-            'lop' => $lop,
-            'khoa' => $khoa,
+            'lop_sinh_hoat_id' => $lop_sinh_hoat_id,
             'nien_khoa' => $nien_khoa,
             'dia_chi' => $dia_chi,
             'trang_thai' => $trang_thai
@@ -190,14 +145,25 @@ class StudentController extends Controller {
         }
 
         if (!isset($_FILES['excel_file']) || $_FILES['excel_file']['error'] !== UPLOAD_ERR_OK) {
-            setFlash('danger', 'Vui lòng chọn tệp Excel hợp lệ.');
+            setFlash('danger', 'Vui lòng chọn tệp hợp lệ (.xlsx hoặc .csv).');
             $this->redirect('/admin/sinh-vien');
         }
 
+        $fileName = $_FILES['excel_file']['name'];
+        $extension = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
         $file = $_FILES['excel_file']['tmp_name'];
+
+        if ($extension !== 'xlsx' && $extension !== 'csv') {
+            setFlash('danger', 'File không hợp lệ! Chỉ chấp nhận file .xlsx hoặc .csv. Vui lòng tải template mẫu và sử dụng đúng định dạng.');
+            $this->redirect('/admin/sinh-vien');
+        }
         
         try {
-            $rows = $this->parseXlsx($file);
+            if ($extension === 'csv') {
+                $rows = $this->parseCsv($file);
+            } else {
+                $rows = $this->parseXlsx($file);
+            }
             if ($rows === false || empty($rows)) {
                 setFlash('danger', 'Không thể đọc hoặc tệp Excel không chứa dữ liệu.');
                 $this->redirect('/admin/sinh-vien');
@@ -288,13 +254,13 @@ class StudentController extends Controller {
                 $gioi_tinh = trim($row[3] ?? 'Nam');
                 $email = trim($row[4] ?? '');
                 $so_dien_thoai = trim($row[5] ?? '');
-                $nganh = trim($row[6] ?? '');
-                $lop = trim($row[7] ?? '');
-                $khoa = trim($row[8] ?? '');
+                $nganh_txt = trim($row[6] ?? '');
+                $lop_txt = trim($row[7] ?? '');
+                $khoa_txt = trim($row[8] ?? '');
                 $nien_khoa = trim($row[9] ?? NAM_HOC_HIEN_TAI);
                 $dia_chi = trim($row[10] ?? '');
 
-                if (empty($ma_sv) || empty($ho_ten)) {
+                if (empty($ma_sv) || empty($ho_ten) || empty($lop_txt)) {
                     $failCount++;
                     continue;
                 }
@@ -304,6 +270,59 @@ class StudentController extends Controller {
                 if ($check) {
                     $failCount++;
                     continue;
+                }
+
+                // Đồng bộ danh mục Khoa, Ngành, Lớp
+                $lop_sinh_hoat_id = 0;
+                
+                // Tra cứu Lớp
+                $stmtGetClass = $pdo->prepare("SELECT id FROM lop_sinh_hoat WHERE ten_lop = ?");
+                $stmtGetClass->execute([$lop_txt]);
+                $classRow = $stmtGetClass->fetch(\PDO::FETCH_ASSOC);
+                
+                if ($classRow) {
+                    $lop_sinh_hoat_id = $classRow['id'];
+                } else {
+                    // Lớp chưa tồn tại, tra cứu Ngành
+                    $nganh_id = 0;
+                    if (empty($nganh_txt)) {
+                        $nganh_txt = 'Chưa rõ';
+                    }
+                    $stmtGetNganh = $pdo->prepare("SELECT id FROM nganh WHERE ten_nganh = ?");
+                    $stmtGetNganh->execute([$nganh_txt]);
+                    $nganhRow = $stmtGetNganh->fetch(\PDO::FETCH_ASSOC);
+                    
+                    if ($nganhRow) {
+                        $nganh_id = $nganhRow['id'];
+                    } else {
+                        // Ngành chưa tồn tại, tra cứu Khoa
+                        $khoa_id = 0;
+                        if (empty($khoa_txt)) {
+                            $khoa_txt = 'Chưa rõ';
+                        }
+                        $stmtGetKhoa = $pdo->prepare("SELECT id FROM khoa WHERE ten_khoa = ?");
+                        $stmtGetKhoa->execute([$khoa_txt]);
+                        $khoaRow = $stmtGetKhoa->fetch(\PDO::FETCH_ASSOC);
+                        
+                        if ($khoaRow) {
+                            $khoa_id = $khoaRow['id'];
+                        } else {
+                            // Tạo Khoa mới
+                            $stmtInsertKhoa = $pdo->prepare("INSERT INTO khoa (ten_khoa) VALUES (?)");
+                            $stmtInsertKhoa->execute([$khoa_txt]);
+                            $khoa_id = $pdo->lastInsertId();
+                        }
+                        
+                        // Tạo Ngành mới
+                        $stmtInsertNganh = $pdo->prepare("INSERT INTO nganh (ten_nganh, khoa_id) VALUES (?, ?)");
+                        $stmtInsertNganh->execute([$nganh_txt, $khoa_id]);
+                        $nganh_id = $pdo->lastInsertId();
+                    }
+                    
+                    // Tạo Lớp mới
+                    $stmtInsertClass = $pdo->prepare("INSERT INTO lop_sinh_hoat (ten_lop, nganh_id) VALUES (?, ?)");
+                    $stmtInsertClass->execute([$lop_txt, $nganh_id]);
+                    $lop_sinh_hoat_id = $pdo->lastInsertId();
                 }
 
                 if (empty($email)) {
@@ -317,8 +336,8 @@ class StudentController extends Controller {
 
                 // 2. Tạo bản ghi sinh viên
                 $ngay_sinh_db = !empty($ngay_sinh) ? $ngay_sinh : null;
-                $stmtSv = $pdo->prepare("INSERT INTO sinh_vien (user_id, ma_sv, ho_ten, ngay_sinh, gioi_tinh, email, so_dien_thoai, nganh, lop, khoa, nien_khoa, dia_chi, trang_thai) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Đang học')");
-                $stmtSv->execute([$user_id, $ma_sv, $ho_ten, $ngay_sinh_db, $gioi_tinh, $email, $so_dien_thoai, $nganh, $lop, $khoa, $nien_khoa, $dia_chi]);
+                $stmtSv = $pdo->prepare("INSERT INTO sinh_vien (user_id, ma_sv, ho_ten, ngay_sinh, gioi_tinh, email, so_dien_thoai, lop_sinh_hoat_id, nien_khoa, dia_chi, trang_thai) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Đang học')");
+                $stmtSv->execute([$user_id, $ma_sv, $ho_ten, $ngay_sinh_db, $gioi_tinh, $email, $so_dien_thoai, $lop_sinh_hoat_id, $nien_khoa, $dia_chi]);
                 
                 $successCount++;
             }
@@ -407,6 +426,29 @@ class StudentController extends Controller {
         }
 
         $zip->close();
+        return $rows;
+    }
+
+    private function parseCsv($filePath) {
+        $rows = [];
+        $content = file_get_contents($filePath);
+        
+        // Loại bỏ BOM UTF-8 nếu có
+        if (substr($content, 0, 3) === "\xEF\xBB\xBF") {
+            $content = substr($content, 3);
+        }
+        
+        $lines = explode("\n", $content);
+        foreach ($lines as $line) {
+            $line = trim($line, "\r\n");
+            if ($line === '') continue;
+            
+            $row = str_getcsv($line, ',');
+            if (!empty($row) && !(count($row) === 1 && trim($row[0]) === '')) {
+                $rows[] = $row;
+            }
+        }
+        
         return $rows;
     }
 }

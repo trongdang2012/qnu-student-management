@@ -90,8 +90,7 @@ $router->post('/student/hoc-phi/nop', 'StudentController@payTuition');
 // Route của Admin
 $router->get('/admin/dashboard', 'Admin\DashboardController@index');
 $router->get('/admin/sinh-vien', 'Admin\StudentController@index');
-$router->get('/admin/sinh-vien/add', 'Admin\StudentController@add');
-$router->post('/admin/sinh-vien/add', 'Admin\StudentController@processAdd');
+$router->get('/admin/sinh-vien/export-template', 'Admin\StudentController@exportTemplate');
 $router->get('/admin/sinh-vien/edit', 'Admin\StudentController@edit');
 $router->post('/admin/sinh-vien/edit', 'Admin\StudentController@processEdit');
 $router->get('/admin/sinh-vien/delete', 'Admin\StudentController@delete');
@@ -108,6 +107,18 @@ $router->post('/admin/lop-hoc-phan/delete', 'Admin\ClassController@delete');
 $router->get('/admin/lop-hoc-phan/optimize', 'Admin\ClassController@optimize');
 $router->post('/admin/lop-hoc-phan/batch-open', 'Admin\ClassController@batchOpen');
 
+$router->get('/admin/khoa', 'Admin\FacultyController@index');
+$router->post('/admin/khoa/save', 'Admin\FacultyController@save');
+$router->post('/admin/khoa/delete', 'Admin\FacultyController@delete');
+
+$router->get('/admin/nganh', 'Admin\MajorController@index');
+$router->post('/admin/nganh/save', 'Admin\MajorController@save');
+$router->post('/admin/nganh/delete', 'Admin\MajorController@delete');
+
+$router->get('/admin/lop-sinh-hoat', 'Admin\ClassStudentController@index');
+$router->post('/admin/lop-sinh-hoat/save', 'Admin\ClassStudentController@save');
+$router->post('/admin/lop-sinh-hoat/delete', 'Admin\ClassStudentController@delete');
+
 $router->get('/admin/diem/hoc-tap', 'Admin\GradeController@academic');
 $router->post('/admin/diem/hoc-tap/save', 'Admin\GradeController@academicSave');
 $router->get('/admin/diem/hoc-tap/export-template', 'Admin\GradeController@academicExportTemplate');
@@ -118,7 +129,6 @@ $router->get('/admin/diem/ren-luyen/departments', 'Admin\GradeController@getDepa
 $router->get('/admin/diem/ren-luyen/classes', 'Admin\GradeController@getClasses');
 $router->get('/admin/diem/ren-luyen/export-template', 'Admin\GradeController@trainingExportTemplate');
 $router->post('/admin/diem/ren-luyen/import', 'Admin\GradeController@trainingImport');
-$router->get('/admin/diem/bao-cao', 'Admin\GradeController@report');
 
 $router->get('/admin/thoi-khoa-bieu', 'Admin\ScheduleController@index');
 $router->post('/admin/thoi-khoa-bieu/save', 'Admin\ScheduleController@save');

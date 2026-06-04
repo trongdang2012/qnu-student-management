@@ -38,10 +38,10 @@ class NotificationModel {
             $student = $this->db->fetch("SELECT id FROM sinh_vien WHERE ma_sv = ?", [$targetValue]);
             if ($student) { $studentIds[] = $student['id']; }
         } elseif ($targetType === 'khoa') {
-            $students = $this->db->fetchAll("SELECT id FROM sinh_vien WHERE khoa = ?", [$targetValue]);
+            $students = $this->db->fetchAll("SELECT sv.id FROM sinh_vien sv JOIN lop_sinh_hoat l ON sv.lop_sinh_hoat_id = l.id JOIN nganh n ON l.nganh_id = n.id JOIN khoa k ON n.khoa_id = k.id WHERE k.ten_khoa = ?", [$targetValue]);
             foreach ($students as $s) { $studentIds[] = $s['id']; }
         } elseif ($targetType === 'lop') {
-            $students = $this->db->fetchAll("SELECT id FROM sinh_vien WHERE lop = ?", [$targetValue]);
+            $students = $this->db->fetchAll("SELECT sv.id FROM sinh_vien sv JOIN lop_sinh_hoat l ON sv.lop_sinh_hoat_id = l.id WHERE l.ten_lop = ?", [$targetValue]);
             foreach ($students as $s) { $studentIds[] = $s['id']; }
         } elseif ($targetType === 'canh_bao') {
             $students = $this->db->fetchAll("SELECT DISTINCT sinh_vien_id as id FROM diem_hoc_tap WHERE diem_tong < 4.0");
@@ -86,17 +86,19 @@ class NotificationModel {
     }
 
     public function getFaculties() {
-        return $this->db->fetchAll("SELECT DISTINCT khoa FROM sinh_vien WHERE khoa IS NOT NULL AND khoa != ''");
+        return $this->db->fetchAll("SELECT ten_khoa as khoa FROM khoa ORDER BY ten_khoa ASC");
     }
 
     public function getClasses() {
-        return $this->db->fetchAll("SELECT DISTINCT lop FROM sinh_vien WHERE lop IS NOT NULL AND lop != ''");
+        return $this->db->fetchAll("SELECT ten_lop as lop FROM lop_sinh_hoat ORDER BY ten_lop ASC");
     }
 
     public function getWarningStudents() {
-        $sql = "SELECT sv.id, sv.ma_sv, sv.ho_ten, sv.lop, sv.nganh, temp.so_mon_f,
+        $sql = "SELECT sv.id, sv.ma_sv, sv.ho_ten, l.ten_lop AS lop, n.ten_nganh AS nganh, temp.so_mon_f,
                        (SELECT COUNT(*) FROM thong_bao_sinh_vien tbsv WHERE tbsv.sinh_vien_id = sv.id) as so_lan_gui
                 FROM sinh_vien sv
+                LEFT JOIN lop_sinh_hoat l ON sv.lop_sinh_hoat_id = l.id
+                LEFT JOIN nganh n ON l.nganh_id = n.id
                 JOIN (
                     SELECT d.sinh_vien_id, COUNT(*) as so_mon_f
                     FROM (
@@ -113,21 +115,25 @@ class NotificationModel {
     }
 
     public function getTuitionWarningStudents() {
-        $sql = "SELECT sv.id, sv.ma_sv, sv.ho_ten, sv.lop, sv.nganh, SUM(hp.so_tien - hp.da_nop) as tong_no,
+        $sql = "SELECT sv.id, sv.ma_sv, sv.ho_ten, l.ten_lop AS lop, n.ten_nganh AS nganh, SUM(hp.so_tien - hp.da_nop) as tong_no,
                        (SELECT COUNT(*) FROM thong_bao_sinh_vien tbsv WHERE tbsv.sinh_vien_id = sv.id) as so_lan_gui
                 FROM sinh_vien sv 
+                LEFT JOIN lop_sinh_hoat l ON sv.lop_sinh_hoat_id = l.id
+                LEFT JOIN nganh n ON l.nganh_id = n.id
                 JOIN hoc_phi hp ON hp.sinh_vien_id = sv.id 
                 WHERE hp.trang_thai IN ('Nợ', 'Chưa nộp') 
-                GROUP BY sv.id, sv.ma_sv, sv.ho_ten, sv.lop, sv.nganh
+                GROUP BY sv.id, sv.ma_sv, sv.ho_ten, l.ten_lop, n.ten_nganh
                 HAVING tong_no > 0
                 ORDER BY tong_no DESC";
         return $this->db->fetchAll($sql);
     }
 
     public function getTrainingPointWarningStudents() {
-        $sql = "SELECT sv.id, sv.ma_sv, sv.ho_ten, sv.lop, sv.nganh, drl.diem, drl.xep_loai, drl.nam_hoc, drl.hoc_ky,
+        $sql = "SELECT sv.id, sv.ma_sv, sv.ho_ten, l.ten_lop AS lop, n.ten_nganh AS nganh, drl.diem, drl.xep_loai, drl.nam_hoc, drl.hoc_ky,
                        (SELECT COUNT(*) FROM thong_bao_sinh_vien tbsv WHERE tbsv.sinh_vien_id = sv.id) as so_lan_gui
                 FROM sinh_vien sv
+                LEFT JOIN lop_sinh_hoat l ON sv.lop_sinh_hoat_id = l.id
+                LEFT JOIN nganh n ON l.nganh_id = n.id
                 JOIN diem_ren_luyen drl ON drl.sinh_vien_id = sv.id
                 WHERE drl.id IN (
                     SELECT MAX(id) FROM diem_ren_luyen GROUP BY sinh_vien_id

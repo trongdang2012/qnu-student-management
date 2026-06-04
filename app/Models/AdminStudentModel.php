@@ -14,24 +14,29 @@ class AdminStudentModel {
         $where = "1=1";
         $params = [];
         if (!empty($search)) {
-            $where .= " AND (ma_sv LIKE :search1 OR ho_ten LIKE :search2 OR email LIKE :search3)";
+            $where .= " AND (sv.ma_sv LIKE :search1 OR sv.ho_ten LIKE :search2 OR sv.email LIKE :search3)";
             $params['search1'] = "%$search%";
             $params['search2'] = "%$search%";
             $params['search3'] = "%$search%";
         }
         if (!empty($khoa)) {
-            $where .= " AND khoa = :khoa";
+            $where .= " AND k.ten_khoa = :khoa";
             $params['khoa'] = $khoa;
         }
         if (!empty($nganh)) {
-            $where .= " AND nganh = :nganh";
+            $where .= " AND n.ten_nganh = :nganh";
             $params['nganh'] = $nganh;
         }
         if (!empty($lop)) {
-            $where .= " AND lop = :lop";
+            $where .= " AND l.ten_lop = :lop";
             $params['lop'] = $lop;
         }
-        $sql = "SELECT COUNT(*) as total FROM sinh_vien WHERE " . $where;
+        $sql = "SELECT COUNT(*) as total 
+                FROM sinh_vien sv
+                LEFT JOIN lop_sinh_hoat l ON l.id = sv.lop_sinh_hoat_id
+                LEFT JOIN nganh n ON n.id = l.nganh_id
+                LEFT JOIN khoa k ON k.id = n.khoa_id
+                WHERE " . $where;
         return $this->db->fetch($sql, $params)['total'];
     }
 
@@ -45,15 +50,15 @@ class AdminStudentModel {
             $params['search3'] = "%$search%";
         }
         if (!empty($khoa)) {
-            $where .= " AND sv.khoa = :khoa";
+            $where .= " AND k.ten_khoa = :khoa";
             $params['khoa'] = $khoa;
         }
         if (!empty($nganh)) {
-            $where .= " AND sv.nganh = :nganh";
+            $where .= " AND n.ten_nganh = :nganh";
             $params['nganh'] = $nganh;
         }
         if (!empty($lop)) {
-            $where .= " AND sv.lop = :lop";
+            $where .= " AND l.ten_lop = :lop";
             $params['lop'] = $lop;
         }
 
@@ -62,26 +67,50 @@ class AdminStudentModel {
         $sort_by = in_array($sort_by, $allowed_sort) ? $sort_by : 'ma_sv';
         $sort_dir = strtolower($sort_dir) === 'desc' ? 'DESC' : 'ASC';
 
-        $sql = "SELECT sv.*, u.username FROM sinh_vien sv 
+        // Ánh xạ trường sort cho cột alias
+        $sort_field = "sv.ma_sv";
+        if ($sort_by === 'ho_ten') $sort_field = "sv.ho_ten";
+        elseif ($sort_by === 'lop') $sort_field = "l.ten_lop";
+        elseif ($sort_by === 'nganh') $sort_field = "n.ten_nganh";
+        elseif ($sort_by === 'trang_thai') $sort_field = "sv.trang_thai";
+
+        $sql = "SELECT sv.*, u.username, l.ten_lop as lop, n.ten_nganh as nganh, k.ten_khoa as khoa 
+                FROM sinh_vien sv 
                 LEFT JOIN users u ON u.id = sv.user_id
+                LEFT JOIN lop_sinh_hoat l ON l.id = sv.lop_sinh_hoat_id
+                LEFT JOIN nganh n ON n.id = l.nganh_id
+                LEFT JOIN khoa k ON k.id = n.khoa_id
                 WHERE " . $where . " 
-                ORDER BY sv.$sort_by $sort_dir LIMIT $limit OFFSET $offset";
+                ORDER BY $sort_field $sort_dir LIMIT $limit OFFSET $offset";
         return $this->db->fetchAll($sql, $params);
     }
 
     public function getFacultiesAndClasses() {
-        $sql = "SELECT DISTINCT khoa, nganh, lop FROM sinh_vien WHERE khoa IS NOT NULL AND khoa != '' AND nganh IS NOT NULL AND nganh != '' AND lop IS NOT NULL AND lop != '' ORDER BY khoa, nganh, lop";
+        $sql = "SELECT k.ten_khoa as khoa, n.ten_nganh as nganh, l.ten_lop as lop 
+                FROM lop_sinh_hoat l 
+                LEFT JOIN nganh n ON n.id = l.nganh_id 
+                LEFT JOIN khoa k ON k.id = n.khoa_id 
+                ORDER BY k.ten_khoa, n.ten_nganh, l.ten_lop";
         $rows = $this->db->fetchAll($sql);
         
         $tree = [];
         foreach ($rows as $row) {
-            $tree[$row['khoa']][$row['nganh']][] = $row['lop'];
+            if ($row['khoa'] && $row['nganh'] && $row['lop']) {
+                $tree[$row['khoa']][$row['nganh']][] = $row['lop'];
+            }
         }
         return $tree;
     }
 
     public function getStudentById($id) {
-        return $this->db->fetch("SELECT * FROM sinh_vien WHERE id = :id", ['id' => $id]);
+        return $this->db->fetch("
+            SELECT sv.*, l.ten_lop as lop, n.ten_nganh as nganh, k.ten_khoa as khoa 
+            FROM sinh_vien sv 
+            LEFT JOIN lop_sinh_hoat l ON l.id = sv.lop_sinh_hoat_id
+            LEFT JOIN nganh n ON n.id = l.nganh_id
+            LEFT JOIN khoa k ON k.id = n.khoa_id
+            WHERE sv.id = :id
+        ", ['id' => $id]);
     }
 
     public function getStudentByMaSv($ma_sv) {
@@ -90,8 +119,8 @@ class AdminStudentModel {
 
     public function addStudent($data) {
         $sql = "INSERT INTO sinh_vien 
-            (user_id, ma_sv, ho_ten, ngay_sinh, gioi_tinh, email, so_dien_thoai, nganh, lop, khoa, nien_khoa, dia_chi, trang_thai)
-            VALUES (:user_id, :ma_sv, :ho_ten, :ngay_sinh, :gioi_tinh, :email, :so_dien_thoai, :nganh, :lop, :khoa, :nien_khoa, :dia_chi, :trang_thai)";
+            (user_id, ma_sv, ho_ten, ngay_sinh, gioi_tinh, email, so_dien_thoai, lop_sinh_hoat_id, nien_khoa, dia_chi, trang_thai)
+            VALUES (:user_id, :ma_sv, :ho_ten, :ngay_sinh, :gioi_tinh, :email, :so_dien_thoai, :lop_sinh_hoat_id, :nien_khoa, :dia_chi, :trang_thai)";
         return $this->db->query($sql, $data);
     }
 
@@ -99,7 +128,7 @@ class AdminStudentModel {
         $data['id'] = $id;
         $sql = "UPDATE sinh_vien SET 
             ho_ten = :ho_ten, ngay_sinh = :ngay_sinh, gioi_tinh = :gioi_tinh, email = :email,
-            so_dien_thoai = :so_dien_thoai, nganh = :nganh, lop = :lop, khoa = :khoa, 
+            so_dien_thoai = :so_dien_thoai, lop_sinh_hoat_id = :lop_sinh_hoat_id, 
             nien_khoa = :nien_khoa, dia_chi = :dia_chi, trang_thai = :trang_thai
             WHERE id = :id";
         return $this->db->query($sql, $data);

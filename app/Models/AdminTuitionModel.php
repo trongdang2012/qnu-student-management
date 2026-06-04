@@ -37,32 +37,36 @@ class AdminTuitionModel {
     }
 
     public function getKhoaList() {
-        return $this->db->fetchAll("SELECT DISTINCT khoa FROM sinh_vien WHERE COALESCE(khoa,'') <> '' ORDER BY khoa ASC");
+        return $this->db->fetchAll("SELECT ten_khoa as khoa FROM khoa ORDER BY ten_khoa ASC");
     }
 
     public function getNganhList($khoa) {
-        $sql = "SELECT DISTINCT nganh FROM sinh_vien WHERE COALESCE(nganh,'') <> ''";
+        $sql = "SELECT DISTINCT n.ten_nganh as nganh FROM nganh n JOIN khoa k ON n.khoa_id = k.id";
         $params = [];
         if ($khoa !== '') {
-            $sql .= " AND khoa = :khoa";
+            $sql .= " WHERE k.ten_khoa = :khoa";
             $params['khoa'] = $khoa;
         }
-        $sql .= " ORDER BY nganh ASC";
+        $sql .= " ORDER BY n.ten_nganh ASC";
         return $this->db->fetchAll($sql, $params);
     }
 
     public function getLopList($khoa, $nganh) {
-        $sql = "SELECT DISTINCT lop FROM sinh_vien WHERE COALESCE(lop,'') <> ''";
+        $sql = "SELECT DISTINCT l.ten_lop as lop FROM lop_sinh_hoat l JOIN nganh n ON l.nganh_id = n.id JOIN khoa k ON n.khoa_id = k.id";
         $params = [];
+        $wheres = [];
         if ($khoa !== '') {
-            $sql .= " AND khoa = :khoa";
+            $wheres[] = "k.ten_khoa = :khoa";
             $params['khoa'] = $khoa;
         }
         if ($nganh !== '') {
-            $sql .= " AND nganh = :nganh";
+            $wheres[] = "n.ten_nganh = :nganh";
             $params['nganh'] = $nganh;
         }
-        $sql .= " ORDER BY lop ASC";
+        if (!empty($wheres)) {
+            $sql .= " WHERE " . implode(" AND ", $wheres);
+        }
+        $sql .= " ORDER BY l.ten_lop ASC";
         return $this->db->fetchAll($sql, $params);
     }
 
@@ -72,12 +76,15 @@ class AdminTuitionModel {
     }
 
     public function getFilteredTuitionRecords($khoa, $nganh, $lop) {
-        $sql = "SELECT hf.*, sv.ma_sv, sv.ho_ten, sv.khoa, sv.nganh, sv.lop";
+        $sql = "SELECT hf.*, sv.ma_sv, sv.ho_ten, k.ten_khoa AS khoa, n.ten_nganh AS nganh, l.ten_lop AS lop";
         if ($this->hasHocPhanIdColumn()) {
             $sql .= ", hp.ma_hp, hp.ten_hp, hp.so_tin_chi";
         }
         $sql .= " FROM hoc_phi hf
-                JOIN sinh_vien sv ON sv.id = hf.sinh_vien_id";
+                JOIN sinh_vien sv ON sv.id = hf.sinh_vien_id
+                LEFT JOIN lop_sinh_hoat l ON sv.lop_sinh_hoat_id = l.id
+                LEFT JOIN nganh n ON l.nganh_id = n.id
+                LEFT JOIN khoa k ON n.khoa_id = k.id";
         if ($this->hasHocPhanIdColumn()) {
             $sql .= " LEFT JOIN hoc_phan hp ON hp.id = hf.hoc_phan_id";
         }
@@ -85,18 +92,18 @@ class AdminTuitionModel {
 
         $params = [];
         if ($khoa !== '') {
-            $sql .= ' AND sv.khoa = :khoa';
+            $sql .= ' AND k.ten_khoa = :khoa';
             $params['khoa'] = $khoa;
         }
         if ($nganh !== '') {
-            $sql .= ' AND sv.nganh = :nganh';
+            $sql .= ' AND n.ten_nganh = :nganh';
             $params['nganh'] = $nganh;
         }
         if ($lop !== '') {
-            $sql .= ' AND sv.lop = :lop';
+            $sql .= ' AND l.ten_lop = :lop';
             $params['lop'] = $lop;
         }
-        $sql .= ' ORDER BY hf.nam_hoc DESC, hf.hoc_ky DESC, sv.khoa, sv.nganh, sv.lop, sv.ho_ten';
+        $sql .= ' ORDER BY hf.nam_hoc DESC, hf.hoc_ky DESC, k.ten_khoa, n.ten_nganh, l.ten_lop, sv.ho_ten';
         return $this->db->fetchAll($sql, $params);
     }
 
@@ -165,27 +172,30 @@ class AdminTuitionModel {
     }
 
     public function getTuitionSummaryByStudents($khoa, $nganh, $lop) {
-        $sql = "SELECT sv.id, sv.ma_sv, sv.ho_ten, sv.khoa, sv.nganh, sv.lop,
+        $sql = "SELECT sv.id, sv.ma_sv, sv.ho_ten, k.ten_khoa AS khoa, n.ten_nganh AS nganh, l.ten_lop AS lop,
                    COALESCE(SUM(hp.so_tien), 0) AS total_fee,
                    COALESCE(SUM(hp.da_nop), 0) AS total_paid,
                    COALESCE(SUM(hp.so_tien - hp.da_nop), 0) AS total_owed
                 FROM sinh_vien sv
+                LEFT JOIN lop_sinh_hoat l ON sv.lop_sinh_hoat_id = l.id
+                LEFT JOIN nganh n ON l.nganh_id = n.id
+                LEFT JOIN khoa k ON n.khoa_id = k.id
                 LEFT JOIN hoc_phi hp ON hp.sinh_vien_id = sv.id
                 WHERE 1 = 1";
         $params = [];
         if ($khoa !== '') {
-            $sql .= ' AND sv.khoa = :khoa';
+            $sql .= ' AND k.ten_khoa = :khoa';
             $params['khoa'] = $khoa;
         }
         if ($nganh !== '') {
-            $sql .= ' AND sv.nganh = :nganh';
+            $sql .= ' AND n.ten_nganh = :nganh';
             $params['nganh'] = $nganh;
         }
         if ($lop !== '') {
-            $sql .= ' AND sv.lop = :lop';
+            $sql .= ' AND l.ten_lop = :lop';
             $params['lop'] = $lop;
         }
-        $sql .= ' GROUP BY sv.id ORDER BY sv.khoa, sv.nganh, sv.lop, sv.ho_ten';
+        $sql .= ' GROUP BY sv.id, sv.ma_sv, sv.ho_ten, k.ten_khoa, n.ten_nganh, l.ten_lop ORDER BY k.ten_khoa, n.ten_nganh, l.ten_lop, sv.ho_ten';
         return $this->db->fetchAll($sql, $params);
     }
 
@@ -207,23 +217,30 @@ class AdminTuitionModel {
     }
 
     public function getByKhoa() {
-        return $this->db->fetchAll("SELECT sv.khoa,
+        return $this->db->fetchAll("SELECT k.ten_khoa AS khoa,
           COUNT(DISTINCT sv.id) AS students,
           COALESCE(SUM(hp.so_tien), 0) AS total_fee,
           COALESCE(SUM(hp.da_nop), 0) AS total_paid,
           COALESCE(SUM(hp.so_tien - hp.da_nop), 0) AS total_owed
           FROM sinh_vien sv
+          LEFT JOIN lop_sinh_hoat l ON sv.lop_sinh_hoat_id = l.id
+          LEFT JOIN nganh n ON l.nganh_id = n.id
+          LEFT JOIN khoa k ON n.khoa_id = k.id
           JOIN hoc_phi hp ON hp.sinh_vien_id = sv.id
-          GROUP BY sv.khoa
-          ORDER BY total_owed DESC, sv.khoa ASC");
+          GROUP BY k.ten_khoa
+          ORDER BY total_owed DESC, k.ten_khoa ASC");
     }
 
     public function getTuitionRecord($id) {
-        $sql = 'SELECT hf.*, sv.ma_sv, sv.ho_ten, sv.khoa, sv.nganh, sv.lop';
+        $sql = 'SELECT hf.*, sv.ma_sv, sv.ho_ten, k.ten_khoa AS khoa, n.ten_nganh AS nganh, l.ten_lop AS lop';
         if ($this->hasHocPhanIdColumn()) {
             $sql .= ', hp.ma_hp, hp.ten_hp, hp.so_tin_chi';
         }
-        $sql .= ' FROM hoc_phi hf JOIN sinh_vien sv ON sv.id = hf.sinh_vien_id';
+        $sql .= ' FROM hoc_phi hf 
+                  JOIN sinh_vien sv ON sv.id = hf.sinh_vien_id
+                  LEFT JOIN lop_sinh_hoat l ON sv.lop_sinh_hoat_id = l.id
+                  LEFT JOIN nganh n ON l.nganh_id = n.id
+                  LEFT JOIN khoa k ON n.khoa_id = k.id';
         if ($this->hasHocPhanIdColumn()) {
             $sql .= ' LEFT JOIN hoc_phan hp ON hp.id = hf.hoc_phan_id';
         }
@@ -243,15 +260,19 @@ class AdminTuitionModel {
     }
 
     public function getAllFees() {
-        $sql = 'SELECT hf.*, sv.ma_sv, sv.ho_ten, sv.khoa, sv.nganh, sv.lop';
+        $sql = 'SELECT hf.*, sv.ma_sv, sv.ho_ten, k.ten_khoa AS khoa, n.ten_nganh AS nganh, l.ten_lop AS lop';
         if ($this->hasHocPhanIdColumn()) {
             $sql .= ', hp.ma_hp, hp.ten_hp, hp.so_tin_chi';
         }
-        $sql .= ' FROM hoc_phi hf JOIN sinh_vien sv ON sv.id = hf.sinh_vien_id';
+        $sql .= ' FROM hoc_phi hf 
+                  JOIN sinh_vien sv ON sv.id = hf.sinh_vien_id
+                  LEFT JOIN lop_sinh_hoat l ON sv.lop_sinh_hoat_id = l.id
+                  LEFT JOIN nganh n ON l.nganh_id = n.id
+                  LEFT JOIN khoa k ON n.khoa_id = k.id';
         if ($this->hasHocPhanIdColumn()) {
             $sql .= ' LEFT JOIN hoc_phan hp ON hp.id = hf.hoc_phan_id';
         }
-        $sql .= ' ORDER BY hf.nam_hoc DESC, hf.hoc_ky DESC, sv.khoa, sv.nganh, sv.lop';
+        $sql .= ' ORDER BY hf.nam_hoc DESC, hf.hoc_ky DESC, k.ten_khoa, n.ten_nganh, l.ten_lop';
         return $this->db->fetchAll($sql);
     }
 
@@ -332,9 +353,12 @@ class AdminTuitionModel {
     }
 
     public function getPendingFees(string $maSv = '') {
-        $sql = "SELECT hf.*, sv.ma_sv, sv.ho_ten, sv.khoa, sv.nganh, sv.lop
+        $sql = "SELECT hf.*, sv.ma_sv, sv.ho_ten, k.ten_khoa AS khoa, n.ten_nganh AS nganh, l.ten_lop AS lop
                 FROM hoc_phi hf
                 JOIN sinh_vien sv ON sv.id = hf.sinh_vien_id
+                LEFT JOIN lop_sinh_hoat l ON sv.lop_sinh_hoat_id = l.id
+                LEFT JOIN nganh n ON l.nganh_id = n.id
+                LEFT JOIN khoa k ON n.khoa_id = k.id
                 WHERE hf.trang_thai IN ('Chưa nộp', 'Nợ')";
 
         $params = [];
@@ -343,7 +367,7 @@ class AdminTuitionModel {
             $params['ma_sv'] = $maSv;
         }
 
-        $sql .= ' ORDER BY sv.khoa, sv.nganh, sv.lop, hf.nam_hoc DESC, hf.hoc_ky DESC';
+        $sql .= ' ORDER BY k.ten_khoa, n.ten_nganh, l.ten_lop, hf.nam_hoc DESC, hf.hoc_ky DESC';
         return $this->db->fetchAll($sql, $params);
     }
 

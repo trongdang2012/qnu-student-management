@@ -22,18 +22,27 @@ class GradeController extends Controller {
         $action = $_GET['action'] ?? 'list';
         $hoc_phan_id = (int)($_GET['hoc_phan_id'] ?? 0);
 
+        $khoa = trim($_GET['khoa'] ?? '');
+        $nganh = trim($_GET['nganh'] ?? '');
+        $lop = trim($_GET['lop'] ?? '');
+
         if ($action === 'list') {
             $search = trim($_GET['search'] ?? '');
             $hoc_ky = (int)($_GET['hoc_ky'] ?? 0);
             $loai = trim($_GET['loai'] ?? '');
 
-            $list_hp = $this->gradeModel->getCoursesWithGradeStats($search, $hoc_ky, $loai);
+            $list_hp = $this->gradeModel->getCoursesWithGradeStats($search, $hoc_ky, $loai, $khoa, $nganh, $lop);
+            $facultiesClassesTree = $this->gradeModel->getFacultiesAndClasses();
 
             $this->view('admin/grade/academic', [
                 'list_hp' => $list_hp,
                 'search' => $search,
                 'hoc_ky' => $hoc_ky,
                 'loai' => $loai,
+                'khoa' => $khoa,
+                'nganh' => $nganh,
+                'lop' => $lop,
+                'facultiesClassesTree' => $facultiesClassesTree,
                 'page_title' => 'Nhập điểm học tập',
                 'active_menu' => 'diem'
             ]);
@@ -44,12 +53,15 @@ class GradeController extends Controller {
                 $this->redirect('/admin/diem/hoc-tap');
             }
 
-            $students = $this->gradeModel->getStudentsForGrade($hoc_phan_id);
+            $students = $this->gradeModel->getStudentsForGrade($hoc_phan_id, $khoa, $nganh, $lop);
 
             $this->view('admin/grade/academic_edit', [
                 'hp' => $hp,
                 'hoc_phan_id' => $hoc_phan_id,
                 'students' => $students,
+                'khoa' => $khoa,
+                'nganh' => $nganh,
+                'lop' => $lop,
                 'page_title' => 'Nhập điểm học phần: ' . $hp['ten_hp'],
                 'active_menu' => 'diem'
             ]);
@@ -151,7 +163,11 @@ class GradeController extends Controller {
             $this->redirect('/admin/diem/hoc-tap');
         }
 
-        $students = $this->gradeModel->getStudentsForGrade($hoc_phan_id);
+        $khoa = trim($_GET['khoa'] ?? '');
+        $nganh = trim($_GET['nganh'] ?? '');
+        $lop = trim($_GET['lop'] ?? '');
+
+        $students = $this->gradeModel->getStudentsForGrade($hoc_phan_id, $khoa, $nganh, $lop);
 
         header('Content-Type: text/csv; charset=utf-8');
         header('Content-Disposition: attachment; filename="template_diem_' . $hp['ma_hp'] . '.csv"');
@@ -215,7 +231,11 @@ class GradeController extends Controller {
         // Bỏ dòng tiêu đề
         array_shift($rows);
 
-        $students = $this->gradeModel->getStudentsForGrade($hoc_phan_id);
+        $khoa = trim($_POST['khoa'] ?? '');
+        $nganh = trim($_POST['nganh'] ?? '');
+        $lop = trim($_POST['lop'] ?? '');
+
+        $students = $this->gradeModel->getStudentsForGrade($hoc_phan_id, $khoa, $nganh, $lop);
         $svMap = [];
         foreach ($students as $sv) {
             $svMap[$sv['ma_sv']] = $sv['sinh_vien_id'];
@@ -707,131 +727,7 @@ class GradeController extends Controller {
     }
 
 
-    // ==========================================
-    // BÁO CÁO ĐIỂM
-    // ==========================================
 
-    public function report() {
-        $ma_sv = isset($_GET['ma_sv']) ? trim($_GET['ma_sv']) : '';
-        $action = $_GET['action'] ?? '';
-
-        $student = null;
-        $diem_list = [];
-        $error_msg = '';
-        $info_msg = '';
-        $cpa = 0.0;
-        $tc_tich_luy = 0;
-        $so_mon = 0;
-        $so_mon_F = 0;
-        $by_nh_hk = [];
-
-        if ($action === 'view' || $action === 'export') {
-            if ($ma_sv === '') {
-                $error_msg = 'Vui lòng nhập thông tin tìm kiếm (Mã sinh viên).';
-            } else {
-                $student = $this->gradeModel->getStudentByCode($ma_sv);
-                if (!$student) {
-                    $error_msg = 'Không tìm thấy sinh viên.';
-                } else {
-                    $diem_list = $this->gradeModel->getStudentGradesReport($student['id']);
-                    if (empty($diem_list)) {
-                        $info_msg = 'Chưa có dữ liệu điểm cho sinh viên này.';
-                    } else {
-                        $sum_tc = 0;
-                        $sum_he4 = 0;
-                        foreach ($diem_list as $d) {
-                            if ($action !== 'export') {
-                                $by_nh_hk[$d['nam_hoc']][$d['hoc_ky']][] = $d;
-                            }
-                            if (!is_null($d['diem_he4'])) {
-                                $sum_tc += $d['so_tin_chi'];
-                                $sum_he4 += $d['diem_he4'] * $d['so_tin_chi'];
-                                $so_mon++;
-                                if ($d['diem_he4'] >= 1.0) {
-                                    $tc_tich_luy += $d['so_tin_chi'];
-                                } else {
-                                    $so_mon_F++;
-                                }
-                            }
-                        }
-                        $cpa = $sum_tc > 0 ? round($sum_he4 / $sum_tc, 2) : 0;
-
-                        if ($action === 'export') {
-                            $this->exportCsv($student, $diem_list, $cpa, $tc_tich_luy, $so_mon_F);
-                        }
-                    }
-                }
-            }
-        }
-
-        $this->view('admin/grade/report', [
-            'ma_sv' => $ma_sv,
-            'student' => $student,
-            'diem_list' => $diem_list,
-            'error_msg' => $error_msg,
-            'info_msg' => $info_msg,
-            'cpa' => $cpa,
-            'tc_tich_luy' => $tc_tich_luy,
-            'so_mon' => $so_mon,
-            'so_mon_F' => $so_mon_F,
-            'by_nh_hk' => $by_nh_hk,
-            'page_title' => 'Báo cáo điểm sinh viên',
-            'active_menu' => 'diem',
-            'gradeModel' => $this->gradeModel // pass model to view to get training grade per semester easily
-        ]);
-    }
-
-    private function exportCsv($student, $diem_list, $cpa, $tc_tich_luy, $so_mon_F) {
-        function xepLoaiCSV($cpa) {
-            if ($cpa >= 3.6) return 'Xuất sắc';
-            if ($cpa >= 3.2) return 'Giỏi';
-            if ($cpa >= 2.5) return 'Khá';
-            if ($cpa >= 2.0) return 'Trung bình';
-            return 'Yếu';
-        }
-
-        header('Content-Type: text/csv; charset=utf-8');
-        header('Content-Disposition: attachment; filename="bang_diem_' . $student['ma_sv'] . '.csv"');
-        echo "\xEF\xBB\xBF";
-        $output = fopen('php://output', 'w');
-
-        fputcsv($output, ['BÁO CÁO KẾT QUẢ HỌC TẬP SINH VIÊN'], "\t");
-        fputcsv($output, [], "\t");
-        fputcsv($output, ['THÔNG TIN SINH VIÊN'], "\t");
-        fputcsv($output, ['Mã sinh viên:', $student['ma_sv']], "\t");
-        fputcsv($output, ['Họ và tên:', $student['ho_ten']], "\t");
-        fputcsv($output, ['Ngày sinh:', $student['ngay_sinh'] ? date('d/m/Y', strtotime($student['ngay_sinh'])) : ''], "\t");
-        fputcsv($output, ['Lớp học:', $student['lop']], "\t");
-        fputcsv($output, ['Ngành:', $student['nganh']], "\t");
-        fputcsv($output, ['Khoa:', $student['khoa']], "\t");
-        fputcsv($output, ['Niên khóa:', $student['nien_khoa']], "\t");
-        fputcsv($output, [], "\t");
-
-        fputcsv($output, ['TỔNG HỢP TOÀN KHÓA'], "\t");
-        fputcsv($output, ['CPA (Hệ 4):', number_format($cpa, 2)], "\t");
-        fputcsv($output, ['Tín chỉ tích lũy:', $tc_tich_luy], "\t");
-        fputcsv($output, ['Số học phần tích lũy:', count($diem_list)], "\t");
-        fputcsv($output, ['Số học phần chưa đạt (F):', $so_mon_F], "\t");
-        fputcsv($output, ['Xếp loại học lực:', xepLoaiCSV($cpa)], "\t");
-        fputcsv($output, [], "\t");
-
-        fputcsv($output, ['CHI TIẾT BẢNG ĐIỂM'], "\t");
-        fputcsv($output, ['Mã HP', 'Tên học phần', 'Số TC', 'Kỳ học', 'Năm học', 'Điểm CC (10%)', 'Điểm GK (30%)', 'Điểm CK (60%)', 'Điểm tổng kết', 'Hệ 4', 'Điểm chữ'], "\t");
-
-        foreach ($diem_list as $d) {
-            fputcsv($output, [
-                $d['ma_hp'], $d['ten_hp'], $d['so_tin_chi'],
-                'HK' . $d['hoc_ky'], $d['nam_hoc'],
-                is_null($d['diem_cc']) ? '—' : $d['diem_cc'],
-                is_null($d['diem_gk']) ? '—' : $d['diem_gk'],
-                is_null($d['diem_ck']) ? '—' : $d['diem_ck'],
-                is_null($d['diem_tong']) ? '—' : $d['diem_tong'],
-                is_null($d['diem_he4']) ? '—' : $d['diem_he4'],
-                is_null($d['diem_chu']) ? '—' : $d['diem_chu']
-            ], "\t");
-        }
-
-    }
 
     public function trainingExportTemplate() {
         $lop = trim($_GET['lop'] ?? '');

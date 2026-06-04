@@ -39,12 +39,15 @@
           <h3><i class="fas fa-users"></i> Danh sách sinh viên (<?= count($students) ?>)</h3>
           
           <div style="display:flex; gap:10px; align-items:center; flex-wrap: wrap; margin-top: 5px;">
-            <a href="<?= BASE_URL ?>/admin/diem/hoc-tap" class="btn btn-secondary btn-sm"><i class="fas fa-arrow-left"></i> Quay lại</a>
-            <a href="<?= BASE_URL ?>/admin/diem/hoc-tap/export-template?hoc_phan_id=<?= $hoc_phan_id ?>" class="btn btn-info btn-sm" style="color:white; background:#17a2b8; border:none;">
+            <a href="<?= BASE_URL ?>/admin/diem/hoc-tap?khoa=<?= urlencode($khoa) ?>&nganh=<?= urlencode($nganh) ?>&lop=<?= urlencode($lop) ?>" class="btn btn-secondary btn-sm"><i class="fas fa-arrow-left"></i> Quay lại</a>
+            <a href="<?= BASE_URL ?>/admin/diem/hoc-tap/export-template?hoc_phan_id=<?= $hoc_phan_id ?>&khoa=<?= urlencode($khoa) ?>&nganh=<?= urlencode($nganh) ?>&lop=<?= urlencode($lop) ?>" class="btn btn-info btn-sm" style="color:white; background:#17a2b8; border:none;">
                 <i class="fas fa-download"></i> Tải template (Excel/CSV)
             </a>
             <form action="<?= BASE_URL ?>/admin/diem/hoc-tap/import" method="POST" enctype="multipart/form-data" style="display:inline-flex; align-items:center; gap:5px; margin:0;">
                 <input type="hidden" name="hoc_phan_id" value="<?= $hoc_phan_id ?>">
+                <input type="hidden" name="khoa" value="<?= e($khoa) ?>">
+                <input type="hidden" name="nganh" value="<?= e($nganh) ?>">
+                <input type="hidden" name="lop" value="<?= e($lop) ?>">
                 <input type="file" name="excel_file" accept=".xlsx, .csv" required style="font-size:12px; max-width:200px; padding:3px;" class="form-control" title="Chọn file Excel hoặc CSV">
                 <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-upload"></i> Nhập/Đè điểm</button>
             </form>

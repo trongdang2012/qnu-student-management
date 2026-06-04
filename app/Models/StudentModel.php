@@ -11,7 +11,12 @@ class StudentModel {
     }
 
     public function getStudentInfo($userId) {
-        $sql = "SELECT s.* FROM sinh_vien s WHERE s.user_id = :uid LIMIT 1";
+        $sql = "SELECT s.*, l.ten_lop as lop, n.ten_nganh as nganh, k.ten_khoa as khoa 
+                FROM sinh_vien s 
+                LEFT JOIN lop_sinh_hoat l ON l.id = s.lop_sinh_hoat_id
+                LEFT JOIN nganh n ON n.id = l.nganh_id
+                LEFT JOIN khoa k ON k.id = n.khoa_id
+                WHERE s.user_id = :uid LIMIT 1";
         return $this->db->fetch($sql, ['uid' => $userId]);
     }
 
@@ -32,8 +37,10 @@ class StudentModel {
 
         // Tổng tín chỉ chương trình
         $sql2 = "SELECT SUM(hp.so_tin_chi) AS tc
-                 FROM ctdt_chi_tiet c JOIN hoc_phan hp ON hp.id = c.hoc_phan_id
-                 WHERE c.nganh = :nganh";
+                 FROM ctdt_chi_tiet c 
+                 JOIN nganh n ON n.id = c.nganh_id
+                 JOIN hoc_phan hp ON hp.id = c.hoc_phan_id
+                 WHERE n.ten_nganh = :nganh";
         $tc_total = (float)($this->db->fetch($sql2, ['nganh' => $nganh])['tc'] ?? 130);
 
         // CPA (lấy điểm cao nhất của từng môn học bao gồm cả các môn trượt/nợ)
@@ -113,8 +120,9 @@ class StudentModel {
         $ctdt = $this->db->fetchAll("
             SELECT hp.loai, SUM(hp.so_tin_chi) AS tong
             FROM ctdt_chi_tiet c
+            JOIN nganh n ON n.id = c.nganh_id
             JOIN hoc_phan hp ON hp.id = c.hoc_phan_id
-            WHERE c.nganh = :nganh
+            WHERE n.ten_nganh = :nganh
             GROUP BY hp.loai
         ", ['nganh' => $nganh]);
 
@@ -150,9 +158,10 @@ class StudentModel {
             SELECT c.hoc_ky, hp.ma_hp, hp.ten_hp, hp.so_tin_chi, hp.loai,
                    d.diem_tong, d.diem_chu, d.diem_he4
             FROM ctdt_chi_tiet c
+            JOIN nganh n ON n.id = c.nganh_id
             JOIN hoc_phan hp ON hp.id = c.hoc_phan_id
             LEFT JOIN diem_hoc_tap d ON d.hoc_phan_id = hp.id AND d.sinh_vien_id = :sid
-            WHERE c.nganh = :nganh
+            WHERE n.ten_nganh = :nganh
             ORDER BY c.hoc_ky, hp.loai
         ", ['sid' => $studentId, 'nganh' => $nganh]);
 

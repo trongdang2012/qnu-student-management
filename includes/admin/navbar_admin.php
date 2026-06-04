@@ -41,6 +41,22 @@ $active_menu = $active_menu ?? 'dashboard';
           <i class="fas fa-chalkboard-teacher"></i> Lớp học phần
         </a>
       </li>
+      <li class="nav-item dropdown <?= $active_menu==='dao_tao'?'active':'' ?>">
+        <a class="nav-link" href="#">
+          <i class="fas fa-university"></i> Quản lý đào tạo <span class="arrow">▾</span>
+        </a>
+        <ul class="dropdown-menu">
+          <li><a href="<?= BASE_URL ?>/admin/khoa">
+            <span class="menu-icon"><i class="fas fa-landmark"></i></span> Quản lý Khoa
+          </a></li>
+          <li><a href="<?= BASE_URL ?>/admin/nganh">
+            <span class="menu-icon"><i class="fas fa-graduation-cap"></i></span> Quản lý Ngành
+          </a></li>
+          <li><a href="<?= BASE_URL ?>/admin/lop-sinh-hoat">
+            <span class="menu-icon"><i class="fas fa-users"></i></span> Lớp sinh hoạt
+          </a></li>
+        </ul>
+      </li>
       <li class="nav-item <?= $active_menu==='hoc_phi'?'active':'' ?>">
         <a class="nav-link" href="<?= BASE_URL ?>/admin/hoc-phi">
           <i class="fas fa-money-bill-wave"></i> Học phí
@@ -66,9 +82,6 @@ $active_menu = $active_menu ?? 'dashboard';
           </a></li>
           <li><a href="<?= BASE_URL ?>/admin/diem/ren-luyen">
             <span class="menu-icon"><i class="fas fa-star"></i></span> Điểm rèn luyện
-          </a></li>
-          <li><a href="<?= BASE_URL ?>/admin/diem/bao-cao">
-            <span class="menu-icon"><i class="fas fa-chart-bar"></i></span> Báo cáo điểm
           </a></li>
         </ul>
       </li>
