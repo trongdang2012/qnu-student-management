@@ -899,3 +899,796 @@
     padding: 24px 20px;
   }
 }
+
+/* ── MODERN DASHBOARD STUDENT (ẢNH 1 STYLE) ───────────────────── */
+
+/* Ghi đè Header thành Glassmorphism */
+.student-navbar {
+  position: fixed;
+  top: 15px !important;
+  left: 20px !important;
+  right: 20px !important;
+  max-width: 1200px;
+  margin: 0 auto;
+  height: 60px !important;
+  background: rgba(255, 255, 255, 0.8) !important;
+  backdrop-filter: blur(14px) saturate(180%);
+  -webkit-backdrop-filter: blur(14px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.4) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04) !important;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+}
+
+.navbar-inner {
+  padding: 0 24px !important;
+}
+
+/* Logo Brand sẫm màu */
+.student-navbar .navbar-brand {
+  color: #1d2c5e !important;
+}
+.student-navbar .navbar-brand .logo-icon {
+  background: rgba(29, 44, 94, 0.08) !important;
+  color: #3a86ff !important;
+  border-radius: 10px;
+}
+
+/* Menu sẫm màu và active style */
+.student-navbar .navbar-nav .nav-link {
+  color: #4b5563 !important;
+  font-weight: 600;
+  padding: 8px 16px !important;
+  border-radius: 12px !important;
+  font-size: 13.5px;
+}
+.student-navbar .navbar-nav .nav-link:hover {
+  background: rgba(29, 44, 94, 0.04) !important;
+  color: #1d2c5e !important;
+}
+.student-navbar .navbar-nav .nav-link.active {
+  background: #1d2c5e !important;
+  color: #fff !important;
+}
+
+/* Nút tài liệu & Bell icon sẫm màu */
+.student-navbar .nav-doc-link {
+  color: #1d2c5e !important;
+}
+.student-navbar .nav-doc-link:hover {
+  opacity: 0.7;
+}
+.student-navbar .nav-bell {
+  color: #1d2c5e !important;
+}
+.student-navbar .navbar-user .user-name {
+  color: #1d2c5e !important;
+  font-weight: 600;
+}
+.student-navbar .navbar-user .user-avatar {
+  border-color: rgba(29, 44, 94, 0.15) !important;
+}
+.student-navbar .navbar-user .user-name-arrow {
+  color: #1d2c5e !important;
+}
+
+/* Thêm dải nền lượn sóng màu xanh sẫm thẫm ở phía sau */
+.student-wrapper {
+  position: relative;
+  background: #f4f6fa !important;
+  min-height: 100vh;
+  padding-top: 110px !important; /* Tạo khoảng trống cho navbar lơ lửng */
+  padding-bottom: 40px;
+  overflow-x: hidden;
+}
+
+.student-wrapper::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 380px;
+  background: linear-gradient(135deg, #090e1f 0%, #152244 100%);
+  border-bottom-left-radius: 50% 40px;
+  border-bottom-right-radius: 50% 40px;
+  z-index: 0;
+}
+
+.student-container {
+  position: relative;
+  z-index: 1 !important;
+}
+
+/* Row 1: Welcome Section */
+.row-welcome {
+  display: grid;
+  grid-template-columns: 7fr 3fr;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.col-welcome-left {
+  display: flex;
+  flex-direction: column;
+}
+
+.col-welcome-right {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Welcome Banner Modern */
+.welcome-banner-modern {
+  background: linear-gradient(135deg, #3a86ff 0%, #8338ec 100%);
+  color: #fff;
+  border-radius: 24px;
+  padding: 36px 40px;
+  margin-bottom: 24px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(131, 56, 236, 0.15);
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.welcome-text-wrap {
+  position: relative;
+  z-index: 2;
+}
+
+.welcome-banner-modern h2 {
+  font-size: 28px;
+  font-weight: 700;
+  margin: 0 0 10px 0;
+  letter-spacing: -0.5px;
+}
+
+.welcome-banner-modern p {
+  opacity: 0.9;
+  font-size: 14.5px;
+  font-weight: 500;
+  margin: 0;
+}
+
+/* Khối đa diện neon 3D trang trí */
+.welcome-banner-modern .decor-shape {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  pointer-events: none;
+}
+.welcome-banner-modern .shape-1 {
+  width: 70px;
+  height: 70px;
+  border-radius: 16px;
+  top: -20px;
+  right: 15%;
+  transform: rotate(15deg);
+  background: linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.02) 100%);
+}
+.welcome-banner-modern .shape-2 {
+  width: 50px;
+  height: 50px;
+  border-radius: 12px;
+  bottom: -10px;
+  right: 5%;
+  transform: rotate(-25deg);
+  background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%);
+}
+.welcome-banner-modern .shape-3 {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  top: 30px;
+  right: 25%;
+  background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 70%);
+  border: none;
+}
+
+/* 3 Stat Cards Modern */
+.stat-grid-modern {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.stat-card-modern {
+  background: #fff;
+  border-radius: 20px;
+  padding: 18px 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+  border: 1px solid rgba(0, 0, 0, 0.02);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.stat-card-modern:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
+}
+
+.stat-icon-modern {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.stat-icon-modern.blue {
+  background: rgba(58, 134, 255, 0.08);
+  color: #3a86ff;
+}
+
+.stat-icon-modern.purple {
+  background: rgba(131, 56, 236, 0.08);
+  color: #8338ec;
+}
+
+.stat-icon-modern.dark-blue {
+  background: rgba(29, 44, 94, 0.08);
+  color: #1d2c5e;
+}
+
+.stat-info-modern {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.stat-label-modern {
+  font-size: 12px;
+  color: #8892b0;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.stat-value-modern {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+/* Progress Graduation Card */
+.progress-card-modern {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 24px;
+  padding: 24px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03);
+}
+
+.progress-title-modern {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1d2c5e;
+  margin: 0 0 20px 0;
+  align-self: flex-start;
+}
+
+.radial-gauge-container {
+  position: relative;
+  width: 170px;
+  height: 170px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: auto 0;
+}
+
+.radial-gauge-svg {
+  transform: rotate(-90deg);
+  width: 100%;
+  height: 100%;
+}
+
+.radial-gauge-progress {
+  transition: stroke-dashoffset 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.radial-gauge-content {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  pointer-events: none;
+}
+
+.gauge-percent {
+  font-size: 34px;
+  font-weight: 800;
+  color: #1d2c5e;
+  line-height: 1;
+}
+
+.gauge-stats {
+  font-size: 11px;
+  color: #4b5563;
+  font-weight: 700;
+  margin-top: 4px;
+}
+
+.gauge-subtext {
+  font-size: 10px;
+  color: #8892b0;
+  font-weight: 500;
+  margin-top: 4px;
+  max-width: 120px;
+  line-height: 1.3;
+}
+
+/* Row 2: Lower Section */
+.row-lower {
+  display: grid;
+  grid-template-columns: 3fr 7fr;
+  gap: 24px;
+}
+
+.col-lower-left {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.col-lower-right {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Modern Card style */
+.card-modern {
+  background: #fff;
+  border-radius: 24px;
+  padding: 24px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+  border: 1px solid rgba(0, 0, 0, 0.02);
+}
+
+.card-header-modern {
+  margin-bottom: 18px;
+}
+
+.card-header-modern h3 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1d2c5e;
+  margin: 0;
+}
+
+/* Info rows (Thông tin cá nhân) */
+.info-row-modern {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #f3f4f6;
+  font-size: 13.5px;
+}
+
+.info-row-modern:last-child {
+  border-bottom: none;
+}
+
+.info-label-modern {
+  color: #8892b0;
+  font-weight: 500;
+}
+
+.info-value-modern {
+  color: #1f2937;
+  font-weight: 600;
+  text-align: right;
+  max-width: 60%;
+}
+
+.pill-green-modern {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* Notice list (Thông báo mới) */
+.notice-card-modern {
+  display: flex;
+  flex-direction: column;
+}
+
+.display-flex-between {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.arrow-link-modern {
+  color: #8892b0;
+  font-size: 12px;
+  transition: color 0.2s, transform 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #f8f9fa;
+}
+
+.arrow-link-modern:hover {
+  color: #3a86ff;
+  transform: translateX(2px);
+  background: rgba(58, 134, 255, 0.08);
+}
+
+.notice-item-modern {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  background: #f8f9fa;
+  border-radius: 16px;
+  padding: 14px;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
+  border: 1px solid rgba(0, 0, 0, 0.01);
+}
+
+.notice-item-modern:hover {
+  background: rgba(58, 134, 255, 0.04);
+  transform: translateY(-1px);
+  border-color: rgba(58, 134, 255, 0.1);
+}
+
+.notice-icon-modern {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: rgba(255, 183, 3, 0.12);
+  color: #ffb703;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+.notice-info-modern {
+  flex: 1;
+  min-width: 0;
+}
+
+.notice-title-modern {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.notice-text-modern {
+  font-size: 11.5px;
+  color: #6b7280;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Modern Grades Card style */
+.grades-card-modern {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.table-container-modern {
+  overflow-x: auto;
+  flex: 1;
+}
+
+.table-modern {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.table-modern th {
+  padding: 12px 16px;
+  color: #8892b0;
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid #f3f4f6;
+  background: #fdfdfd;
+}
+
+.table-modern td {
+  padding: 16px;
+  border-bottom: 1px solid #f3f4f6;
+  font-size: 13.5px;
+  color: #1f2937;
+  vertical-align: middle;
+}
+
+.table-modern tr:last-child td {
+  border-bottom: none;
+}
+
+.table-modern tr:hover td {
+  background: rgba(58, 134, 255, 0.01);
+}
+
+.font-medium {
+  font-weight: 500;
+}
+
+.font-bold {
+  font-weight: 700;
+}
+
+.grade-badge-modern {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  font-weight: 700;
+  font-size: 12.5px;
+}
+
+.grade-badge-modern.grade-A,
+.grade-badge-modern.grade-A_plus {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+}
+
+.grade-badge-modern.grade-B,
+.grade-badge-modern.grade-B_plus {
+  background: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+}
+
+.grade-badge-modern.grade-C,
+.grade-badge-modern.grade-C_plus {
+  background: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+}
+
+.grade-badge-modern.grade-D,
+.grade-badge-modern.grade-D_plus {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+.grade-badge-modern.grade-F {
+  background: rgba(220, 38, 38, 0.12);
+  color: #dc2626;
+}
+
+.btn-action-modern {
+  display: inline-block;
+  padding: 8px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  color: #4b5563;
+  font-weight: 600;
+  font-size: 12.5px;
+  text-decoration: none;
+  transition: all 0.2s;
+  background: #fff;
+  white-space: nowrap;
+}
+
+.btn-action-modern:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+  color: #111827;
+}
+
+/* Wiggle animation for Bell */
+@keyframes wiggle {
+  0%, 100% { transform: rotate(0); }
+  25% { transform: rotate(8deg); }
+  75% { transform: rotate(-8deg); }
+}
+.animate-wiggle {
+  animation: wiggle 2.5s infinite;
+}
+
+/* Responsive cho layout mới */
+@media (max-width: 992px) {
+  .row-welcome {
+    grid-template-columns: 1fr;
+  }
+  .row-lower {
+    grid-template-columns: 1fr;
+  }
+  .col-welcome-right {
+    height: 250px;
+  }
+}
+
+@media (max-width: 768px) {
+  .student-navbar {
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    border-radius: 0 !important;
+    border-left: none !important;
+    border-right: none !important;
+    border-top: none !important;
+    height: 60px !important;
+  }
+  .student-wrapper {
+    padding-top: 80px !important;
+  }
+  .welcome-banner-modern {
+    padding: 24px;
+  }
+  .welcome-banner-modern h2 {
+    font-size: 22px;
+  }
+  .stat-grid-modern {
+    grid-template-columns: 1fr;
+  }
+  .welcome-banner-modern .decor-shape {
+    display: none;
+  }
+}
+
+/* Thiết kế lại banner cảnh báo học vụ nợ môn */
+.debt-warning-banner {
+  background: rgba(239, 68, 68, 0.15) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1.5px solid rgba(239, 68, 68, 0.35) !important;
+  border-radius: 24px !important;
+  padding: 24px 28px !important;
+  margin-bottom: 28px !important;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  box-shadow: 0 10px 30px rgba(239, 68, 68, 0.12) !important;
+  position: relative;
+  z-index: 2;
+}
+
+.debt-warning-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  flex: 1;
+}
+
+.debt-warning-icon {
+  background: rgba(239, 68, 68, 0.25) !important;
+  color: #ff4d4d !important;
+  font-size: 26px;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 0 15px rgba(239, 68, 68, 0.2);
+}
+
+.debt-warning-body h4 {
+  margin: 0 0 6px 0 !important;
+  color: #ff4d4d !important;
+  font-size: 17px !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.3px;
+}
+
+.debt-warning-body p {
+  margin: 0 0 16px 0 !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+  font-size: 14px !important;
+  line-height: 1.6 !important;
+  font-weight: 500;
+}
+
+.debt-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.debt-badge {
+  background: rgba(239, 68, 68, 0.25) !important;
+  border: 1px solid rgba(239, 68, 68, 0.4) !important;
+  color: #ff9999 !important;
+  padding: 6px 14px !important;
+  border-radius: 10px !important;
+  font-size: 13px !important;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+}
+
+.debt-badge strong {
+  color: #ff4d4d !important;
+  margin-right: 4px;
+}
+
+.debt-warning-action {
+  flex-shrink: 0;
+}
+
+.debt-warning-action .btn-danger {
+  background: #ff4d4d !important;
+  color: #fff !important;
+  border: none !important;
+  padding: 12px 24px !important;
+  font-weight: 700 !important;
+  font-size: 14.5px !important;
+  border-radius: 14px !important;
+  white-space: nowrap;
+  transition: all 0.25s ease !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.3) !important;
+}
+
+.debt-warning-action .btn-danger:hover {
+  background: #ff3333 !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 25px rgba(239, 68, 68, 0.45) !important;
+}
+
+.animate-pulse {
+  animation: pulse-red 2s infinite;
+}
+
+@keyframes pulse-red {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+
+@media (max-width: 768px) {
+  .debt-warning-banner {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    padding: 20px !important;
+  }
+  .debt-warning-action {
+    text-align: right;
+    margin-top: 12px;
+  }
+  .debt-warning-action .btn-danger {
+    width: 100%;
+    justify-content: center;
+  }
+}

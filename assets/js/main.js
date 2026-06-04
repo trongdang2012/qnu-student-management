@@ -43,8 +43,8 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   });
 
-  // User menu (avatar + tên người dùng)
-  document.querySelectorAll('.navbar-user .user-avatar, .navbar-user .user-name').forEach(el => {
+  // User menu (avatar + tên người dùng + nút toggle)
+  document.querySelectorAll('.navbar-user .user-toggle, .navbar-user .user-avatar, .navbar-user .user-name').forEach(el => {
     el.addEventListener('click', function (e) {
       e.stopPropagation();
       const userMenu = this.closest('.navbar-user');

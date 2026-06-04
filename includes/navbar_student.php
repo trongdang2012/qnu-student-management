@@ -17,7 +17,7 @@ $_menu = $active_menu ?? '';
 
     <!-- Brand -->
     <a href="<?= $_base ?>/student/dashboard" class="navbar-brand" aria-label="QNU SMS - Trang chủ">
-      <div class="logo-icon"><i class="fas fa-university"></i></div>
+      <div class="logo-icon"><i class="fas fa-graduation-cap"></i></div>
       <span>QNU SMS</span>
     </a>
 
@@ -34,14 +34,14 @@ $_menu = $active_menu ?? '';
         <a href="<?= $_base ?>/student/dashboard"
            class="nav-link <?= $_menu === 'dashboard' ? 'active' : '' ?>"
            role="menuitem">
-          <i class="fas fa-home"></i> Tổng quan
+          Tổng quan
         </a>
       </li>
 
       <!-- Cá nhân -->
       <li class="nav-item dropdown" role="none">
         <a href="#" class="nav-link <?= $_menu === 'ca_nhan' ? 'active' : '' ?>" role="menuitem" aria-haspopup="true">
-          <i class="fas fa-user-circle"></i> Cá nhân <span class="arrow">▾</span>
+          Cá nhân <span class="arrow">▾</span>
         </a>
         <ul class="dropdown-menu" role="menu">
           <li><a href="<?= $_base ?>/student/ho-so" role="menuitem">
@@ -61,7 +61,7 @@ $_menu = $active_menu ?? '';
       <!-- Học tập -->
       <li class="nav-item dropdown" role="none">
         <a href="#" class="nav-link <?= $_menu === 'hoc_tap' ? 'active' : '' ?>" role="menuitem" aria-haspopup="true">
-          <i class="fas fa-book-open"></i> Học tập <span class="arrow">▾</span>
+          Học tập <span class="arrow">▾</span>
         </a>
         <ul class="dropdown-menu" role="menu">
           <li><a href="<?= $_base ?>/student/chuong-trinh" role="menuitem">
@@ -86,7 +86,7 @@ $_menu = $active_menu ?? '';
       <!-- Trực tuyến -->
       <li class="nav-item dropdown" role="none">
         <a href="#" class="nav-link <?= $_menu === 'truc_tuyen' ? 'active' : '' ?>" role="menuitem" aria-haspopup="true">
-          <i class="fas fa-laptop-code"></i> Trực tuyến <span class="arrow">▾</span>
+          Trực tuyến <span class="arrow">▾</span>
         </a>
         <ul class="dropdown-menu" role="menu">
           <li><a href="<?= $_base ?>/student/dang-ky-hoc-phan" role="menuitem">
@@ -103,14 +103,14 @@ $_menu = $active_menu ?? '';
     <div class="navbar-actions" style="display:flex; align-items:center; gap: 20px;">
       <!-- Notification Bell with Dropdown -->
       <div class="nav-bell-container" style="position:relative; z-index: 1005;">
-        <a href="javascript:void(0)" class="nav-bell" id="bellToggle" style="position:relative; color: #fff; text-decoration:none; font-size: 1.3rem;">
-          <i class="fas fa-bell"></i>
+        <a href="javascript:void(0)" class="nav-bell" id="bellToggle" style="position:relative; color: #1d2c5e; text-decoration:none; font-size: 1.3rem; display: flex; align-items: center;">
+          <i class="far fa-bell"></i>
           <?php 
             $studentModel = new \App\Models\StudentModel();
             $unreadCount = isset($sv) ? $studentModel->getUnreadNotificationCount($sv['id']) : 0;
             if ($unreadCount > 0): 
           ?>
-            <span class="badge" id="bellBadge" style="position:absolute; top:-5px; right:-10px; background:#dc3545; color:white; border-radius:50%; font-size:0.7rem; padding: 2px 6px; box-shadow: 0 0 0 2px var(--primary);"><?= $unreadCount ?></span>
+            <span class="badge-dot" id="bellBadge" style="position:absolute; top: 0px; right: 0px; width: 8px; height: 8px; background:#dc3545; border-radius:50%; border: 1.5px solid #fff;"></span>
           <?php endif; ?>
         </a>
 
@@ -181,24 +181,27 @@ $_menu = $active_menu ?? '';
 
       <!-- User info (right) -->
       <div class="navbar-user" id="userMenu" style="z-index: 1005;">
-      <img src="<?= $_avatar ?>" alt="Avatar" class="user-avatar" id="userAvatarToggle">
-      <span class="user-name"><?= $_name ?></span>
-      <div class="user-dropdown" role="menu">
-        <div class="user-dropdown-header">
-          <div class="ud-name"><?= $_name ?></div>
-          <div class="ud-id">MSSV: <?= $_msv ?></div>
+        <div class="user-toggle" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+          <img src="<?= $_avatar ?>" alt="Avatar" class="user-avatar" id="userAvatarToggle">
+          <span class="user-name"><?= $_name ?></span>
+          <i class="fas fa-chevron-down user-name-arrow" style="font-size: 10px; color: #1d2c5e; margin-left: 2px;"></i>
         </div>
-        <a href="<?= $_base ?>/student/ho-so" role="menuitem">
-          <i class="fas fa-user"></i> Hồ sơ của tôi
-        </a>
-        <a href="<?= $_base ?>/student/cap-nhat" role="menuitem">
-          <i class="fas fa-cog"></i> Cài đặt
-        </a>
-        <a href="<?= $_base ?>/auth/logout" class="logout-link" role="menuitem"
-           onclick="return confirm('Bạn có muốn đăng xuất không?')">
-          <i class="fas fa-sign-out-alt"></i> Đăng xuất
-        </a>
-      </div>
+        <div class="user-dropdown" role="menu">
+          <div class="user-dropdown-header">
+            <div class="ud-name"><?= $_name ?></div>
+            <div class="ud-id">MSSV: <?= $_msv ?></div>
+          </div>
+          <a href="<?= $_base ?>/student/ho-so" role="menuitem">
+            <i class="fas fa-user"></i> Hồ sơ của tôi
+          </a>
+          <a href="<?= $_base ?>/student/cap-nhat" role="menuitem">
+            <i class="fas fa-cog"></i> Cài đặt
+          </a>
+          <a href="<?= $_base ?>/auth/logout" class="logout-link" role="menuitem"
+             onclick="return confirm('Bạn có muốn đăng xuất không?')">
+            <i class="fas fa-sign-out-alt"></i> Đăng xuất
+          </a>
+        </div>
       </div>
     </div><!-- /navbar-actions -->
 
