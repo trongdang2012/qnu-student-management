@@ -35,9 +35,10 @@ class CourseModel {
                       AND dk.sinh_vien_id = :sid 
                     ORDER BY dk.ngay_dang_ky DESC LIMIT 1) AS dk_trang_thai
             FROM ctdt_chi_tiet c
+            JOIN nganh n ON n.id = c.nganh_id
             JOIN hoc_phan hp ON hp.id = c.hoc_phan_id
             LEFT JOIN diem_hoc_tap d ON d.hoc_phan_id = hp.id AND d.sinh_vien_id = :sid2
-            WHERE c.nganh = :nganh
+            WHERE n.ten_nganh = :nganh
             ORDER BY c.hoc_ky, hp.loai, hp.ma_hp
         ", ['sid' => $studentId, 'sid2' => $studentId, 'nganh' => $nganh]);
 
@@ -168,8 +169,9 @@ class CourseModel {
             FROM lop_hoc_phan l
             JOIN hoc_phan hp ON l.hoc_phan_id = hp.id
             JOIN ctdt_chi_tiet c ON hp.id = c.hoc_phan_id
+            JOIN nganh n ON n.id = c.nganh_id
             LEFT JOIN thoi_khoa_bieu t ON t.lop_hoc_phan_id = l.id
-            WHERE c.nganh = :nganh
+            WHERE n.ten_nganh = :nganh
               AND l.hoc_ky = :hk_hien_tai
               AND l.nam_hoc = :nh_hien_tai
               AND l.trang_thai_mo_lop = 'Đang mở'

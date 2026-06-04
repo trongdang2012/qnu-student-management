@@ -132,8 +132,10 @@ class DocumentModel {
     public function getCoursesByMajor($nganh) {
         $sql = "
             SELECT hp.id, hp.ten_hp, hp.ma_hp
-            FROM ctdt_chi_tiet c JOIN hoc_phan hp ON hp.id=c.hoc_phan_id
-            WHERE c.nganh = :nganh
+            FROM ctdt_chi_tiet c 
+            JOIN nganh n ON n.id = c.nganh_id
+            JOIN hoc_phan hp ON hp.id=c.hoc_phan_id
+            WHERE n.ten_nganh = :nganh
             ORDER BY hp.ten_hp
         ";
         return $this->db->fetchAll($sql, ['nganh' => $nganh]);
