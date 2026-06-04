@@ -144,7 +144,6 @@
               <th>Khoa</th>
               <th>Ngành</th>
               <th>Lớp</th>
-              <th>Học phần</th>
               <th style="text-align:center">HK</th>
               <th style="text-align:right">Số tiền</th>
               <th style="text-align:right">Đã nộp</th>
@@ -155,7 +154,7 @@
           </thead>
           <tbody>
             <?php if (empty($fees)): ?>
-              <tr><td colspan="11" style="text-align:center;padding:24px;color:var(--text-muted)">Chưa có dữ liệu học phí.</td></tr>
+              <tr><td colspan="10" style="text-align:center;padding:24px;color:var(--text-muted)">Chưa có dữ liệu học phí.</td></tr>
             <?php else: ?>
               <?php foreach ($fees as $fee): ?>
                 <tr>
@@ -164,7 +163,6 @@
                   <td><?= e($fee['khoa']) ?></td>
                   <td><?= e($fee['nganh']) ?></td>
                   <td><?= e($fee['lop']) ?></td>
-                  <td><?= e($fee['ma_hp'] ? $fee['ma_hp'] . ' - ' . $fee['ten_hp'] : '—') ?></td>
                   <td style="text-align:center">HK <?= (int)$fee['hoc_ky'] ?> / <?= e($fee['nam_hoc']) ?></td>
                   <td style="text-align:right"><?= formatMoney((float)$fee['so_tien']) ?></td>
                   <td style="text-align:right;color:var(--success)"><?= formatMoney((float)$fee['da_nop']) ?></td>

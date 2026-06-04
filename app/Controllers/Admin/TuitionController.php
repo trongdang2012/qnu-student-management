@@ -184,7 +184,8 @@ class TuitionController extends Controller {
             $this->redirect('/admin/hoc-phi/xac-nhan');
         }
 
-        $selected = array_map('intval', $_POST['selected'] ?? []);
+        $singleId = (int)($_POST['single_id'] ?? 0);
+        $selected = $singleId > 0 ? [$singleId] : array_map('intval', $_POST['selected'] ?? []);
         if (empty($selected)) {
             setFlash('danger', 'Vui lòng chọn ít nhất một bản ghi để xác nhận.');
         } else {

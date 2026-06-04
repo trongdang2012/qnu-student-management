@@ -117,8 +117,9 @@ class AdminTuitionModel {
         $status = 'Chưa nộp';
         $studentsSql = "SELECT DISTINCT sv.id AS sinh_vien_id, dk.hoc_ky, dk.nam_hoc
                         FROM dang_ky_hp dk
+                        LEFT JOIN lop_hoc_phan l ON l.id = dk.lop_hoc_phan_id
                         JOIN sinh_vien sv ON sv.id = dk.sinh_vien_id
-                        WHERE dk.hoc_phan_id = :hp
+                        WHERE COALESCE(dk.hoc_phan_id, l.hoc_phan_id) = :hp
                           AND dk.trang_thai = 'Đã duyệt'
                           AND dk.hoc_ky = :hk
                           AND dk.nam_hoc = :nh";
@@ -254,8 +255,27 @@ class AdminTuitionModel {
     }
 
     public function updateTuition($id, $so_tien, $han_nop, $trang_thai) {
+        $record = $this->db->fetch('SELECT da_nop FROM hoc_phi WHERE id = :id LIMIT 1', ['id' => $id]);
+        if (!$record) {
+            return false;
+        }
+
+        $da_nop = (float)$record['da_nop'];
+        $so_tien = (float)$so_tien;
+
+        if ($da_nop >= $so_tien && $so_tien > 0) {
+            $trang_thai = 'Đã nộp';
+        } elseif ($da_nop > 0) {
+            $trang_thai = 'Nợ';
+        } else {
+            $trang_thai = 'Chưa nộp';
+        }
+
         return $this->db->query('UPDATE hoc_phi SET so_tien = :so_tien, han_nop = :han_nop, trang_thai = :trang_thai WHERE id = :id', [
-            'so_tien' => $so_tien, 'han_nop' => $han_nop, 'trang_thai' => $trang_thai, 'id' => $id
+            'so_tien' => $so_tien,
+            'han_nop' => $han_nop,
+            'trang_thai' => $trang_thai,
+            'id' => $id
         ]);
     }
 
@@ -315,13 +335,25 @@ class AdminTuitionModel {
 
         $placeholders = implode(',', array_fill(0, count($ids), '?'));
         $tuitionRecords = $this->db->fetchAll(
-            "SELECT hf.id, hf.sinh_vien_id, hf.hoc_ky, hf.nam_hoc, hf.so_tien FROM hoc_phi hf WHERE hf.id IN ($placeholders)",
+            "SELECT hf.id, hf.sinh_vien_id, hf.hoc_ky, hf.nam_hoc, hf.so_tien
+             FROM hoc_phi hf
+             WHERE hf.id IN ($placeholders)
+               AND hf.trang_thai IN ('Chưa nộp', 'Nợ')",
             $ids
         );
+        if (empty($tuitionRecords)) {
+            return 0;
+        }
+
+        $pendingIds = array_column($tuitionRecords, 'id');
+        $pendingPlaceholders = implode(',', array_fill(0, count($pendingIds), '?'));
 
         $stmt = $this->db->query(
-            "UPDATE hoc_phi SET da_nop = so_tien, trang_thai = 'Đã nộp' WHERE id IN ($placeholders)",
-            $ids
+            "UPDATE hoc_phi
+             SET da_nop = so_tien, trang_thai = 'Đã nộp'
+             WHERE id IN ($pendingPlaceholders)
+               AND trang_thai IN ('Chưa nộp', 'Nợ')",
+            $pendingIds
         );
 
         foreach ($tuitionRecords as $record) {
@@ -333,7 +365,11 @@ class AdminTuitionModel {
 
     public function confirmTuitionSingle($id) {
         $record = $this->db->fetch(
-            'SELECT hf.id, hf.sinh_vien_id, hf.hoc_ky, hf.nam_hoc, hf.so_tien FROM hoc_phi hf WHERE hf.id = :id LIMIT 1',
+            "SELECT hf.id, hf.sinh_vien_id, hf.hoc_ky, hf.nam_hoc, hf.so_tien
+             FROM hoc_phi hf
+             WHERE hf.id = :id
+               AND hf.trang_thai IN ('Chưa nộp', 'Nợ')
+             LIMIT 1",
             ['id' => $id]
         );
         if (!$record) {
@@ -341,7 +377,10 @@ class AdminTuitionModel {
         }
 
         $stmt = $this->db->query(
-            "UPDATE hoc_phi SET da_nop = so_tien, trang_thai = 'Đã nộp' WHERE id = :id",
+            "UPDATE hoc_phi
+             SET da_nop = so_tien, trang_thai = 'Đã nộp'
+             WHERE id = :id
+               AND trang_thai IN ('Chưa nộp', 'Nợ')",
             ['id' => $id]
         );
 
