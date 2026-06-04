@@ -1692,3 +1692,41 @@
     justify-content: center;
   }
 }
+
+/* Page Title & Breadcrumbs styles for Student layout (light text on dark background) */
+.student-wrapper .page-title h1 {
+  color: #ffffff !important;
+}
+.student-wrapper .page-title h1 i {
+  color: #ffffff !important;
+}
+.student-wrapper .page-title p {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+.student-wrapper .page-title p i {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+.student-wrapper .page-title .breadcrumb {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+.student-wrapper .page-title .breadcrumb i {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+.student-wrapper .page-title .breadcrumb a {
+  color: rgba(255, 255, 255, 0.6) !important;
+  transition: color 0.2s ease;
+}
+.student-wrapper .page-title .breadcrumb a i {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+.student-wrapper .page-title .breadcrumb a:hover,
+.student-wrapper .page-title .breadcrumb a:hover i {
+  color: #ffffff !important;
+}
+.student-wrapper .page-title .breadcrumb span {
+  color: #ffffff !important;
+  font-weight: 600;
+}
+.student-wrapper .page-title i {
+  color: #ffffff !important;
+}

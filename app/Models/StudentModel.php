@@ -322,13 +322,14 @@ class StudentModel {
             }
 
             $student = $this->db->fetch("
-                SELECT nganh FROM sinh_vien
-                WHERE id = :sid
+                SELECT lsh.nganh_id FROM sinh_vien sv
+                JOIN lop_sinh_hoat lsh ON lsh.id = sv.lop_sinh_hoat_id
+                WHERE sv.id = :sid
                 LIMIT 1
             ", ['sid' => $studentId]);
 
             $programCoursesBySemester = [];
-            if (!empty($student['nganh'])) {
+            if (!empty($student['nganh_id'])) {
                 $programCourses = $this->db->fetchAll("
                     SELECT DISTINCT
                            c.hoc_ky,
@@ -340,9 +341,9 @@ class StudentModel {
                            NULL AS trang_thai
                     FROM ctdt_chi_tiet c
                     JOIN hoc_phan hp ON hp.id = c.hoc_phan_id
-                    WHERE c.nganh = :nganh
+                    WHERE c.nganh_id = :nganh_id
                     ORDER BY c.hoc_ky, hp.ma_hp
-                ", ['nganh' => $student['nganh']]);
+                ", ['nganh_id' => $student['nganh_id']]);
 
                 foreach ($programCourses as $course) {
                     $semester = (string)$course['hoc_ky'];

@@ -45,9 +45,9 @@ class AuthController extends Controller {
             $_SESSION['login_at'] = time();
 
             if ($user['role'] === 'admin') {
-                return $this->json(['success' => true, 'redirect' => BASE_URL . '/admin/dashboard']);
+                return $this->json(['success' => true, 'needs_2fa' => false, 'redirect' => BASE_URL . '/admin/dashboard']);
             } else {
-                return $this->json(['success' => true, 'redirect' => BASE_URL . '/student/dashboard']);
+                return $this->json(['success' => true, 'needs_2fa' => false, 'redirect' => BASE_URL . '/student/dashboard']);
             }
         }
 
@@ -94,7 +94,7 @@ class AuthController extends Controller {
             $mail->AltBody = "Mã xác thực đăng nhập của bạn là: {$otp}. Mã có hiệu lực 5 phút.";
 
             $mail->send();
-            return $this->json(['success' => true, 'redirect' => BASE_URL . '/auth/otp']);
+            return $this->json(['success' => true, 'needs_2fa' => true, 'redirect' => BASE_URL . '/auth/otp']);
         } catch (Exception $e) {
             return $this->json(['success' => false, 'message' => 'Không thể gửi email OTP. Vui lòng thử lại sau.']);
         }

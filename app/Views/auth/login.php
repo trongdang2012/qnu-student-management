@@ -126,10 +126,11 @@ $page_title = 'Đăng nhập';
         .then(response => response.json())
         .then(data => {
           if (data.success) {
+            const is2FA = data.needs_2fa === true;
             Swal.fire({
               icon: 'success',
               title: 'Thành công',
-              text: 'Mã xác thực đã được gửi đến email của bạn!',
+              text: is2FA ? 'Mã xác thực đã được gửi đến email của bạn!' : 'Đăng nhập thành công!',
               showConfirmButton: false,
               timer: 1500
             }).then(() => {
