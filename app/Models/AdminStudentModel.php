@@ -87,16 +87,30 @@ class AdminStudentModel {
 
     public function getFacultiesAndClasses() {
         $sql = "SELECT k.ten_khoa as khoa, n.ten_nganh as nganh, l.ten_lop as lop 
-                FROM lop_sinh_hoat l 
-                LEFT JOIN nganh n ON n.id = l.nganh_id 
-                LEFT JOIN khoa k ON k.id = n.khoa_id 
+                FROM khoa k
+                LEFT JOIN nganh n ON n.khoa_id = k.id 
+                LEFT JOIN lop_sinh_hoat l ON l.nganh_id = n.id 
                 ORDER BY k.ten_khoa, n.ten_nganh, l.ten_lop";
         $rows = $this->db->fetchAll($sql);
         
         $tree = [];
         foreach ($rows as $row) {
-            if ($row['khoa'] && $row['nganh'] && $row['lop']) {
-                $tree[$row['khoa']][$row['nganh']][] = $row['lop'];
+            $k = $row['khoa'];
+            $n = $row['nganh'];
+            $l = $row['lop'];
+            
+            if ($k) {
+                if (!isset($tree[$k])) {
+                    $tree[$k] = [];
+                }
+                if ($n) {
+                    if (!isset($tree[$k][$n])) {
+                        $tree[$k][$n] = [];
+                    }
+                    if ($l) {
+                        $tree[$k][$n][] = $l;
+                    }
+                }
             }
         }
         return $tree;
