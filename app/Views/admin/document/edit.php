@@ -19,6 +19,7 @@
     <div class="card">
       <div class="card-body">
         <form method="POST" action="<?= BASE_URL ?>/admin/tai-lieu/process-edit" enctype="multipart/form-data">
+          <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
           <input type="hidden" name="id" value="<?= e($item['id']) ?>">
           <div class="form-row full">
             <div class="form-group">

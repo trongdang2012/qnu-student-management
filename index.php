@@ -8,6 +8,8 @@ define('ROOT', __DIR__);
 
 // Tải file hằng số
 require_once ROOT . '/config/constants.php';
+// Tải cấu hình cơ sở dữ liệu
+require_once ROOT . '/config/database.php';
 // Tải các hàm session (giữ tạm thời để tương thích)
 require_once ROOT . '/includes/session.php';
 

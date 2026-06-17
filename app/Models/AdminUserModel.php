@@ -123,19 +123,19 @@ class AdminUserModel {
         return $this->db->fetch('SELECT id FROM users WHERE username = :un', ['un' => $username]);
     }
 
-    public function insertUser($username, $hashed_password, $role, $email) {
-        $sql = "INSERT INTO users (username, password, role, email) VALUES (:un, :pw, :role, :email)";
-        return $this->db->query($sql, ['un' => $username, 'pw' => $hashed_password, 'role' => $role, 'email' => $email]);
+    public function insertUser($username, $hashed_password, $role, $email, $two_factor_auth = 0) {
+        $sql = "INSERT INTO users (username, password, role, email, two_factor_auth) VALUES (:un, :pw, :role, :email, :two_factor_auth)";
+        return $this->db->query($sql, ['un' => $username, 'pw' => $hashed_password, 'role' => $role, 'email' => $email, 'two_factor_auth' => $two_factor_auth]);
     }
 
-    public function updateUserPasswordAndRole($id, $hashed_password, $role) {
-        $sql = "UPDATE users SET password = :pw, role = :role WHERE id = :id";
-        return $this->db->query($sql, ['pw' => $hashed_password, 'role' => $role, 'id' => $id]);
+    public function updateUserPasswordAndRole($id, $hashed_password, $role, $two_factor_auth = 0) {
+        $sql = "UPDATE users SET password = :pw, role = :role, two_factor_auth = :two_factor_auth WHERE id = :id";
+        return $this->db->query($sql, ['pw' => $hashed_password, 'role' => $role, 'two_factor_auth' => $two_factor_auth, 'id' => $id]);
     }
 
-    public function updateUserRole($id, $role) {
-        $sql = "UPDATE users SET role = :role WHERE id = :id";
-        return $this->db->query($sql, ['role' => $role, 'id' => $id]);
+    public function updateUserRole($id, $role, $two_factor_auth = 0) {
+        $sql = "UPDATE users SET role = :role, two_factor_auth = :two_factor_auth WHERE id = :id";
+        return $this->db->query($sql, ['role' => $role, 'two_factor_auth' => $two_factor_auth, 'id' => $id]);
     }
 
     public function deleteUser($id) {

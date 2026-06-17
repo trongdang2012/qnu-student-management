@@ -35,6 +35,13 @@ class DocumentController extends Controller {
             $this->redirect('/admin/tai-lieu');
         }
 
+        // Kiểm tra CSRF Token
+        $csrfToken = $_POST['csrf_token'] ?? '';
+        if (!validateCsrfToken($csrfToken)) {
+            setFlash('danger', 'Lỗi bảo mật: CSRF Token không hợp lệ.');
+            $this->redirect('/admin/tai-lieu');
+        }
+
         $title = trim($_POST['title'] ?? '');
         $description = trim($_POST['description'] ?? '');
 
@@ -47,7 +54,12 @@ class DocumentController extends Controller {
         if (!empty($_FILES['file']['name'])) {
             $up = $_FILES['file'];
             if ($up['error'] === UPLOAD_ERR_OK) {
-                $ext = pathinfo($up['name'], PATHINFO_EXTENSION);
+                $ext = strtolower(pathinfo($up['name'], PATHINFO_EXTENSION));
+                if (!in_array($ext, ALLOWED_FILE_TYPES, true)) {
+                    setFlash('danger', 'Định dạng file không được phép tải lên.');
+                    $this->redirect('/admin/tai-lieu/add');
+                }
+
                 $base = time() . '_' . bin2hex(random_bytes(6));
                 $fname = $base . ($ext ? '.' . $ext : '');
                 $target = $this->documentModel->getUploadsDir() . DIRECTORY_SEPARATOR . $fname;
@@ -92,6 +104,14 @@ class DocumentController extends Controller {
         }
 
         $id = (int)($_POST['id'] ?? 0);
+
+        // Kiểm tra CSRF Token
+        $csrfToken = $_POST['csrf_token'] ?? '';
+        if (!validateCsrfToken($csrfToken)) {
+            setFlash('danger', 'Lỗi bảo mật: CSRF Token không hợp lệ.');
+            $this->redirect('/admin/tai-lieu/edit?id=' . $id);
+        }
+
         $title = trim($_POST['title'] ?? '');
         $description = trim($_POST['description'] ?? '');
 
@@ -110,11 +130,16 @@ class DocumentController extends Controller {
         if (!empty($_FILES['file']['name'])) {
             $up = $_FILES['file'];
             if ($up['error'] === UPLOAD_ERR_OK) {
-                if (!empty($item['file'])) {
-                    $old = ROOT . '/storage/documents/' . $item['file'];
+                $ext = strtolower(pathinfo($up['name'], PATHINFO_EXTENSION));
+                if (!in_array($ext, ALLOWED_FILE_TYPES, true)) {
+                    setFlash('danger', 'Định dạng file không được phép tải lên.');
+                    $this->redirect('/admin/tai-lieu/edit?id=' . $id);
+                }
+
+                if (!empty($item['duong_dan'])) {
+                    $old = $this->documentModel->getUploadsDir() . basename($item['duong_dan']);
                     if (file_exists($old)) @unlink($old);
                 }
-                $ext = pathinfo($up['name'], PATHINFO_EXTENSION);
                 $base = time() . '_' . bin2hex(random_bytes(6));
                 $fname = $base . ($ext ? '.' . $ext : '');
                 $target = $this->documentModel->getUploadsDir() . DIRECTORY_SEPARATOR . $fname;

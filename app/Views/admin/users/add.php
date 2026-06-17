@@ -28,6 +28,7 @@
 
       <div class="card-body" style="padding: 30px;">
         <form method="POST" action="<?= BASE_URL ?>/admin/users/process-add">
+          <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
           
           <!-- Username -->
           <div style="margin-bottom: 20px;">
@@ -102,6 +103,24 @@
               <option value="student">🎓 Sinh viên</option>
               <option value="admin">👤 Admin</option>
             </select>
+          </div>
+
+          <!-- Two Factor Auth (2FA) -->
+          <div style="margin-bottom: 30px; padding: 15px; background: #f8f9fa; border-radius: var(--radius-sm); border: 1px solid var(--border);">
+            <label style="display: flex; align-items: center; cursor: pointer; margin: 0; width: 100%;">
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="width: 36px; height: 36px; border-radius: 50%; background: rgba(40,167,69,0.1); color: var(--success); display: flex; align-items: center; justify-content: center; font-size: 16px;">
+                  <i class="fas fa-shield-alt"></i>
+                </div>
+                <div>
+                  <strong style="font-size: 14px; color: var(--text);">Xác thực hai lớp (2FA OTP)</strong>
+                  <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">Bắt buộc nhập mã OTP gửi qua Email khi đăng nhập.</div>
+                </div>
+              </div>
+              <div style="margin-left: auto;">
+                <input type="checkbox" name="two_factor_auth" value="1" checked style="width: 18px; height: 18px; cursor: pointer;">
+              </div>
+            </label>
           </div>
 
           <!-- Buttons -->

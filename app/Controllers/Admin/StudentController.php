@@ -105,6 +105,24 @@ class StudentController extends Controller {
             $this->redirect("/admin/sinh-vien/edit?id=$id");
         }
 
+        // Kiểm tra trùng lặp Email và Số điện thoại
+        $db = \App\Core\Database::getInstance();
+        if (!empty($email)) {
+            $checkEmail = $db->fetch("SELECT id, ho_ten FROM sinh_vien WHERE email = ? AND id != ?", [$email, $id]);
+            if ($checkEmail) {
+                setFlash('danger', 'Lỗi: Email "' . htmlspecialchars($email) . '" đã được sử dụng bởi sinh viên khác (' . htmlspecialchars($checkEmail['ho_ten']) . ')');
+                $this->redirect("/admin/sinh-vien/edit?id=$id");
+            }
+        }
+
+        if (!empty($so_dien_thoai)) {
+            $checkPhone = $db->fetch("SELECT id, ho_ten FROM sinh_vien WHERE so_dien_thoai = ? AND id != ?", [$so_dien_thoai, $id]);
+            if ($checkPhone) {
+                setFlash('danger', 'Lỗi: Số điện thoại "' . htmlspecialchars($so_dien_thoai) . '" đã được sử dụng bởi sinh viên khác (' . htmlspecialchars($checkPhone['ho_ten']) . ')');
+                $this->redirect("/admin/sinh-vien/edit?id=$id");
+            }
+        }
+
         $data = [
             'ho_ten' => $ho_ten,
             'ngay_sinh' => !empty($ngay_sinh) ? $ngay_sinh : null,
@@ -119,6 +137,12 @@ class StudentController extends Controller {
 
         try {
             $this->studentModel->updateStudent($id, $data);
+            
+            // Đồng bộ email sang bảng users nếu có thay đổi
+            if (!empty($email)) {
+                $db->query("UPDATE users SET email = ? WHERE id = (SELECT user_id FROM sinh_vien WHERE id = ? LIMIT 1)", [$email, $id]);
+            }
+            
             setFlash('success', 'Cập nhật sinh viên thành công!');
             $this->redirect('/admin/sinh-vien');
         } catch (\Exception $e) {
@@ -236,6 +260,8 @@ class StudentController extends Controller {
         
         $successCount = 0;
         $failCount = 0;
+        $importedEmails = [];
+        $importedPhones = [];
 
         $defaultPassword = 'Student@123';
         $hashedPassword = password_hash($defaultPassword, PASSWORD_BCRYPT);
@@ -327,6 +353,29 @@ class StudentController extends Controller {
 
                 if (empty($email)) {
                     $email = strtolower($ma_sv) . '@student.qnu.edu.vn';
+                }
+
+                // Kiểm tra trùng lặp Email trong hệ thống hoặc trong lô đang import
+                $stmtCheckEmail = $pdo->prepare("SELECT id FROM sinh_vien WHERE email = ?");
+                $stmtCheckEmail->execute([$email]);
+                if ($stmtCheckEmail->fetch() || in_array($email, $importedEmails)) {
+                    $failCount++;
+                    continue;
+                }
+
+                // Kiểm tra trùng lặp Số điện thoại trong hệ thống hoặc trong lô đang import
+                if (!empty($so_dien_thoai)) {
+                    $stmtCheckPhone = $pdo->prepare("SELECT id FROM sinh_vien WHERE so_dien_thoai = ?");
+                    $stmtCheckPhone->execute([$so_dien_thoai]);
+                    if ($stmtCheckPhone->fetch() || in_array($so_dien_thoai, $importedPhones)) {
+                        $failCount++;
+                        continue;
+                    }
+                }
+
+                $importedEmails[] = $email;
+                if (!empty($so_dien_thoai)) {
+                    $importedPhones[] = $so_dien_thoai;
                 }
 
                 // 1. Tạo tài khoản trong bảng users

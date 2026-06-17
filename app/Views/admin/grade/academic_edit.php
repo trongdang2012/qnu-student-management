@@ -44,6 +44,7 @@
                 <i class="fas fa-download"></i> Tải template (Excel/CSV)
             </a>
             <form action="<?= BASE_URL ?>/admin/diem/hoc-tap/import" method="POST" enctype="multipart/form-data" style="display:inline-flex; align-items:center; gap:5px; margin:0;">
+                <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
                 <input type="hidden" name="hoc_phan_id" value="<?= $hoc_phan_id ?>">
                 <input type="hidden" name="khoa" value="<?= e($khoa) ?>">
                 <input type="hidden" name="nganh" value="<?= e($nganh) ?>">

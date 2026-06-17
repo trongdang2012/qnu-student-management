@@ -76,6 +76,16 @@ class GradeController extends Controller {
         }
 
         $hoc_phan_id = (int)($_POST['hoc_phan_id'] ?? 0);
+        $csrfToken = $_POST['csrf_token'] ?? '';
+        if (!validateCsrfToken($csrfToken)) {
+            setFlash('danger', 'Lỗi bảo mật: CSRF Token không hợp lệ.');
+            if ($hoc_phan_id > 0) {
+                $this->redirect("/admin/diem/hoc-tap?action=edit&hoc_phan_id=$hoc_phan_id");
+            } else {
+                $this->redirect('/admin/diem/hoc-tap');
+            }
+        }
+
         $hp = $this->gradeModel->getCourseById($hoc_phan_id);
         
         if (!$hp) {
@@ -195,6 +205,16 @@ class GradeController extends Controller {
         }
 
         $hoc_phan_id = (int)($_POST['hoc_phan_id'] ?? 0);
+        $csrfToken = $_POST['csrf_token'] ?? '';
+        if (!validateCsrfToken($csrfToken)) {
+            setFlash('danger', 'Lỗi bảo mật: CSRF Token không hợp lệ.');
+            if ($hoc_phan_id > 0) {
+                $this->redirect("/admin/diem/hoc-tap?action=edit&hoc_phan_id=$hoc_phan_id");
+            } else {
+                $this->redirect('/admin/diem/hoc-tap');
+            }
+        }
+
         $hp = $this->gradeModel->getCourseById($hoc_phan_id);
         if (!$hp) {
             setFlash('danger', 'Không tìm thấy học phần.');
@@ -431,6 +451,13 @@ class GradeController extends Controller {
         $nganh = trim($_POST['nganh'] ?? '');
         $lop = trim($_POST['lop'] ?? '');
 
+        $csrfToken = $_POST['csrf_token'] ?? '';
+        if (!validateCsrfToken($csrfToken)) {
+            setFlash('danger', 'Lỗi bảo mật: CSRF Token không hợp lệ.');
+            $this->redirect('/admin/diem/ren-luyen?hoc_ky=' . $hoc_ky . '&nam_hoc=' . urlencode($nam_hoc) . '&khoa=' . urlencode($khoa) . '&nganh=' . urlencode($nganh) . '&lop=' . urlencode($lop));
+            return;
+        }
+
         // Validate uploaded file existence
         if (!isset($_FILES['excel_file']) || $_FILES['excel_file']['error'] !== UPLOAD_ERR_OK) {
             setFlash('danger', 'Lỗi khi tải file lên.');
@@ -663,9 +690,15 @@ class GradeController extends Controller {
         $nh_val = trim($_POST['nam_hoc']);
         $search = trim($_GET['search'] ?? '');
         $lop_filter = trim($_GET['lop'] ?? '');
-        // Retrieve faculty and department from POST (hidden fields) or fallback to GET
         $khoa = trim($_POST['khoa'] ?? $_GET['khoa'] ?? '');
         $nganh = trim($_POST['nganh'] ?? $_GET['nganh'] ?? '');
+
+        $csrfToken = $_POST['csrf_token'] ?? '';
+        if (!validateCsrfToken($csrfToken)) {
+            setFlash('danger', 'Lỗi bảo mật: CSRF Token không hợp lệ.');
+            $this->redirect("/admin/diem/ren-luyen?hoc_ky=$hk_val&nam_hoc=" . urlencode($nh_val) . "&khoa=" . urlencode($khoa) . "&nganh=" . urlencode($nganh) . "&lop=" . urlencode($lop_filter));
+            return;
+        }
         // $lop_filter already retrieved from GET above
         $search = trim($_GET['search'] ?? '');
 

@@ -4,7 +4,6 @@
  */
 
 require_once __DIR__ . '/../config/constants.php';
-require_once __DIR__ . '/../config/database.php';
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -18,7 +17,7 @@ function isLoggedIn(): bool {
 // ─── Yêu cầu đăng nhập - nếu chưa thì redirect login ────────────
 function requireLogin(): void {
     if (!isLoggedIn()) {
-        header('Location: ' . BASE_URL . '/auth/login.php');
+        header('Location: ' . BASE_URL . '/auth/login');
         exit;
     }
 }
@@ -27,7 +26,7 @@ function requireLogin(): void {
 function requireStudent(): void {
     requireLogin();
     if ($_SESSION['role'] !== 'student') {
-        header('Location: ' . BASE_URL . '/auth/login.php?error=no_permission');
+        header('Location: ' . BASE_URL . '/auth/login?error=no_permission');
         exit;
     }
 }
@@ -36,7 +35,7 @@ function requireStudent(): void {
 function requireAdmin(): void {
     requireLogin();
     if ($_SESSION['role'] !== 'admin') {
-        header('Location: ' . BASE_URL . '/auth/login.php?error=no_permission');
+        header('Location: ' . BASE_URL . '/auth/login?error=no_permission');
         exit;
     }
 }
@@ -44,16 +43,12 @@ function requireAdmin(): void {
 // ─── Lấy thông tin sinh viên hiện tại từ DB ─────────────────────
 function getCurrentStudent(): ?array {
     if (!isLoggedIn() || $_SESSION['role'] !== 'student') return null;
-    $db = getDB();
+    $db = \App\Core\Database::getInstance();
     $uid = (int)$_SESSION['user_id'];
     $sql = "SELECT sv.*, u.username FROM sinh_vien sv
             JOIN users u ON u.id = sv.user_id
-            WHERE sv.user_id = ?";
-    $stmt = $db->prepare($sql);
-    $stmt->bind_param('i', $uid);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    return $result->fetch_assoc() ?: null;
+            WHERE sv.user_id = :uid";
+    return $db->fetch($sql, ['uid' => $uid]) ?: null;
 }
 
 // ─── Flash message ──────────────────────────────────────────────
@@ -117,5 +112,20 @@ function badgeDiemChu(string $chu): string {
 function tenThu(int $thu): string {
     $map = [2=>'Thứ 2',3=>'Thứ 3',4=>'Thứ 4',5=>'Thứ 5',6=>'Thứ 6',7=>'Thứ 7',8=>'Chủ nhật'];
     return $map[$thu] ?? "Thứ $thu";
+}
+
+// ─── Bảo mật CSRF ────────────────────────────────────────────────
+function generateCsrfToken(): string {
+    if (empty($_SESSION['csrf_token'])) {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    }
+    return $_SESSION['csrf_token'];
+}
+
+function validateCsrfToken(?string $token): bool {
+    if (empty($_SESSION['csrf_token']) || empty($token)) {
+        return false;
+    }
+    return hash_equals($_SESSION['csrf_token'], $token);
 }
 ?>

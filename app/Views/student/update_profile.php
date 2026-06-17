@@ -22,6 +22,7 @@ $avatar_url = (!empty($sv['anh_dai_dien']))
     </div>
 
     <form action="<?= BASE_URL ?>/student/cap-nhat" method="POST" enctype="multipart/form-data" id="updateForm" novalidate>
+      <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
 
       <!-- ── CARD 1: Ảnh đại diện ── -->
       <div class="card fade-in" style="margin-bottom:20px">
@@ -178,6 +179,7 @@ $avatar_url = (!empty($sv['anh_dai_dien']))
 
     <!-- ── CARD 3: Đổi mật khẩu ── -->
     <form action="<?= BASE_URL ?>/student/doi-mat-khau" method="POST" id="changePasswordForm" novalidate>
+      <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
       <div class="card fade-in" style="margin-top:20px;">
         <div class="card-header">
           <h3><i class="fas fa-key"></i> Đổi mật khẩu</h3>

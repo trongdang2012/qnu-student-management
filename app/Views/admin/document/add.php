@@ -19,6 +19,7 @@
     <div class="card">
       <div class="card-body">
         <form method="POST" action="<?= BASE_URL ?>/admin/tai-lieu/process-add" enctype="multipart/form-data">
+          <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
           <div class="form-row full">
             <div class="form-group">
               <label>Tiêu đề</label>

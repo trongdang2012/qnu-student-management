@@ -174,14 +174,12 @@
           </div>
           <div class="card-body-modern notice-list-modern">
             <?php 
-              $noticeModel = new \App\Models\StudentModel();
-              $myNotices = $noticeModel->getNotifications($sv['id']);
-              $latestNotices = array_slice($myNotices, 0, 1);
-              if (empty($latestNotices)):
+              $topNotices = array_slice($latestNotices ?? [], 0, 1);
+              if (empty($topNotices)):
             ?>
               <p class="text-muted text-center" style="font-size: 13px; margin: 10px 0;">Chưa có thông báo mới.</p>
             <?php else: ?>
-              <?php foreach ($latestNotices as $n): ?>
+              <?php foreach ($topNotices as $n): ?>
                 <div class="notice-item-modern" onclick="openNoticeDetailModal(<?= $n['id'] ?>, '<?= e($n['tieu_de']) ?>', '<?= e($n['nguoi_gui_ten'] ?? 'Hệ thống') ?>', '<?= date('d/m/Y H:i', strtotime($n['ngay_tao'])) ?>', <?= htmlspecialchars(json_encode($n['noi_dung'], JSON_UNESCAPED_UNICODE)) ?>, '<?= $n['loai'] ?>')">
                   <div class="notice-icon-modern"><i class="fas fa-bell animate-wiggle"></i></div>
                   <div class="notice-info-modern">

@@ -124,6 +124,7 @@ function statusBadge(string $tt): string {
           <td style="text-align:center">
             <?php if ($hp['trang_thai'] !== 'Đã nộp'): ?>
               <form method="POST" action="<?= BASE_URL ?>/student/hoc-phi/nop" style="margin:0;">
+                <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
                 <input type="hidden" name="tuition_id" value="<?= (int)$hp['id'] ?>">
                 <button type="submit" class="btn btn-sm btn-primary">Nộp học phí</button>
               </form>

@@ -34,12 +34,14 @@ class StudentController extends Controller {
         $stats = $studentModel->getDashboardStats($sv['id'], $sv['nganh']);
         $drl = $studentModel->getRecentDrl($sv['id']);
         $diem_recent = $studentModel->getRecentGrades($sv['id'], 4);
+        $latestNotices = $studentModel->getNotifications($sv['id']);
 
         $this->view('student/dashboard', [
             'sv' => $sv,
             'stats' => $stats,
             'drl' => $drl,
             'diem_recent' => $diem_recent,
+            'latestNotices' => $latestNotices,
             'page_title' => 'Tổng quan',
             'active_menu' => 'dashboard'
         ]);
@@ -87,6 +89,12 @@ class StudentController extends Controller {
             return $this->json(['success' => false, 'message' => 'Yêu cầu không hợp lệ.']);
         }
 
+        // Kiểm tra CSRF Token
+        $csrfToken = $_POST['csrf_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+        if (!validateCsrfToken($csrfToken)) {
+            return $this->json(['success' => false, 'message' => 'Lỗi bảo mật: CSRF Token không hợp lệ.']);
+        }
+
         $studentModel = new StudentModel();
         $sv = $studentModel->getStudentInfo($_SESSION['user_id']);
         if (!$sv) return $this->json(['success' => false, 'message' => 'Lỗi xác thực.']);
@@ -104,6 +112,22 @@ class StudentController extends Controller {
 
         if (!empty($sdt) && !preg_match('/^(0|\+84)[0-9]{9,10}$/', $sdt)) {
             $errors['sdt'] = 'Số điện thoại không hợp lệ.';
+        }
+
+        // Kiểm tra trùng lặp Email và Số điện thoại
+        $db = \App\Core\Database::getInstance();
+        if (empty($errors['email']) && !empty($email)) {
+            $checkEmail = $db->fetch("SELECT id FROM sinh_vien WHERE email = ? AND id != ?", [$email, $sid]);
+            if ($checkEmail) {
+                $errors['email'] = 'Email này đã được sử dụng bởi một tài khoản khác.';
+            }
+        }
+
+        if (empty($errors['sdt']) && !empty($sdt)) {
+            $checkPhone = $db->fetch("SELECT id FROM sinh_vien WHERE so_dien_thoai = ? AND id != ?", [$sdt, $sid]);
+            if ($checkPhone) {
+                $errors['sdt'] = 'Số điện thoại này đã được sử dụng bởi một tài khoản khác.';
+            }
         }
 
         $upload_dir = ROOT . '/uploads/avatars/';
@@ -161,6 +185,12 @@ class StudentController extends Controller {
         $this->requireStudent();
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             return $this->json(['success' => false, 'message' => 'Yêu cầu không hợp lệ.']);
+        }
+
+        // Kiểm tra CSRF Token
+        $csrfToken = $_POST['csrf_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+        if (!validateCsrfToken($csrfToken)) {
+            return $this->json(['success' => false, 'message' => 'Lỗi bảo mật: CSRF Token không hợp lệ.']);
         }
 
         $userId = $_SESSION['user_id'];
@@ -252,6 +282,13 @@ class StudentController extends Controller {
     public function payTuition() {
         $this->requireStudent();
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->redirect('/student/hoc-phi');
+        }
+
+        // Kiểm tra CSRF Token
+        $csrfToken = $_POST['csrf_token'] ?? '';
+        if (!validateCsrfToken($csrfToken)) {
+            setFlash('danger', 'Lỗi bảo mật: CSRF Token không hợp lệ.');
             $this->redirect('/student/hoc-phi');
         }
 

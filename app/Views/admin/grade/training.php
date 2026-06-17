@@ -92,6 +92,7 @@
                 <i class="fas fa-download"></i> Tải template (Excel/CSV)
             </a>
             <form action="<?= BASE_URL ?>/admin/diem/ren-luyen/import" method="POST" enctype="multipart/form-data" style="display:inline-flex; align-items:center; gap:8px; margin:0;" id="importForm">
+                <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
                 <input type="hidden" name="hoc_ky" value="<?= $hoc_ky ?>">
                 <input type="hidden" name="nam_hoc" value="<?= e($nam_hoc) ?>">
                 <input type="hidden" name="khoa" value="<?= e($khoa) ?>">

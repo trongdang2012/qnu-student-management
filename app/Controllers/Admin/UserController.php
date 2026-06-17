@@ -60,6 +60,13 @@ class UserController extends Controller {
             $this->redirect('/admin/users');
         }
 
+        // Kiểm tra CSRF Token
+        $csrfToken = $_POST['csrf_token'] ?? '';
+        if (!validateCsrfToken($csrfToken)) {
+            $_SESSION['errors'] = ['Lỗi bảo mật: CSRF Token không hợp lệ.'];
+            $this->redirect('/admin/users/add');
+        }
+
         $username = trim($_POST['username'] ?? '');
         $password = $_POST['password'] ?? '';
         $password_confirm = $_POST['password_confirm'] ?? '';
@@ -102,7 +109,8 @@ class UserController extends Controller {
         }
 
         $hashed_password = password_hash($password, PASSWORD_BCRYPT);
-        if ($this->userModel->insertUser($username, $hashed_password, $role, $email)) {
+        $two_factor_auth = isset($_POST['two_factor_auth']) ? 1 : 0;
+        if ($this->userModel->insertUser($username, $hashed_password, $role, $email, $two_factor_auth)) {
             setFlash('success', 'Thêm tài khoản thành công!');
             $this->redirect('/admin/users');
         } else {
@@ -136,6 +144,13 @@ class UserController extends Controller {
         }
 
         $id = (int)($_POST['id'] ?? 0);
+
+        // Kiểm tra CSRF Token
+        $csrfToken = $_POST['csrf_token'] ?? '';
+        if (!validateCsrfToken($csrfToken)) {
+            $_SESSION['errors'] = ['Lỗi bảo mật: CSRF Token không hợp lệ.'];
+            $this->redirect('/admin/users');
+        }
         $password = $_POST['password'] ?? '';
         $password_confirm = $_POST['password_confirm'] ?? '';
         $role = trim($_POST['role'] ?? '');
@@ -169,12 +184,13 @@ class UserController extends Controller {
             $this->redirect('/admin/users');
         }
 
+        $two_factor_auth = isset($_POST['two_factor_auth']) ? 1 : 0;
         $success = false;
         if (!empty($password)) {
             $hashed_password = password_hash($password, PASSWORD_BCRYPT);
-            $success = $this->userModel->updateUserPasswordAndRole($id, $hashed_password, $role);
+            $success = $this->userModel->updateUserPasswordAndRole($id, $hashed_password, $role, $two_factor_auth);
         } else {
-            $success = $this->userModel->updateUserRole($id, $role);
+            $success = $this->userModel->updateUserRole($id, $role, $two_factor_auth);
         }
 
         if ($success) {

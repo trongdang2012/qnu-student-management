@@ -13,7 +13,18 @@ define('APP_VERSION', '1.0.0');
 if (php_sapi_name() === 'cli') {
     define('BASE_URL', 'http://localhost/qnu-student-management');
 } else {
-    $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || ($_SERVER['SERVER_PORT'] ?? 80) == 443) ? "https://" : "http://";
+    $isHttps = false;
+    if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') {
+        $isHttps = true;
+    } elseif (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') {
+        $isHttps = true;
+    } elseif (!empty($_SERVER['HTTP_X_FORWARDED_SSL']) && $_SERVER['HTTP_X_FORWARDED_SSL'] === 'on') {
+        $isHttps = true;
+    } elseif (($_SERVER['SERVER_PORT'] ?? 80) == 443) {
+        $isHttps = true;
+    }
+    
+    $protocol = $isHttps ? "https://" : "http://";
     $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
     $subfolder = str_replace('/index.php', '', $_SERVER['SCRIPT_NAME'] ?? '');
     define('BASE_URL', $protocol . $host . $subfolder);
