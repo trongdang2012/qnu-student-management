@@ -82,13 +82,14 @@ function dkBadge(string $tt): string {
               <th style="text-align:center">Tín chỉ</th>
               <th style="text-align:center">Loại môn</th>
               <th>Giảng viên & Lịch học</th>
+              <th style="text-align:center">Sĩ số lớp</th>
               <th style="text-align:center">Ngày đăng ký</th>
               <th style="text-align:center">Trạng thái</th>
               <th style="text-align:center">Thao tác</th>
             </tr></thead>
             <tbody>
             <?php if (empty($da_dk)): ?>
-              <tr><td colspan="8" style="text-align:center;padding:30px;color:var(--text-muted)">
+              <tr><td colspan="9" style="text-align:center;padding:30px;color:var(--text-muted)">
                 Chưa đăng ký lớp học phần nào. Vui lòng chuyển sang tab bên phải để đăng ký.
               </td></tr>
             <?php else: ?>
@@ -104,6 +105,17 @@ function dkBadge(string $tt): string {
                   <span class="badge badge-secondary"><?= e($dk['loai'] ?? '') ?></span>
                 </td>
                 <td><?= formatLichHoc($dk['thu'], $dk['tiet_bat_dau'], $dk['so_tiet'], $dk['phong_hoc'], $dk['giang_vien']) ?></td>
+                <td style="text-align:center">
+                  <?php 
+                    $dk_con_lai = $dk['si_so_toi_da'] - $dk['si_so_hien_tai'];
+                    $dk_is_full = $dk_con_lai <= 0;
+                  ?>
+                  <?php if ($dk_is_full): ?>
+                    <span class="badge badge-danger" style="font-weight:700">Đầy (<?= $dk['si_so_hien_tai'] ?>/<?= $dk['si_so_toi_da'] ?>)</span>
+                  <?php else: ?>
+                    <span class="badge badge-success" style="font-weight:700"><?= $dk['si_so_hien_tai'] ?>/<?= $dk['si_so_toi_da'] ?></span>
+                  <?php endif; ?>
+                </td>
                 <td style="text-align:center;font-size:13px">
                   <?= date('d/m/Y H:i', strtotime($dk['ngay_dang_ky'])) ?>
                 </td>
@@ -151,7 +163,7 @@ function dkBadge(string $tt): string {
               <th style="text-align:center">Loại môn</th>
               <th>Lịch học dự kiến</th>
               <th>Học phần tiên quyết</th>
-              <th style="text-align:center">Sĩ số còn lại</th>
+              <th style="text-align:center">Sĩ số</th>
               <th style="text-align:center">Thao tác</th>
             </tr></thead>
             <tbody>
@@ -182,9 +194,10 @@ function dkBadge(string $tt): string {
                 <td><?= formatTienQuyet($hp['ma_hp_tien_quyet'], $db) ?></td>
                 <td style="text-align:center">
                   <?php if ($is_full): ?>
-                    <span class="badge badge-danger" style="font-weight:700">Hết chỗ (<?= $hp['si_so_hien_tai'] ?>/<?= $hp['si_so_toi_da'] ?>)</span>
+                    <span class="badge badge-danger" style="font-weight:700">Đầy (<?= $hp['si_so_hien_tai'] ?>/<?= $hp['si_so_toi_da'] ?>)</span>
                   <?php else: ?>
-                    <span class="badge badge-success" style="font-weight:700">Còn <?= $con_lai ?> / <?= $hp['si_so_toi_da'] ?></span>
+                    <span class="badge badge-success" style="font-weight:700">Đã ĐK: <?= $hp['si_so_hien_tai'] ?>/<?= $hp['si_so_toi_da'] ?></span>
+                    <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Còn <?= $con_lai ?> chỗ</div>
                   <?php endif; ?>
                 </td>
                 <td style="text-align:center">
