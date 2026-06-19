@@ -285,13 +285,15 @@ function formatSize(int $bytes): string {
       </button>
     </div>
 
-    <!-- Hộp Form tải lên (Trượt xuống, hiển thị rộng 100%) -->
-    <div class="upload-form-container" id="uploadContainer" style="max-width:750px; margin:0 auto 20px auto;">
-      <div class="card my-docs-card shadow-sm fade-in">
-        <div class="card-header" style="background:#fff; border-bottom:1px solid #eef2f5; padding:14px 16px;">
-          <h3 style="font-size:15px; font-weight:600;"><i class="fas fa-upload" style="color:var(--primary)"></i> Chi tiết tài liệu tải lên</h3>
+    <!-- Modal Đăng tài liệu -->
+    <div class="custom-modal" id="uploadModal">
+      <div class="custom-modal-overlay"></div>
+      <div class="custom-modal-content" style="max-width: 600px;">
+        <div class="custom-modal-header">
+          <h3><i class="fas fa-cloud-upload-alt" style="color:var(--primary)"></i> Chi tiết tài liệu tải lên</h3>
+          <button type="button" class="btn-close-modal" id="btnCloseUploadModal">&times;</button>
         </div>
-        <div class="card-body" style="padding:16px;">
+        <div class="custom-modal-body" style="padding:16px; background:#fff;">
           <form action="" method="POST" enctype="multipart/form-data" id="uploadForm" data-validate-form novalidate>
             <input type="hidden" name="action" value="upload">
 
@@ -531,24 +533,32 @@ function formatSize(int $bytes): string {
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     
-    // JS đóng mở Form Upload động mượt mà
+    // JS đóng mở Modal Đăng tài liệu
     const btnToggleUpload = document.getElementById('btnToggleUpload');
-    const uploadContainer = document.getElementById('uploadContainer');
+    const uploadModal = document.getElementById('uploadModal');
+    const btnCloseUploadModal = document.getElementById('btnCloseUploadModal');
     const btnCancelUpload = document.getElementById('btnCancelUpload');
+    const uploadModalOverlay = uploadModal ? uploadModal.querySelector('.custom-modal-overlay') : null;
 
-    if (btnToggleUpload && uploadContainer) {
+    if (btnToggleUpload && uploadModal) {
         btnToggleUpload.addEventListener('click', function() {
-            const isVisible = uploadContainer.style.display === 'block';
-            if (isVisible) {
-                uploadContainer.style.display = 'none';
-                btnToggleUpload.classList.remove('active');
-                btnToggleUpload.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> <span>Đăng tài liệu</span>';
-            } else {
-                uploadContainer.style.display = 'block';
-                btnToggleUpload.classList.add('active');
-                btnToggleUpload.innerHTML = '<i class="fas fa-times"></i> <span>Đóng Form</span>';
-            }
+            uploadModal.classList.add('active');
+            document.body.style.overflow = 'hidden'; // Ngăn cuộn trang nền
         });
+    }
+
+    function closeUploadModal() {
+        if (uploadModal) {
+            uploadModal.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+    }
+
+    if (btnCloseUploadModal) {
+        btnCloseUploadModal.addEventListener('click', closeUploadModal);
+    }
+    if (uploadModalOverlay) {
+        uploadModalOverlay.addEventListener('click', closeUploadModal);
     }
 
     // JS đóng mở Modal Tài liệu của tôi
@@ -579,7 +589,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Form reset
-    if (btnCancelUpload && uploadContainer && btnToggleUpload) {
+    if (btnCancelUpload && uploadModal && btnToggleUpload) {
         btnCancelUpload.addEventListener('click', function() {
             const form = document.getElementById('uploadForm');
             if (form) {
@@ -596,9 +606,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 info.innerHTML = '';
                 info.style.display = 'none';
             }
-            uploadContainer.style.display = 'none';
-            btnToggleUpload.classList.remove('active');
-            btnToggleUpload.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> <span>Tải tài liệu lên</span>';
+            closeUploadModal();
         });
     }
 
