@@ -702,9 +702,9 @@ document.addEventListener('DOMContentLoaded', function() {
             
             let footerBtn = '';
             if (downloadUrl) {
-                footerBtn = `<a href="${downloadUrl}" class="swal2-confirm swal2-styled" style="background-color:var(--primary); text-decoration:none; display:inline-flex; align-items:center; gap:8px; margin: 0 5px; padding: 10px 24px; border-radius: 6px;"><i class="fas fa-download"></i> Tải xuống tài liệu</a>`;
+                footerBtn = `<a href="${downloadUrl}" class="swal2-confirm swal2-styled" style="background-color:var(--primary); color:#fff !important; text-decoration:none; display:inline-flex; align-items:center; gap:8px; margin: 0 5px; padding: 10px 24px; border-radius: 6px;"><i class="fas fa-download"></i> Tải xuống tài liệu</a>`;
             } else {
-                footerBtn = `<button class="swal2-confirm swal2-styled" style="background-color:#6c757d; cursor:not-allowed; margin: 0 5px; padding: 10px 24px; border-radius: 6px;" disabled><i class="fas fa-exclamation-triangle"></i> File không tồn tại</button>`;
+                footerBtn = `<button class="swal2-confirm swal2-styled" style="background-color:#6c757d; color:#fff !important; cursor:not-allowed; margin: 0 5px; padding: 10px 24px; border-radius: 6px;" disabled><i class="fas fa-exclamation-triangle"></i> File không tồn tại</button>`;
             }
 
             Swal.fire({
