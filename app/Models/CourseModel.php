@@ -310,9 +310,14 @@ class CourseModel {
             $prereq_ma = $class['ma_hp_tien_quyet'];
 
             // Kiểm tra giới hạn học kỳ cho phép đăng ký học phần trong CTDT (chống học vượt quá xa)
-            $student = $this->db->fetch("SELECT nien_khoa, nganh FROM sinh_vien WHERE id = :sid", ['sid' => $studentId]);
+            $student = $this->db->fetch("
+                SELECT sv.nien_khoa, lsh.nganh_id 
+                FROM sinh_vien sv 
+                JOIN lop_sinh_hoat lsh ON lsh.id = sv.lop_sinh_hoat_id 
+                WHERE sv.id = :sid
+            ", ['sid' => $studentId]);
             $nien_khoa = $student ? $student['nien_khoa'] : '';
-            $studentNganh = $student ? $student['nganh'] : '';
+            $nganh_id  = $student ? (int)$student['nganh_id'] : 0;
             
             $student_hk = 1;
             if ($nien_khoa) {
@@ -329,8 +334,8 @@ class CourseModel {
 
             $program_course = $this->db->fetch("
                 SELECT hoc_ky FROM ctdt_chi_tiet 
-                WHERE nganh = :nganh AND hoc_phan_id = :hpId
-            ", ['nganh' => $studentNganh, 'hpId' => $hpId]);
+                WHERE nganh_id = :nganh_id AND hoc_phan_id = :hpId
+            ", ['nganh_id' => $nganh_id, 'hpId' => $hpId]);
             
             if ($program_course) {
                 $course_hk = (int)$program_course['hoc_ky'];
