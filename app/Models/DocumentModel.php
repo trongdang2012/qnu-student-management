@@ -24,7 +24,15 @@ class DocumentModel {
             return ['type'=>'danger','text'=>$this->getUploadErrorMessage($file['error'])];
         }
 
-        if (!is_dir(UPLOAD_DIR)) mkdir(UPLOAD_DIR, 0755, true);
+        if (!is_dir(UPLOAD_DIR)) {
+            if (!mkdir(UPLOAD_DIR, 0755, true) && !is_dir(UPLOAD_DIR)) {
+                return ['type'=>'danger','text'=>'Không thể tạo thư mục uploads. Kiểm tra quyền ghi thư mục chứa ứng dụng.'];
+            }
+        }
+
+        if (!is_writable(UPLOAD_DIR)) {
+            return ['type'=>'danger','text'=>'Thư mục uploads không có quyền ghi. Kiểm tra quyền của server cho thư mục uploads.'];
+        }
 
         $studentId = $studentId ?: 0;
         $new_name = time() . '_' . $studentId . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '_', $orig_name);
