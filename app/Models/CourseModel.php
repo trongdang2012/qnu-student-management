@@ -134,15 +134,18 @@ class CourseModel {
         }
 
         $r_cpa = $this->db->fetch("
-            SELECT SUM(d.diem_he4 * hp.so_tin_chi) / SUM(hp.so_tin_chi) AS cpa,
-                   SUM(hp.so_tin_chi) AS tc_tich_luy,
-                   COUNT(*) AS so_mon
-            FROM diem_hoc_tap d
-            JOIN hoc_phan hp ON hp.id = d.hoc_phan_id
-            WHERE d.sinh_vien_id = :sid AND d.diem_he4 IS NOT NULL
+            SELECT SUM(temp.max_he4 * temp.so_tin_chi) / SUM(temp.so_tin_chi) AS cpa,
+                   SUM(CASE WHEN temp.max_he4 >= 1.0 THEN temp.so_tin_chi ELSE 0 END) AS tc_tich_luy,
+                   COUNT(*) AS so_mon,
+                   SUM(CASE WHEN temp.max_he4 < 1.0 THEN 1 ELSE 0 END) AS so_mon_F
+            FROM (
+                SELECT hp.so_tin_chi, MAX(d.diem_he4) as max_he4
+                FROM diem_hoc_tap d
+                JOIN hoc_phan hp ON hp.id = d.hoc_phan_id
+                WHERE d.sinh_vien_id = :sid AND d.diem_he4 IS NOT NULL AND hp.ma_hp NOT LIKE '112%'
+                GROUP BY d.hoc_phan_id, hp.so_tin_chi
+            ) as temp
         ", ['sid' => $studentId]);
-
-        $r_f = $this->db->fetch("SELECT COUNT(*) AS cnt FROM diem_hoc_tap WHERE sinh_vien_id=:sid AND diem_he4 IS NOT NULL AND diem_he4 < 1.0", ['sid' => $studentId]);
 
         return [
             'list_nh' => $list_nh,
@@ -151,7 +154,7 @@ class CourseModel {
             'cpa' => round((float)($r_cpa['cpa'] ?? 0), 2),
             'tc_tich_luy' => (int)($r_cpa['tc_tich_luy'] ?? 0),
             'so_mon' => (int)($r_cpa['so_mon'] ?? 0),
-            'so_mon_F' => (int)($r_f['cnt'] ?? 0)
+            'so_mon_F' => (int)($r_cpa['so_mon_F'] ?? 0)
         ];
     }
 

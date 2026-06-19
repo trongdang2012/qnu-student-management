@@ -93,10 +93,7 @@ function colorCPA(float $cpa): string {
 
     <!-- Bảng điểm -->
     <?php
-    $accumulated_tc_tich_luy = 0;
-    $accumulated_sum_diem_he4 = 0;
-    $accumulated_sum_diem_he10 = 0;
-    $accumulated_tc_tinh_diem = 0;
+    $seen_subjects = []; // Mảng theo dõi điểm cao nhất của từng môn học tính đến thời điểm hiện tại để tính tích lũy cộng dồn
     ?>
     <?php foreach ($gradesData['by_nh_hk'] as $nh => $hk_groups): ?>
       <?php foreach ($hk_groups as $hk => $mons):
@@ -109,6 +106,7 @@ function colorCPA(float $cpa): string {
 
         foreach ($mons as $m) {
             $ma_hp = $m['ma_hp'];
+            $hp_id = $m['hoc_phan_id'];
             $tc = (int)$m['so_tin_chi'];
             $diem_he4 = $m['diem_he4'];
             $diem_tong = $m['diem_tong'];
@@ -119,27 +117,49 @@ function colorCPA(float $cpa): string {
             if (!is_null($diem_he4)) {
                 if ($diem_he4 >= 1.0) {
                     $hk_tc_dat += $tc;
-                    if (!$is_dieu_kien) {
-                        $accumulated_tc_tich_luy += $tc;
-                    }
                 } else {
                     $hk_tc_truot += $tc;
                 }
 
                 if (!$is_dieu_kien) {
+                    // Điểm trung bình của riêng học kỳ đó vẫn tính bình thường cho tất cả các môn trong kỳ
                     $hk_sum_diem_he4 += $diem_he4 * $tc;
                     $hk_sum_diem_he10 += $diem_tong * $tc;
                     $hk_tc_tinh_diem += $tc;
 
-                    $accumulated_sum_diem_he4 += $diem_he4 * $tc;
-                    $accumulated_sum_diem_he10 += $diem_tong * $tc;
-                    $accumulated_tc_tinh_diem += $tc;
+                    // Đối với điểm tích lũy cộng dồn: chỉ lưu điểm cao nhất của môn đó tính đến kỳ này
+                    if (!isset($seen_subjects[$hp_id]) || $diem_he4 > $seen_subjects[$hp_id]['diem_he4']) {
+                        $seen_subjects[$hp_id] = [
+                            'diem_he4' => $diem_he4,
+                            'diem_tong' => $diem_tong,
+                            'so_tin_chi' => $tc
+                        ];
+                    }
                 }
             }
         }
 
         $gpa_hk_he4 = $hk_tc_tinh_diem > 0 ? round($hk_sum_diem_he4 / $hk_tc_tinh_diem, 2) : 0;
         $gpa_hk_he10 = $hk_tc_tinh_diem > 0 ? round($hk_sum_diem_he10 / $hk_tc_tinh_diem, 2) : 0;
+
+        // Tính toán các chỉ số tích lũy cộng dồn chính xác tính đến cuối học kỳ này từ $seen_subjects
+        $accumulated_tc_tich_luy = 0;
+        $accumulated_sum_diem_he4 = 0;
+        $accumulated_sum_diem_he10 = 0;
+        $accumulated_tc_tinh_diem = 0;
+
+        foreach ($seen_subjects as $s_id => $s_val) {
+            $s_he4 = $s_val['diem_he4'];
+            $s_tong = $s_val['diem_tong'];
+            $s_tc = $s_val['so_tin_chi'];
+
+            if ($s_he4 >= 1.0) {
+                $accumulated_tc_tich_luy += $s_tc;
+            }
+            $accumulated_sum_diem_he4 += $s_he4 * $s_tc;
+            $accumulated_sum_diem_he10 += $s_tong * $s_tc;
+            $accumulated_tc_tinh_diem += $s_tc;
+        }
 
         $gpa_tich_luy_he4 = $accumulated_tc_tinh_diem > 0 ? round($accumulated_sum_diem_he4 / $accumulated_tc_tinh_diem, 2) : 0;
         $gpa_tich_luy_he10 = $accumulated_tc_tinh_diem > 0 ? round($accumulated_sum_diem_he10 / $accumulated_tc_tinh_diem, 2) : 0;
