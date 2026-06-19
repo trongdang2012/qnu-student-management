@@ -21,7 +21,7 @@ class DocumentModel {
         } elseif ($size > MAX_UPLOAD_SIZE) {
             return ['type'=>'danger','text'=>'File vượt quá dung lượng cho phép'];
         } elseif ($file['error'] !== UPLOAD_ERR_OK) {
-            return ['type'=>'danger','text'=>'Tải lên thất bại, vui lòng thử lại'];
+            return ['type'=>'danger','text'=>$this->getUploadErrorMessage($file['error'])];
         }
 
         if (!is_dir(UPLOAD_DIR)) mkdir(UPLOAD_DIR, 0755, true);
@@ -50,7 +50,29 @@ class DocumentModel {
                 return ['type'=>'danger','text'=>'Tải lên thất bại, vui lòng thử lại'];
             }
         } else {
-            return ['type'=>'danger','text'=>'Tải lên thất bại, vui lòng thử lại'];
+            $errorCode = is_uploaded_file($tmp) ? error_get_last()['message'] ?? '' : '';
+            $hint = $errorCode ? ' Lỗi hệ thống: ' . $errorCode : '';
+            return ['type'=>'danger','text'=>'Tải lên thất bại: không thể di chuyển file tạm sang thư mục đích. Kiểm tra quyền ghi thư mục uploads.' . $hint];
+        }
+    }
+
+    private function getUploadErrorMessage(int $errorCode): string {
+        switch ($errorCode) {
+            case UPLOAD_ERR_INI_SIZE:
+            case UPLOAD_ERR_FORM_SIZE:
+                return 'File vượt quá dung lượng cho phép.';
+            case UPLOAD_ERR_PARTIAL:
+                return 'File chỉ tải lên một phần, vui lòng thử lại.';
+            case UPLOAD_ERR_NO_FILE:
+                return 'Chưa chọn file để tải lên.';
+            case UPLOAD_ERR_NO_TMP_DIR:
+                return 'Thiếu thư mục tạm trên server.';
+            case UPLOAD_ERR_CANT_WRITE:
+                return 'Không thể ghi file lên server.';
+            case UPLOAD_ERR_EXTENSION:
+                return 'Quá trình tải lên bị dừng bởi extension.';
+            default:
+                return 'Tải lên thất bại, vui lòng thử lại.';
         }
     }
 
