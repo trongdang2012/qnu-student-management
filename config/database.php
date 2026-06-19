@@ -4,9 +4,11 @@
  * QNU Student Management System
  */
 
-function env(string $key, $default = null) {
-    $value = getenv($key);
-    return $value !== false ? $value : $default;
+if (!function_exists('env')) {
+    function env(string $key, $default = null) {
+        $value = getenv($key);
+        return $value !== false ? $value : $default;
+    }
 }
 
 define('DB_HOST', env('DB_HOST', 'localhost'));

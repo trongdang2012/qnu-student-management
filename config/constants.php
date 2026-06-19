@@ -9,9 +9,17 @@ define('APP_NAME', 'QNU - Hệ thống Quản lý Sinh viên');
 define('APP_SHORT_NAME', 'QNU SMS');
 define('APP_VERSION', '1.0.0');
 
+if (!function_exists('env')) {
+    function env(string $key, $default = null) {
+        $value = getenv($key);
+        return $value !== false ? $value : $default;
+    }
+}
+
 // Đường dẫn gốc (Tự động phát hiện động theo host truy cập thực tế để tránh mất Session/Cookie khi chuyển hướng qua lại giữa localhost, 127.0.0.1 hoặc IP LAN)
+// Nếu đã thiết lập biến môi trường BASE_URL thì ưu tiên dùng.
 if (php_sapi_name() === 'cli') {
-    define('BASE_URL', 'http://localhost/qnu-student-management');
+    define('BASE_URL', env('BASE_URL', 'http://localhost/qnu-student-management'));
 } else {
     $isHttps = false;
     if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') {
@@ -27,7 +35,7 @@ if (php_sapi_name() === 'cli') {
     $protocol = $isHttps ? "https://" : "http://";
     $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
     $subfolder = str_replace('/index.php', '', $_SERVER['SCRIPT_NAME'] ?? '');
-    define('BASE_URL', $protocol . $host . $subfolder);
+    define('BASE_URL', env('BASE_URL', $protocol . $host . $subfolder));
 }
 
 // Học kỳ & năm học hiện tại
