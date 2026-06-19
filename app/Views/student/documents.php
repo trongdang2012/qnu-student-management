@@ -19,18 +19,89 @@ function formatSize(int $bytes): string {
 <?php require_once ROOT . '/includes/navbar_student.php'; ?>
 
 <style>
-  /* Cấu trúc Layout Grid phân chia 2 khu vực */
-  .docs-layout-grid {
-    display: grid;
-    grid-template-columns: 1fr 2fr;
-    gap: 24px;
-    align-items: flex-start;
+  /* Custom Modal CSS */
+  .custom-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1050;
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
+  .custom-modal.active {
+    display: flex;
+  }
+  .custom-modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(4px);
+  }
+  .custom-modal-content {
+    position: relative;
+    background: #fff;
+    width: 95%;
+    max-width: 750px;
+    border-radius: 12px;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    z-index: 1051;
+    animation: modalZoomIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
   
-  @media (max-width: 992px) {
-    .docs-layout-grid {
-      grid-template-columns: 1fr;
+  @keyframes modalZoomIn {
+    from {
+      opacity: 0;
+      transform: scale(0.9);
     }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+  
+  .custom-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid #eef2f5;
+    background: #fff;
+  }
+  .custom-modal-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .btn-close-modal {
+    background: none;
+    border: none;
+    font-size: 28px;
+    line-height: 1;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: color 0.2s;
+    padding: 0;
+  }
+  .btn-close-modal:hover {
+    color: #dc3545;
+  }
+  .custom-modal-body {
+    padding: 20px;
+    overflow-y: auto;
+    background: #f8f9fa;
   }
 
   /* Styling Form Upload động */
@@ -203,275 +274,269 @@ function formatSize(int $bytes): string {
       </div>
     <?php endif; ?>
 
-    <!-- Layout Grid 2 Cột chính -->
-    <div class="docs-layout-grid">
+    <!-- Dải nút bấm hành động (Xem tài liệu của tôi & Đăng tài liệu) -->
+    <div style="display:flex; gap:12px; margin-bottom:20px; flex-wrap:wrap;">
+      <button type="button" class="btn" id="btnShowMyDocs" style="display:flex; align-items:center; gap:8px; font-weight:500; padding:10px 18px; border-radius:8px; background:linear-gradient(135deg, #ffc107 0%, #ff9800 100%); color:#fff !important; border:none; cursor:pointer; box-shadow:0 4px 12px rgba(255, 152, 0, 0.25); transition:all 0.3s ease;">
+        <i class="fas fa-folder-open"></i> <span>Xem tài liệu của tôi (<?= count($my_list) ?>)</span>
+      </button>
+      
+      <button type="button" class="btn-upload-trigger" id="btnToggleUpload" style="margin-bottom:0; width:auto; padding:10px 18px; min-width:180px;">
+        <i class="fas fa-cloud-upload-alt"></i> <span>Đăng tài liệu</span>
+      </button>
+    </div>
 
-      <!-- CỘT TRÁI (Tài liệu của tôi & Tải tài liệu lên - Chiếm 1/3) -->
-      <div>
-        
-        <!-- Nút trigger mở form tải lên -->
-        <button type="button" class="btn-upload-trigger" id="btnToggleUpload">
-          <i class="fas fa-cloud-upload-alt"></i> <span>Tải tài liệu lên</span>
-        </button>
-
-        <!-- Hộp Form tải lên (Mặc định ẩn, click mới trượt xuống) -->
-        <div class="upload-form-container" id="uploadContainer">
-          <div class="card my-docs-card shadow-sm fade-in">
-            <div class="card-header" style="background:#fff; border-bottom:1px solid #eef2f5; padding:14px 16px;">
-              <h3 style="font-size:15px; font-weight:600;"><i class="fas fa-upload" style="color:var(--primary)"></i> Chi tiết tài liệu tải lên</h3>
-            </div>
-            <div class="card-body" style="padding:16px;">
-              <form action="" method="POST" enctype="multipart/form-data" id="uploadForm" data-validate-form novalidate>
-                <input type="hidden" name="action" value="upload">
-
-                <!-- Upload zone kéo thả -->
-                <div class="upload-zone" id="uploadZone" style="padding: 20px 10px; border-radius: 8px;">
-                  <div class="upload-icon" style="font-size:28px; margin-bottom:8px;"><i class="fas fa-cloud-upload-alt"></i></div>
-                  <p style="font-size:13px;"><strong>Kéo & thả</strong> file hoặc <strong>click</strong> chọn</p>
-                  <p style="font-size:11px; margin-top:4px; color:var(--text-muted)">Hỗ trợ tài liệu tối đa 10MB</p>
-                  <input type="file" id="fileInput" name="file_upload" style="display:none"
-                         accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.rar,.png,.jpg,.jpeg">
-                </div>
-                <div id="fileInfo" style="display:none;margin:10px 0;padding:8px 10px;background:#f0f4ff;border-radius:6px;font-size:12.5px;color:var(--primary)"></div>
-
-                <!-- Tiêu đề -->
-                <div class="form-group mt-12">
-                  <label for="tieu_de" style="font-size:13px; font-weight:500;">Tiêu đề <span class="required">*</span></label>
-                  <input type="text" id="tieu_de" name="tieu_de" class="form-control"
-                         placeholder="VD: Đề cương ôn tập Toán cao cấp A1"
-                         data-validate="required" maxlength="200" required>
-                  <span class="form-error"></span>
-                </div>
-
-                <!-- Học phần liên quan -->
-                <div class="form-group">
-                  <label for="hoc_phan_id" style="font-size:13px; font-weight:500;">Học phần liên quan</label>
-                  <select id="hoc_phan_id" name="hoc_phan_id" class="form-control" style="font-size:13px; padding:6px">
-                    <option value="">— Không chọn —</option>
-                    <?php foreach ($hp_list as $hp): ?>
-                      <option value="<?= (int)$hp['id'] ?>"><?= e($hp['ten_hp']) ?> (<?= e($hp['ma_hp']) ?>)</option>
-                    <?php endforeach; ?>
-                  </select>
-                </div>
-
-                <!-- Quyền chia sẻ -->
-                <div class="form-group">
-                  <label style="font-size:13px; font-weight:500; display:block; margin-bottom:8px;">Chế độ chia sẻ</label>
-                  <label style="display:inline-flex; align-items:center; gap:8px; margin-right:18px; font-size:13px;">
-                    <input type="radio" name="cong_khai" value="1" checked>
-                    Công khai (mọi người có thể xem)
-                  </label>
-                  <label style="display:inline-flex; align-items:center; gap:8px; font-size:13px;">
-                    <input type="radio" name="cong_khai" value="0">
-                    Riêng tư (chỉ bạn thấy trong tài liệu của tôi)
-                  </label>
-                </div>
-
-                <!-- Mô tả -->
-                <div class="form-group">
-                  <label for="mo_ta" style="font-size:13px; font-weight:500;">Mô tả ngắn</label>
-                  <textarea id="mo_ta" name="mo_ta" class="form-control" rows="3"
-                            placeholder="Mô tả tóm tắt nội dung tài liệu..."
-                            style="resize:vertical; font-size:13px; padding:8px;"></textarea>
-                </div>
-
-                <!-- Nút thao tác -->
-                <div style="display:flex;gap:10px;margin-top:16px;">
-                  <button type="button" id="btnCancelUpload" class="btn btn-secondary" style="flex:1;justify-content:center; padding:8px; font-size:13.5px">
-                    Hủy
-                  </button>
-                  <button type="submit" class="btn btn-primary" style="flex:2;justify-content:center; padding:8px; font-size:13.5px">
-                    <i class="fas fa-upload"></i> Đăng tải
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
+    <!-- Hộp Form tải lên (Trượt xuống, hiển thị rộng 100%) -->
+    <div class="upload-form-container" id="uploadContainer" style="max-width:750px; margin:0 auto 20px auto;">
+      <div class="card my-docs-card shadow-sm fade-in">
+        <div class="card-header" style="background:#fff; border-bottom:1px solid #eef2f5; padding:14px 16px;">
+          <h3 style="font-size:15px; font-weight:600;"><i class="fas fa-upload" style="color:var(--primary)"></i> Chi tiết tài liệu tải lên</h3>
         </div>
+        <div class="card-body" style="padding:16px;">
+          <form action="" method="POST" enctype="multipart/form-data" id="uploadForm" data-validate-form novalidate>
+            <input type="hidden" name="action" value="upload">
 
-        <!-- Khối hiển thị Tài liệu của tôi -->
-        <div class="card my-docs-card shadow-sm fade-in">
-          <div class="card-header" style="background:#fff; border-bottom:1px solid #eef2f5; padding:14px 16px;">
-            <h3 style="font-size:15px; font-weight:600;"><i class="fas fa-folder-open" style="color:#ffc107"></i> Tài liệu của tôi</h3>
-          </div>
-          <div class="card-body" style="padding:16px; max-height: 500px; overflow-y: auto;">
-            
-            <?php if (empty($my_list)): ?>
-              <div class="text-center" style="padding: 24px 0;">
-                <div style="font-size:32px;margin-bottom:8px">📂</div>
-                <p style="color:var(--text-muted); font-size:13px; margin:0">Bạn chưa tải tài liệu nào lên.</p>
-              </div>
-            <?php else: ?>
-              <div class="my-docs-list">
-                <?php foreach ($my_list as $tl): ?>
-                  <div class="my-doc-item">
-                    <div class="my-doc-info">
-                      <?= fileIcon($tl['loai_file'] ?? '') ?>
-                      <div style="min-width: 0; flex: 1;">
-                        <div class="my-doc-title" title="<?= e($tl['tieu_de']) ?>">
-                          <?= e(mb_strimwidth($tl['tieu_de'], 0, 32, '...')) ?>
-                        </div>
-                        <div class="my-doc-meta">
-                          <span><?= formatSize((int)$tl['kich_thuoc']) ?></span>
-                          <span>•</span>
-                          <span><i class="fas fa-download"></i> <?= (int)$tl['luot_tai'] ?></span>
-                          <span>•</span>
-                          <span style="font-weight:600; color:<?= $tl['is_public'] ? '#198754' : '#6c757d' ?>;"><?= $tl['is_public'] ? 'Công khai' : 'Riêng tư' ?></span>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div class="my-doc-actions">
-                      <?php if (!empty($tl['duong_dan']) && file_exists(UPLOAD_DIR . $tl['duong_dan'])): ?>
-                        <a href="<?= BASE_URL ?>/student/download?id=<?= (int)$tl['id'] ?>" class="btn-icon btn-icon-download" title="Tải xuống">
-                          <i class="fas fa-download"></i>
-                        </a>
-                      <?php endif; ?>
-                      
-                      <form method="POST" action="<?= BASE_URL ?>/student/tai-lieu" style="display:inline" class="delete-doc-form">
-                        <input type="hidden" name="action" value="xoa">
-                        <input type="hidden" name="tl_id" value="<?= (int)$tl['id'] ?>">
-                        <button type="button" class="btn-icon btn-icon-delete btn-delete-submit" title="Xóa tài liệu" data-title="<?= e($tl['tieu_de']) ?>">
-                          <i class="fas fa-trash"></i>
-                        </button>
-                      </form>
-                    </div>
-                  </div>
+            <!-- Upload zone kéo thả -->
+            <div class="upload-zone" id="uploadZone" style="padding: 20px 10px; border-radius: 8px;">
+              <div class="upload-icon" style="font-size:28px; margin-bottom:8px;"><i class="fas fa-cloud-upload-alt"></i></div>
+              <p style="font-size:13px;"><strong>Kéo & thả</strong> file hoặc <strong>click</strong> chọn</p>
+              <p style="font-size:11px; margin-top:4px; color:var(--text-muted)">Hỗ trợ tài liệu tối đa 10MB</p>
+              <input type="file" id="fileInput" name="file_upload" style="display:none"
+                     accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.rar,.png,.jpg,.jpeg">
+            </div>
+            <div id="fileInfo" style="display:none;margin:10px 0;padding:8px 10px;background:#f0f4ff;border-radius:6px;font-size:12.5px;color:var(--primary)"></div>
+
+            <!-- Tiêu đề -->
+            <div class="form-group mt-12">
+              <label for="tieu_de" style="font-size:13px; font-weight:500;">Tiêu đề <span class="required">*</span></label>
+              <input type="text" id="tieu_de" name="tieu_de" class="form-control"
+                     placeholder="VD: Đề cương ôn tập Toán cao cấp A1"
+                     data-validate="required" maxlength="200" required>
+              <span class="form-error"></span>
+            </div>
+
+            <!-- Học phần liên quan -->
+            <div class="form-group">
+              <label for="hoc_phan_id" style="font-size:13px; font-weight:500;">Học phần liên quan</label>
+              <select id="hoc_phan_id" name="hoc_phan_id" class="form-control" style="font-size:13px; padding:6px">
+                <option value="">— Không chọn —</option>
+                <?php foreach ($hp_list as $hp): ?>
+                  <option value="<?= (int)$hp['id'] ?>"><?= e($hp['ten_hp']) ?> (<?= e($hp['ma_hp']) ?>)</option>
                 <?php endforeach; ?>
+              </select>
+            </div>
+
+            <!-- Quyền chia sẻ -->
+            <div class="form-group">
+              <label style="font-size:13px; font-weight:500; display:block; margin-bottom:8px;">Chế độ chia sẻ</label>
+              <label style="display:inline-flex; align-items:center; gap:8px; margin-right:18px; font-size:13px;">
+                <input type="radio" name="cong_khai" value="1" checked>
+                Công khai (mọi người có thể xem)
+              </label>
+              <label style="display:inline-flex; align-items:center; gap:8px; font-size:13px;">
+                <input type="radio" name="cong_khai" value="0">
+                Riêng tư (chỉ bạn thấy trong tài liệu của tôi)
+              </label>
+            </div>
+
+            <!-- Mô tả -->
+            <div class="form-group">
+              <label for="mo_ta" style="font-size:13px; font-weight:500;">Mô tả ngắn</label>
+              <textarea id="mo_ta" name="mo_ta" class="form-control" rows="3"
+                        placeholder="Mô tả tóm tắt nội dung tài liệu..."
+                        style="resize:vertical; font-size:13px; padding:8px;"></textarea>
+            </div>
+
+            <!-- Nút thao tác -->
+            <div style="display:flex;gap:10px;margin-top:16px;">
+              <button type="button" id="btnCancelUpload" class="btn btn-secondary" style="flex:1;justify-content:center; padding:8px; font-size:13.5px">
+                Hủy
+              </button>
+              <button type="submit" class="btn btn-primary" style="flex:2;justify-content:center; padding:8px; font-size:13.5px">
+                <i class="fas fa-upload"></i> Đăng tải
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bộ lọc và Ô tìm kiếm tài liệu (Rộng 100%) -->
+    <div class="card mb-16 shadow-sm fade-in" style="border-radius:12px; border:1px solid #eef2f5;">
+      <div class="card-body" style="padding:14px 16px">
+        <form method="GET" style="display:flex; gap:12px; align-items:center; flex-wrap:wrap; width:100%;">
+          
+          <!-- Ô tìm kiếm -->
+          <div style="flex:2; min-width:220px; position:relative;">
+            <input type="text" name="q" class="form-control" 
+                   placeholder="Tìm kiếm tiêu đề, mô tả tài liệu..." 
+                   value="<?= e($search_query ?? '') ?>"
+                   style="font-size:13.5px; padding:7px 12px 7px 36px; border-radius:6px; width:100%;">
+            <i class="fas fa-search" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--text-muted); font-size:13px;"></i>
+          </div>
+          
+          <!-- Bộ lọc học phần -->
+          <div style="flex:1.5; min-width:180px">
+            <select name="hp" class="form-control" style="font-size:13.5px; padding:7px 12px; border-radius:6px; width:100%;">
+              <option value="">Tất cả học phần</option>
+              <?php foreach ($hp_list as $hp): ?>
+                <option value="<?= (int)$hp['id'] ?>" <?= $filter_hp==$hp['id']?'selected':'' ?>><?= e($hp['ten_hp']) ?> (<?= e($hp['ma_hp']) ?>)</option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+          
+          <div style="display:flex; gap:8px;">
+            <button type="submit" class="btn btn-primary" style="padding:7px 16px; font-size:13.5px; border-radius:6px;">
+              <i class="fas fa-filter"></i> Lọc
+            </button>
+            <?php if (!empty($search_query) || $filter_hp > 0): ?>
+              <a href="<?= BASE_URL ?>/student/tai-lieu" class="btn btn-secondary" style="padding:7px 16px; font-size:13.5px; border-radius:6px; display:flex; align-items:center; justify-content:center;">
+                <i class="fas fa-redo"></i> Xóa bộ lọc
+              </a>
+            <?php endif; ?>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Khối hiển thị Danh sách tài liệu chia sẻ -->
+    <h2 style="font-size:17px; font-weight:600; color:#fff; margin:24px 0 16px 4px; display:flex; align-items:center; gap:10px;">
+      <i class="fas fa-globe-asia" style="color:#00d2fc"></i> Tài liệu từ mọi người chia sẻ
+    </h2>
+
+    <?php if (empty($tl_list)): ?>
+      <div class="card shadow-sm fade-in" style="border-radius:12px; border:1px solid #eef2f5;">
+        <div class="card-body text-center" style="padding:60px 40px">
+          <div style="font-size:56px;margin-bottom:16px">📂</div>
+          <h3 style="color:var(--text-muted); font-size:16px; font-weight:600;">Không tìm thấy tài liệu phù hợp</h3>
+          <p class="text-muted" style="font-size:13.5px; margin-top:6px;">Hãy nhập từ khóa khác hoặc tải lên tài liệu môn học này!</p>
+        </div>
+      </div>
+    <?php else: ?>
+      <div class="tl-grid">
+      <?php foreach ($tl_list as $tl): ?>
+        <div class="tl-card shadow-sm fade-in" style="border-radius:12px; border:1px solid #eef2f5; display:flex; flex-direction:column; justify-content:space-between; height: 100%;">
+          <div>
+            <div style="display:flex;gap:12px;align-items:flex-start">
+              <?= fileIcon($tl['loai_file'] ?? '') ?>
+              <div style="flex:1;min-width:0">
+                <div class="tl-title" title="<?= e($tl['tieu_de']) ?>" style="font-size:14.5px; font-weight:600; line-height:1.4;">
+                  <?= e(mb_strimwidth($tl['tieu_de'], 0, 52, '...')) ?>
+                </div>
+                <?php if (!empty($tl['ten_hp'])): ?>
+                  <div style="font-size:12px;color:var(--primary);margin-top:4px; font-weight:500;">
+                    <i class="fas fa-book"></i> <?= e($tl['ten_hp']) ?>
+                  </div>
+                <?php endif; ?>
+              </div>
+            </div>
+
+            <?php if (!empty($tl['mo_ta'])): ?>
+              <div style="font-size:12.5px;color:var(--text-muted);line-height:1.5; margin-top:10px; background:#fafbfc; padding:8px 10px; border-radius:6px;">
+                <?= e(mb_strimwidth($tl['mo_ta'], 0, 75, '...')) ?>
               </div>
             <?php endif; ?>
           </div>
-        </div>
 
-      </div>
+          <div>
+            <div class="tl-meta" style="margin-top:12px; border-top:1px solid #f8f9fa; padding-top:10px; display:flex; flex-wrap:wrap; gap:10px;">
+              <span title="Người đăng"><i class="fas fa-user"></i> <?= e($tl['ho_ten'] ?: 'Admin') ?></span>
+              <span title="Dung lượng"><i class="fas fa-file"></i> <?= formatSize((int)$tl['kich_thuoc']) ?></span>
+              <span title="Lượt tải"><i class="fas fa-download"></i> <?= (int)$tl['luot_tai'] ?></span>
+              <span title="Chế độ chia sẻ" style="font-weight:600;color:#198754;">Công khai</span>
+            </div>
+            
+            <div style="font-size:11px;color:var(--text-muted); margin-top:6px; display:flex; justify-content:space-between; align-items:center;">
+              <span><i class="fas fa-clock"></i> <?= date('d/m/Y H:i', strtotime($tl['ngay_dang'])) ?></span>
+              <?php if ($tl['sinh_vien_id'] == $sv['id']): ?>
+                <span class="badge" style="background-color:#e1f5fe; color:#0288d1; font-size:10px; padding:2px 6px; border-radius:4px; font-weight:600;">Của tôi</span>
+              <?php endif; ?>
+            </div>
 
-      <!-- CỘT PHẢI (Tài liệu được chia sẻ từ cộng đồng - Chiếm 2/3) -->
-      <div>
+            <div class="tl-actions" style="margin-top:12px; gap:8px;">
+              <?php if (!empty($tl['duong_dan']) && file_exists(UPLOAD_DIR . $tl['duong_dan'])): ?>
+                <a href="<?= BASE_URL ?>/student/download?id=<?= (int)$tl['id'] ?>"
+                   class="btn btn-primary btn-sm" style="flex:1;justify-content:center; border-radius:6px; padding:7px;">
+                  <i class="fas fa-download"></i> Tải xuống
+                </a>
+              <?php else: ?>
+                <span class="btn btn-secondary btn-sm" style="flex:1;opacity:.5;cursor:not-allowed;justify-content:center; border-radius:6px; padding:7px;">
+                  <i class="fas fa-exclamation-triangle"></i> File không tồn tại
+                </span>
+              <?php endif; ?>
 
-        <!-- Bộ lọc và Ô tìm kiếm tài liệu tích hợp tinh tế -->
-        <div class="card mb-16 shadow-sm fade-in" style="border-radius:12px; border:1px solid #eef2f5;">
-          <div class="card-body" style="padding:14px 16px">
-            <form method="GET" style="display:flex; gap:12px; align-items:center; flex-wrap:wrap; width:100%;">
-              
-              <!-- Ô tìm kiếm -->
-              <div style="flex:2; min-width:220px; position:relative;">
-                <input type="text" name="q" class="form-control" 
-                       placeholder="Tìm kiếm tiêu đề, mô tả tài liệu..." 
-                       value="<?= e($search_query ?? '') ?>"
-                       style="font-size:13.5px; padding:7px 12px 7px 36px; border-radius:6px; width:100%;">
-                <i class="fas fa-search" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--text-muted); font-size:13px;"></i>
-              </div>
-              
-              <!-- Bộ lọc học phần -->
-              <div style="flex:1.5; min-width:180px">
-                <select name="hp" class="form-control" style="font-size:13.5px; padding:7px 12px; border-radius:6px; width:100%;">
-                  <option value="">Tất cả học phần</option>
-                  <?php foreach ($hp_list as $hp): ?>
-                    <option value="<?= (int)$hp['id'] ?>" <?= $filter_hp==$hp['id']?'selected':'' ?>><?= e($hp['ten_hp']) ?> (<?= e($hp['ma_hp']) ?>)</option>
-                  <?php endforeach; ?>
-                </select>
-              </div>
-              
-              <div style="display:flex; gap:8px;">
-                <button type="submit" class="btn btn-primary" style="padding:7px 16px; font-size:13.5px; border-radius:6px;">
-                  <i class="fas fa-filter"></i> Lọc
-                </button>
-                <?php if (!empty($search_query) || $filter_hp > 0): ?>
-                  <a href="<?= BASE_URL ?>/student/tai-lieu" class="btn btn-secondary" style="padding:7px 16px; font-size:13.5px; border-radius:6px; display:flex; align-items:center; justify-content:center;">
-                    <i class="fas fa-redo"></i> Xóa bộ lọc
-                  </a>
-                <?php endif; ?>
-              </div>
-            </form>
-          </div>
-        </div>
-
-        <!-- Khối hiển thị Danh sách tài liệu chia sẻ -->
-        <h2 style="font-size:16px; font-weight:600; color:var(--text-dark); margin: 8px 0 16px 4px; display:flex; align-items:center; gap:8px;">
-          <i class="fas fa-globe-asia" style="color:var(--primary)"></i> Tài liệu từ mọi người chia sẻ
-        </h2>
-
-        <?php if (empty($tl_list)): ?>
-          <div class="card shadow-sm fade-in" style="border-radius:12px; border:1px solid #eef2f5;">
-            <div class="card-body text-center" style="padding:60px 40px">
-              <div style="font-size:56px;margin-bottom:16px">📂</div>
-              <h3 style="color:var(--text-muted); font-size:16px; font-weight:600;">Không tìm thấy tài liệu phù hợp</h3>
-              <p class="text-muted" style="font-size:13.5px; margin-top:6px;">Hãy nhập từ khóa khác hoặc tải lên tài liệu môn học này!</p>
+              <?php if ($tl['sinh_vien_id'] == $sv['id']): ?>
+                <form method="POST" action="<?= BASE_URL ?>/student/tai-lieu" style="display:inline" class="delete-doc-form">
+                  <input type="hidden" name="action" value="xoa">
+                  <input type="hidden" name="tl_id" value="<?= (int)$tl['id'] ?>">
+                  <button type="button" class="btn btn-danger btn-sm btn-delete-submit" style="border-radius:6px; padding:7px;" data-title="<?= e($tl['tieu_de']) ?>">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </form>
+              <?php endif; ?>
             </div>
           </div>
-        <?php else: ?>
-          <div class="tl-grid">
-          <?php foreach ($tl_list as $tl): ?>
-            <div class="tl-card shadow-sm fade-in" style="border-radius:12px; border:1px solid #eef2f5; display:flex; flex-direction:column; justify-content:space-between; height: 100%;">
-              <div>
-                <div style="display:flex;gap:12px;align-items:flex-start">
-                  <?= fileIcon($tl['loai_file'] ?? '') ?>
-                  <div style="flex:1;min-width:0">
-                    <div class="tl-title" title="<?= e($tl['tieu_de']) ?>" style="font-size:14.5px; font-weight:600; line-height:1.4;">
-                      <?= e(mb_strimwidth($tl['tieu_de'], 0, 52, '...')) ?>
-                    </div>
-                    <?php if (!empty($tl['ten_hp'])): ?>
-                      <div style="font-size:12px;color:var(--primary);margin-top:4px; font-weight:500;">
-                        <i class="fas fa-book"></i> <?= e($tl['ten_hp']) ?>
+
+        </div>
+      <?php endforeach; ?>
+      </div>
+    <?php endif; ?>
+
+    <!-- Modal Tài liệu của tôi -->
+    <div class="custom-modal" id="myDocsModal">
+      <div class="custom-modal-overlay"></div>
+      <div class="custom-modal-content">
+        <div class="custom-modal-header">
+          <h3><i class="fas fa-folder-open" style="color:#ffc107"></i> Tài liệu của tôi</h3>
+          <button type="button" class="btn-close-modal" id="btnCloseMyDocsModal">&times;</button>
+        </div>
+        <div class="custom-modal-body" style="padding:16px; max-height:65vh; overflow-y:auto;">
+          <?php if (empty($my_list)): ?>
+            <div class="text-center" style="padding: 40px 0;">
+              <div style="font-size:48px;margin-bottom:12px">📂</div>
+              <p style="color:var(--text-muted); font-size:14px; margin:0">Bạn chưa tải tài liệu nào lên.</p>
+            </div>
+          <?php else: ?>
+            <div class="my-docs-list">
+              <?php foreach ($my_list as $tl): ?>
+                <div class="my-doc-item" style="background:#fff; margin-bottom:10px; border:1px solid #eef2f5; border-radius:8px; padding:12px;">
+                  <div class="my-doc-info">
+                    <?= fileIcon($tl['loai_file'] ?? '') ?>
+                    <div style="min-width: 0; flex: 1;">
+                      <div class="my-doc-title" title="<?= e($tl['tieu_de']) ?>" style="font-weight:600; font-size:14px;">
+                        <?= e($tl['tieu_de']) ?>
                       </div>
+                      <div class="my-doc-meta" style="font-size:12px; color:var(--text-muted); margin-top:4px;">
+                        <span><?= formatSize((int)$tl['kich_thuoc']) ?></span>
+                        <span>•</span>
+                        <span><i class="fas fa-download"></i> <?= (int)$tl['luot_tai'] ?> lượt tải</span>
+                        <span>•</span>
+                        <span style="font-weight:600; color:<?= $tl['is_public'] ? '#198754' : '#6c757d' ?>;"><?= $tl['is_public'] ? 'Công khai' : 'Riêng tư' ?></span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div class="my-doc-actions">
+                    <?php if (!empty($tl['duong_dan']) && file_exists(UPLOAD_DIR . $tl['duong_dan'])): ?>
+                      <a href="<?= BASE_URL ?>/student/download?id=<?= (int)$tl['id'] ?>" class="btn-icon btn-icon-download" title="Tải xuống">
+                        <i class="fas fa-download"></i>
+                      </a>
                     <?php endif; ?>
-                  </div>
-                </div>
-
-                <?php if (!empty($tl['mo_ta'])): ?>
-                  <div style="font-size:12.5px;color:var(--text-muted);line-height:1.5; margin-top: 10px; background: #fafbfc; padding: 8px 10px; border-radius: 6px;">
-                    <?= e(mb_strimwidth($tl['mo_ta'], 0, 75, '...')) ?>
-                  </div>
-                <?php endif; ?>
-              </div>
-
-              <div>
-                <div class="tl-meta" style="margin-top:12px; border-top:1px solid #f8f9fa; padding-top:10px; display:flex; flex-wrap:wrap; gap:10px;">
-                  <span title="Người đăng"><i class="fas fa-user"></i> <?= e($tl['ho_ten'] ?: 'Admin') ?></span>
-                  <span title="Dung lượng"><i class="fas fa-file"></i> <?= formatSize((int)$tl['kich_thuoc']) ?></span>
-                  <span title="Lượt tải"><i class="fas fa-download"></i> <?= (int)$tl['luot_tai'] ?></span>
-                  <span title="Chế độ chia sẻ" style="font-weight:600;color:#198754;">Công khai</span>
-                </div>
-                
-                <div style="font-size:11px;color:var(--text-muted); margin-top:6px; display:flex; justify-content:space-between; align-items:center;">
-                  <span><i class="fas fa-clock"></i> <?= date('d/m/Y H:i', strtotime($tl['ngay_dang'])) ?></span>
-                  <?php if ($tl['sinh_vien_id'] == $sv['id']): ?>
-                    <span class="badge" style="background-color:#e1f5fe; color:#0288d1; font-size:10px; padding:2px 6px; border-radius:4px; font-weight:600;">Của tôi</span>
-                  <?php endif; ?>
-                </div>
-
-                <div class="tl-actions" style="margin-top:12px; gap:8px;">
-                  <?php if (!empty($tl['duong_dan']) && file_exists(UPLOAD_DIR . $tl['duong_dan'])): ?>
-                    <a href="<?= BASE_URL ?>/student/download?id=<?= (int)$tl['id'] ?>"
-                       class="btn btn-primary btn-sm" style="flex:1;justify-content:center; border-radius:6px; padding:7px;">
-                      <i class="fas fa-download"></i> Tải xuống
-                    </a>
-                  <?php else: ?>
-                    <span class="btn btn-secondary btn-sm" style="flex:1;opacity:.5;cursor:not-allowed;justify-content:center; border-radius:6px; padding:7px;">
-                      <i class="fas fa-exclamation-triangle"></i> File không tồn tại
-                    </span>
-                  <?php endif; ?>
-
-                  <?php if ($tl['sinh_vien_id'] == $sv['id']): ?>
+                    
                     <form method="POST" action="<?= BASE_URL ?>/student/tai-lieu" style="display:inline" class="delete-doc-form">
                       <input type="hidden" name="action" value="xoa">
                       <input type="hidden" name="tl_id" value="<?= (int)$tl['id'] ?>">
-                      <button type="button" class="btn btn-danger btn-sm btn-delete-submit" style="border-radius:6px; padding:7px;" data-title="<?= e($tl['tieu_de']) ?>">
+                      <button type="button" class="btn-icon btn-icon-delete btn-delete-submit" title="Xóa tài liệu" data-title="<?= e($tl['tieu_de']) ?>">
                         <i class="fas fa-trash"></i>
                       </button>
                     </form>
-                  <?php endif; ?>
+                  </div>
                 </div>
-              </div>
-
+              <?php endforeach; ?>
             </div>
-          <?php endforeach; ?>
-          </div>
-        <?php endif; ?>
-
-      </div><!-- /right -->
-
-    </div><!-- /content-grid -->
+          <?php endif; ?>
+        </div>
+      </div>
+    </div>
 
   </div>
 </div>
@@ -490,13 +555,40 @@ document.addEventListener('DOMContentLoaded', function() {
             if (isVisible) {
                 uploadContainer.style.display = 'none';
                 btnToggleUpload.classList.remove('active');
-                btnToggleUpload.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> <span>Tải tài liệu lên</span>';
+                btnToggleUpload.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> <span>Đăng tài liệu</span>';
             } else {
                 uploadContainer.style.display = 'block';
                 btnToggleUpload.classList.add('active');
                 btnToggleUpload.innerHTML = '<i class="fas fa-times"></i> <span>Đóng Form</span>';
             }
         });
+    }
+
+    // JS đóng mở Modal Tài liệu của tôi
+    const btnShowMyDocs = document.getElementById('btnShowMyDocs');
+    const myDocsModal = document.getElementById('myDocsModal');
+    const btnCloseMyDocsModal = document.getElementById('btnCloseMyDocsModal');
+    const modalOverlay = myDocsModal ? myDocsModal.querySelector('.custom-modal-overlay') : null;
+
+    if (btnShowMyDocs && myDocsModal) {
+        btnShowMyDocs.addEventListener('click', function() {
+            myDocsModal.classList.add('active');
+            document.body.style.overflow = 'hidden'; // Ngăn cuộn trang nền
+        });
+    }
+
+    function closeModal() {
+        if (myDocsModal) {
+            myDocsModal.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+    }
+
+    if (btnCloseMyDocsModal) {
+        btnCloseMyDocsModal.addEventListener('click', closeModal);
+    }
+    if (modalOverlay) {
+        modalOverlay.addEventListener('click', closeModal);
     }
 
     // Form reset
