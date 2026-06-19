@@ -1,24 +1,26 @@
 <?php
-function sortUrl($col, $current_sort, $current_order, $search, $khoa, $nganh, $lop) {
-    $order = ($current_sort === $col && $current_order === 'asc') ? 'desc' : 'asc';
-    $params = [
-        'sort' => $col,
-        'order' => $order
-    ];
-    if (!empty($search)) $params['search'] = $search;
-    if (!empty($khoa)) $params['khoa'] = $khoa;
-    if (!empty($nganh)) $params['nganh'] = $nganh;
-    if (!empty($lop)) $params['lop'] = $lop;
-    return '?' . http_build_query($params);
+function sortUrl($col, $current_sort, $current_order, $search, $khoa, $nganh, $lop)
+{
+  $order = ($current_sort === $col && $current_order === 'asc') ? 'desc' : 'asc';
+  $params = [
+    'sort' => $col,
+    'order' => $order
+  ];
+  if (!empty($search)) $params['search'] = $search;
+  if (!empty($khoa)) $params['khoa'] = $khoa;
+  if (!empty($nganh)) $params['nganh'] = $nganh;
+  if (!empty($lop)) $params['lop'] = $lop;
+  return '?' . http_build_query($params);
 }
 
-function sortIcon($col, $current_sort, $current_order) {
-    if ($current_sort !== $col) {
-        return '<i class="fas fa-sort" style="margin-left: 5px; opacity: 0.35; font-size: 11px;"></i>';
-    }
-    return $current_order === 'asc' 
-        ? '<i class="fas fa-sort-up" style="margin-left: 5px; color: var(--primary); font-size: 13px; vertical-align: middle;"></i>'
-        : '<i class="fas fa-sort-down" style="margin-left: 5px; color: var(--primary); font-size: 13px; vertical-align: middle;"></i>';
+function sortIcon($col, $current_sort, $current_order)
+{
+  if ($current_sort !== $col) {
+    return '<i class="fas fa-sort" style="margin-left: 5px; opacity: 0.35; font-size: 11px;"></i>';
+  }
+  return $current_order === 'asc'
+    ? '<i class="fas fa-sort-up" style="margin-left: 5px; color: var(--primary); font-size: 13px; vertical-align: middle;"></i>'
+    : '<i class="fas fa-sort-down" style="margin-left: 5px; color: var(--primary); font-size: 13px; vertical-align: middle;"></i>';
 }
 ?>
 <?php require_once ROOT . '/includes/admin/header_admin.php'; ?>
@@ -42,7 +44,7 @@ function sortIcon($col, $current_sort, $current_order) {
 
     <!-- Layout 2 cột: Sidebar Cây lọc & Bảng danh sách -->
     <div class="student-layout-grid fade-in" style="display: flex; gap: 20px; align-items: flex-start; margin-top: 15px;">
-      
+
       <!-- Cột trái: Cây Khoa -> Lớp (Sidebar) -->
       <div class="sidebar-tree-card card" style="width: 290px; flex-shrink: 0; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border-radius: var(--radius);">
         <div class="card-header" style="background: var(--bg-card); border-bottom: 1px solid var(--border); padding: 15px 20px;">
@@ -54,67 +56,73 @@ function sortIcon($col, $current_sort, $current_order) {
           <ul class="tree-menu" style="list-style: none; padding: 0; margin: 0;">
             <!-- Tất cả sinh viên -->
             <li style="margin-bottom: 8px;">
-              <a href="?search=<?= urlencode($search) ?>&sort=<?= urlencode($sort) ?>&order=<?= urlencode($order) ?>" class="tree-item <?= (empty($khoa) && empty($nganh) && empty($lop)) ? 'active' : '' ?>" 
-                 style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: var(--radius-sm); text-decoration: none; color: var(--text); font-weight: 600; transition: all 0.2s;">
+              <a href="?search=<?= urlencode($search) ?>&sort=<?= urlencode($sort) ?>&order=<?= urlencode($order) ?>" class="tree-item <?= (empty($khoa) && empty($nganh) && empty($lop)) ? 'active' : '' ?>"
+                style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: var(--radius-sm); text-decoration: none; color: var(--text); font-weight: 600; transition: all 0.2s;">
                 <i class="fas fa-users" style="color: var(--primary);"></i> Tất cả sinh viên
               </a>
             </li>
-            
+
             <?php foreach ($facultiesClassesTree as $fName => $majors): ?>
-              <?php 
-                $hasActiveMajorOrClass = false;
-                foreach ($majors as $mName => $classes) {
-                    if ($nganh === $mName) {
-                        $hasActiveMajorOrClass = true;
-                        break;
-                    }
-                    foreach ($classes as $cName) {
-                        if ($lop === $cName) { $hasActiveMajorOrClass = true; break 2; }
-                    }
+              <?php
+              $hasActiveMajorOrClass = false;
+              foreach ($majors as $mName => $classes) {
+                if ($nganh === $mName) {
+                  $hasActiveMajorOrClass = true;
+                  break;
                 }
-                $isOpen = ($khoa === $fName || $hasActiveMajorOrClass);
+                foreach ($classes as $cName) {
+                  if ($lop === $cName) {
+                    $hasActiveMajorOrClass = true;
+                    break 2;
+                  }
+                }
+              }
+              $isOpen = ($khoa === $fName || $hasActiveMajorOrClass);
               ?>
               <li class="tree-node <?= $isOpen ? 'open' : '' ?>" style="margin-bottom: 8px;">
                 <!-- Tên Khoa -->
                 <div class="tree-faculty-header" style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border-radius: var(--radius-sm); cursor: pointer; transition: all 0.2s; background: <?= ($khoa === $fName && empty($nganh) && empty($lop)) ? 'var(--primary-light)' : 'transparent' ?>;"
-                     onclick="toggleTreeNode(this)">
+                  onclick="toggleTreeNode(this)">
                   <a href="?khoa=<?= urlencode($fName) ?>&search=<?= urlencode($search) ?>&sort=<?= urlencode($sort) ?>&order=<?= urlencode($order) ?>" class="tree-faculty-link" style="text-decoration: none; color: <?= ($khoa === $fName && empty($nganh) && empty($lop)) ? 'var(--primary)' : 'var(--text)' ?>; font-weight: 600; display: flex; align-items: center; gap: 8px; flex: 1;"
-                     onclick="event.stopPropagation();">
-                    <i class="fas fa-folder-open" style="color: #ffc107; font-size: 15px;"></i> 
+                    onclick="event.stopPropagation();">
+                    <i class="fas fa-folder-open" style="color: #ffc107; font-size: 15px;"></i>
                     <span style="font-size: 13.5px;" title="<?= e($fName) ?>"><?= e(mb_strimwidth($fName, 0, 24, '...')) ?></span>
                   </a>
                   <i class="fas fa-chevron-right toggle-icon" style="font-size: 10px; color: var(--text-muted); transition: transform 0.2s; transform: <?= $isOpen ? 'rotate(90deg)' : 'none' ?>;"></i>
                 </div>
-                
+
                 <!-- Danh sách Ngành -->
                 <ul class="tree-classes-list" style="list-style: none; padding-left: 20px; margin-top: 4px; display: <?= $isOpen ? 'block' : 'none' ?>;">
                   <?php foreach ($majors as $mName => $classes): ?>
                     <?php
-                       $hasActiveClass = false;
-                       foreach ($classes as $cName) {
-                           if ($lop === $cName) { $hasActiveClass = true; break; }
-                       }
-                       $isMajorOpen = ($nganh === $mName || $hasActiveClass);
+                    $hasActiveClass = false;
+                    foreach ($classes as $cName) {
+                      if ($lop === $cName) {
+                        $hasActiveClass = true;
+                        break;
+                      }
+                    }
+                    $isMajorOpen = ($nganh === $mName || $hasActiveClass);
                     ?>
                     <li class="tree-node <?= $isMajorOpen ? 'open' : '' ?>" style="margin-bottom: 4px;">
-                        <div class="tree-faculty-header" style="display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; border-radius: var(--radius-sm); cursor: pointer; transition: all 0.2s; background: <?= ($nganh === $mName && empty($lop)) ? 'var(--primary-light)' : 'transparent' ?>;" onclick="toggleTreeNode(this)">
-                            <a href="?khoa=<?= urlencode($fName) ?>&nganh=<?= urlencode($mName) ?>&search=<?= urlencode($search) ?>&sort=<?= urlencode($sort) ?>&order=<?= urlencode($order) ?>" class="tree-faculty-link" style="text-decoration: none; color: <?= ($nganh === $mName && empty($lop)) ? 'var(--primary)' : 'var(--text-muted)' ?>; font-weight: 500; font-size: 13.5px; display: flex; align-items: center; gap: 8px; flex: 1;" onclick="event.stopPropagation();">
-                                <i class="fas fa-book-open" style="color: #17a2b8; font-size: 13px;"></i>
-                                <span title="<?= e($mName) ?>"><?= e(mb_strimwidth($mName, 0, 20, '...')) ?></span>
+                      <div class="tree-faculty-header" style="display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; border-radius: var(--radius-sm); cursor: pointer; transition: all 0.2s; background: <?= ($nganh === $mName && empty($lop)) ? 'var(--primary-light)' : 'transparent' ?>;" onclick="toggleTreeNode(this)">
+                        <a href="?khoa=<?= urlencode($fName) ?>&nganh=<?= urlencode($mName) ?>&search=<?= urlencode($search) ?>&sort=<?= urlencode($sort) ?>&order=<?= urlencode($order) ?>" class="tree-faculty-link" style="text-decoration: none; color: <?= ($nganh === $mName && empty($lop)) ? 'var(--primary)' : 'var(--text-muted)' ?>; font-weight: 500; font-size: 13.5px; display: flex; align-items: center; gap: 8px; flex: 1;" onclick="event.stopPropagation();">
+                          <i class="fas fa-book-open" style="color: #17a2b8; font-size: 13px;"></i>
+                          <span title="<?= e($mName) ?>"><?= e(mb_strimwidth($mName, 0, 20, '...')) ?></span>
+                        </a>
+                        <i class="fas fa-chevron-right toggle-icon" style="font-size: 10px; color: var(--text-muted); transition: transform 0.2s; transform: <?= $isMajorOpen ? 'rotate(90deg)' : 'none' ?>;"></i>
+                      </div>
+
+                      <!-- Danh sách Lớp -->
+                      <ul class="tree-classes-list" style="list-style: none; padding-left: 20px; margin-top: 2px; display: <?= $isMajorOpen ? 'block' : 'none' ?>;">
+                        <?php foreach ($classes as $cName): ?>
+                          <li style="margin-top: 2px;">
+                            <a href="?khoa=<?= urlencode($fName) ?>&nganh=<?= urlencode($mName) ?>&lop=<?= urlencode($cName) ?>&search=<?= urlencode($search) ?>&sort=<?= urlencode($sort) ?>&order=<?= urlencode($order) ?>" class="tree-item <?= ($lop === $cName) ? 'active' : '' ?>" style="display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: var(--radius-sm); text-decoration: none; color: var(--text-muted); font-size: 13px; font-weight: 400; transition: all 0.2s;">
+                              <i class="fas fa-graduation-cap" style="font-size: 12px; opacity: 0.7;"></i> <?= e($cName) ?>
                             </a>
-                            <i class="fas fa-chevron-right toggle-icon" style="font-size: 10px; color: var(--text-muted); transition: transform 0.2s; transform: <?= $isMajorOpen ? 'rotate(90deg)' : 'none' ?>;"></i>
-                        </div>
-                        
-                        <!-- Danh sách Lớp -->
-                        <ul class="tree-classes-list" style="list-style: none; padding-left: 20px; margin-top: 2px; display: <?= $isMajorOpen ? 'block' : 'none' ?>;">
-                            <?php foreach ($classes as $cName): ?>
-                                <li style="margin-top: 2px;">
-                                    <a href="?khoa=<?= urlencode($fName) ?>&nganh=<?= urlencode($mName) ?>&lop=<?= urlencode($cName) ?>&search=<?= urlencode($search) ?>&sort=<?= urlencode($sort) ?>&order=<?= urlencode($order) ?>" class="tree-item <?= ($lop === $cName) ? 'active' : '' ?>" style="display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: var(--radius-sm); text-decoration: none; color: var(--text-muted); font-size: 13px; font-weight: 400; transition: all 0.2s;">
-                                        <i class="fas fa-graduation-cap" style="font-size: 12px; opacity: 0.7;"></i> <?= e($cName) ?>
-                                    </a>
-                                </li>
-                            <?php endforeach; ?>
-                        </ul>
+                          </li>
+                        <?php endforeach; ?>
+                      </ul>
                     </li>
                   <?php endforeach; ?>
                 </ul>
@@ -144,12 +152,15 @@ function sortIcon($col, $current_sort, $current_order) {
             </span>
           </h3>
           <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-            <a href="<?= BASE_URL ?>/admin/sinh-vien/export-template" class="btn btn-secondary btn-sm" style="display: flex; align-items: center; gap: 6px;">
+            <a href="<?= BASE_URL ?>/admin/sinh-vien/export-template" class="btn btn-secondary btn-sm" style="display: flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 5px; background: #6C757D; color: white; text-decoration: none; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.background='#5a6268'; this.style.transform='translateY(-1px)';" onmouseout="this.style.background='#6C757D'; this.style.transform='translateY(0)';">
               <i class="fas fa-download"></i> Tải template (Excel/CSV)
             </a>
-            <form method="POST" action="<?= BASE_URL ?>/admin/sinh-vien/import" enctype="multipart/form-data" id="importForm" style="display: flex; align-items: center; gap: 8px; margin: 0;">
-              <input type="file" name="excel_file" id="excel_file" accept=".xlsx,.csv" style="font-size: 13px; max-width: 200px;" onchange="validateFile(this)">
-              <button type="submit" class="btn btn-primary btn-sm" id="btnImport" disabled style="display: flex; align-items: center; gap: 6px; opacity: 0.6; cursor: not-allowed;">
+            <form method="POST" action="<?= BASE_URL ?>/admin/sinh-vien/import" enctype="multipart/form-data" id="importForm" style="display: flex; align-items: center; gap: 12px; margin: 0; padding: 10px 14px; background: rgba(0,86,179,0.04); border-radius: 6px; border: 1px solid rgba(0,86,179,0.1);">
+              <label for="excel_file" style="display: flex; align-items: center; gap: 6px; cursor: pointer; padding: 6px 12px; background: #f8f9fa; border: 1.5px dashed rgba(0,86,179,0.3); border-radius: 5px; transition: all 0.2s ease; color: var(--primary); font-weight: 500; font-size: 13px;" onmouseover="this.style.background='#e8f0fb'; this.style.borderColor='rgba(0,86,179,0.5)';" onmouseout="this.style.background='#f8f9fa'; this.style.borderColor='rgba(0,86,179,0.3)';">
+                <i class="fas fa-upload"></i> <span id="fileLabel">Chọn file Excel/CSV</span>
+              </label>
+              <input type="file" name="excel_file" id="excel_file" accept=".xlsx,.csv" style="display: none;" onchange="validateFile(this)">
+              <button type="submit" class="btn btn-primary btn-sm" id="btnImport" disabled style="display: flex; align-items: center; gap: 6px; opacity: 0.6; cursor: not-allowed; padding: 8px 16px; border-radius: 5px; transition: all 0.2s ease;" onmouseover="if(!this.disabled) { this.style.opacity='1'; this.style.cursor='pointer'; }" onmouseout="if(!this.disabled) { this.style.opacity='0.8'; }">
                 <i class="fas fa-file-import"></i> Nhập/Đề sinh viên
               </button>
             </form>
@@ -252,26 +263,26 @@ function sortIcon($col, $current_sort, $current_order) {
                       <td style="padding: 12px;">
                         <span style="display: inline-block; padding: 4px 10px; border-radius: var(--radius-sm); font-size: 12px; font-weight: 600; 
                           background: <?php
-                          $status = $student['trang_thai'];
-                          if ($status === 'Đang học')
-                            echo '#d4edda';
-                          elseif ($status === 'Tốt nghiệp')
-                            echo '#cce5ff';
-                          elseif ($status === 'Tạm dừng')
-                            echo '#fff3cd';
-                          else
-                            echo '#f8d7da';
-                          ?>;
+                                      $status = $student['trang_thai'];
+                                      if ($status === 'Đang học')
+                                        echo '#d4edda';
+                                      elseif ($status === 'Tốt nghiệp')
+                                        echo '#cce5ff';
+                                      elseif ($status === 'Tạm dừng')
+                                        echo '#fff3cd';
+                                      else
+                                        echo '#f8d7da';
+                                      ?>;
                           color: <?php
-                          if ($status === 'Đang học')
-                            echo '#155724';
-                          elseif ($status === 'Tốt nghiệp')
-                            echo '#004085';
-                          elseif ($status === 'Tạm dừng')
-                            echo '#856404';
-                          else
-                            echo '#721c24';
-                          ?>;">
+                                  if ($status === 'Đang học')
+                                    echo '#155724';
+                                  elseif ($status === 'Tốt nghiệp')
+                                    echo '#004085';
+                                  elseif ($status === 'Tạm dừng')
+                                    echo '#856404';
+                                  else
+                                    echo '#721c24';
+                                  ?>;">
                           <?= e($status) ?>
                         </span>
                       </td>
@@ -343,52 +354,52 @@ function sortIcon($col, $current_sort, $current_order) {
 </div>
 
 <script>
-function toggleTreeNode(el) {
+  function toggleTreeNode(el) {
     const node = el.closest('.tree-node');
     const subList = node.querySelector('.tree-classes-list');
     const toggleIcon = el.querySelector('.toggle-icon');
     const folderIcon = el.querySelector('.tree-faculty-link i');
-    
-    if (subList.style.display === 'none') {
-        subList.style.display = 'block';
-        toggleIcon.style.transform = 'rotate(90deg)';
-        node.classList.add('open');
-        if (folderIcon) {
-            folderIcon.className = 'fas fa-folder-open';
-        }
-    } else {
-        subList.style.display = 'none';
-        toggleIcon.style.transform = 'none';
-        node.classList.remove('open');
-        if (folderIcon) {
-            folderIcon.className = 'fas fa-folder';
-        }
-    }
-}
 
-document.addEventListener('DOMContentLoaded', function() {
+    if (subList.style.display === 'none') {
+      subList.style.display = 'block';
+      toggleIcon.style.transform = 'rotate(90deg)';
+      node.classList.add('open');
+      if (folderIcon) {
+        folderIcon.className = 'fas fa-folder-open';
+      }
+    } else {
+      subList.style.display = 'none';
+      toggleIcon.style.transform = 'none';
+      node.classList.remove('open');
+      if (folderIcon) {
+        folderIcon.className = 'fas fa-folder';
+      }
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
     const sidebar = document.querySelector('.sidebar-tree-card');
     const toggleBtn = document.getElementById('btnToggleSidebarLeft');
-    
+
     if (sidebar && toggleBtn) {
-        // Kiểm tra trạng thái đã lưu
-        const isHidden = localStorage.getItem('student_sidebar_hidden') === 'true';
-        
-        if (isHidden) {
-            sidebar.style.display = 'none';
+      // Kiểm tra trạng thái đã lưu
+      const isHidden = localStorage.getItem('student_sidebar_hidden') === 'true';
+
+      if (isHidden) {
+        sidebar.style.display = 'none';
+      }
+
+      toggleBtn.addEventListener('click', function() {
+        if (sidebar.style.display === 'none') {
+          sidebar.style.display = 'block';
+          localStorage.setItem('student_sidebar_hidden', 'false');
+        } else {
+          sidebar.style.display = 'none';
+          localStorage.setItem('student_sidebar_hidden', 'true');
         }
-        
-        toggleBtn.addEventListener('click', function() {
-            if (sidebar.style.display === 'none') {
-                sidebar.style.display = 'block';
-                localStorage.setItem('student_sidebar_hidden', 'false');
-            } else {
-                sidebar.style.display = 'none';
-                localStorage.setItem('student_sidebar_hidden', 'true');
-            }
-        });
+      });
     }
-});
+  });
 </script>
 
 <style>
@@ -399,77 +410,89 @@ document.addEventListener('DOMContentLoaded', function() {
   .hover-row:hover {
     background: #f8f9fa;
   }
-  
+
   .tree-item {
     transition: all 0.2s;
   }
+
   .tree-item:hover {
     background: var(--primary-light);
     color: var(--primary) !important;
     padding-left: 15px !important;
   }
+
   .tree-item.active {
     background: var(--primary) !important;
     color: #fff !important;
     font-weight: 600;
   }
+
   .tree-faculty-header:hover {
     background: #f1f5fe;
   }
-  
+
   /* Cải tiến CSS cho Sortable Columns */
   thead th a {
-      transition: color 0.2s;
+    transition: color 0.2s;
   }
+
   thead th a:hover {
-      color: var(--primary) !important;
+    color: var(--primary) !important;
   }
-  
+
   /* Responsive Layout */
   @media (max-width: 992px) {
-      .student-layout-grid {
-          flex-direction: column;
-      }
-      .sidebar-tree-card {
-          width: 100% !important;
-          margin-bottom: 20px;
-      }
+    .student-layout-grid {
+      flex-direction: column;
+    }
+
+    .sidebar-tree-card {
+      width: 100% !important;
+      margin-bottom: 20px;
+    }
   }
 </style>
 
 <script>
-function validateFile(input) {
-  const btn = document.getElementById('btnImport');
-  const file = input.files[0];
-  
-  if (!file) {
-    btn.disabled = true;
-    btn.style.opacity = '0.6';
-    btn.style.cursor = 'not-allowed';
-    return;
-  }
-  
-  const ext = file.name.split('.').pop().toLowerCase();
-  if (ext !== 'xlsx' && ext !== 'csv') {
-    alert('Chỉ chấp nhận file .xlsx hoặc .csv!\nVui lòng tải template mẫu và điền thông tin sinh viên vào đó.');
-    input.value = '';
-    btn.disabled = true;
-    btn.style.opacity = '0.6';
-    btn.style.cursor = 'not-allowed';
-    return;
-  }
-  
-  btn.disabled = false;
-  btn.style.opacity = '1';
-  btn.style.cursor = 'pointer';
-}
+  function validateFile(input) {
+    const btn = document.getElementById('btnImport');
+    const fileLabel = document.getElementById('fileLabel');
+    const file = input.files[0];
 
-// Xác nhận trước khi submit
-document.getElementById('importForm').addEventListener('submit', function(e) {
-  if (!confirm('Bạn có chắc chắn muốn nhập sinh viên từ file này?\n\nLưu ý:\n- File phải đúng theo template đã tải\n- Cột theo thứ tự: MSSV, Họ tên, Ngày sinh, Giới tính, Email, SĐT, Ngành, Lớp, Khoa, Niên khóa, Địa chỉ\n- Hàng đầu tiên là tiêu đề cột\n- Mật khẩu mặc định: Student@123')) {
-    e.preventDefault();
+    if (!file) {
+      btn.disabled = true;
+      btn.style.opacity = '0.6';
+      btn.style.cursor = 'not-allowed';
+      fileLabel.textContent = 'Chọn file Excel/CSV';
+      return;
+    }
+
+    const ext = file.name.split('.').pop().toLowerCase();
+    if (ext !== 'xlsx' && ext !== 'csv') {
+      alert('Chỉ chấp nhận file .xlsx hoặc .csv!\nVui lòng tải template mẫu và điền thông tin sinh viên vào đó.');
+      input.value = '';
+      btn.disabled = true;
+      btn.style.opacity = '0.6';
+      btn.style.cursor = 'not-allowed';
+      fileLabel.textContent = 'Chọn file Excel/CSV';
+      return;
+    }
+
+    // Update label with filename
+    const fileName = file.name.length > 30 ? file.name.substring(0, 27) + '...' : file.name;
+    fileLabel.textContent = '✓ ' + fileName;
+
+    btn.disabled = false;
+    btn.style.opacity = '1';
+    btn.style.cursor = 'pointer';
   }
-});
+
+  // Xác nhận trước khi submit
+  document.getElementById('importForm').addEventListener('submit', function(e) {
+    if (!confirm('Bạn có chắc chắn muốn nhập sinh viên từ file này?\n\nLưu ý:\n- File phải đúng theo template đã tải\n- Cột theo thứ tự: MSSV, Họ tên, Ngày sinh, Giới tính, Email, SĐT, Ngành, Lớp, Khoa, Niên khóa, Địa chỉ\n- Hàng đầu tiên là tiêu đề cột\n- Mật khẩu mặc định: Student@123')) {
+      e.preventDefault();
+    }
+  });
 </script>
 
 <?php require_once ROOT . '/includes/admin/footer_admin.php'; ?>

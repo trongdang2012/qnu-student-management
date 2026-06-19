@@ -1,0 +1,4 @@
+﻿username,password,role,email
+admin1,Admin@123!,admin,admin1@example.com
+student1,Stud@123!,student,student1@example.com
+student2,Pass@456!,student,student2@example.com
