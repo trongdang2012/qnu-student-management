@@ -886,12 +886,21 @@ foreach ($sinhVienList as $sv) {
             // 2. Thời khóa biểu (Thứ và tiết cố định theo từng lớp sinh hoạt để đồng bộ)
             $hashVal = crc32($sv['lop_sinh_hoat_id'] . '_' . $hpId);
             $thu = ($hashVal % 6) + 2; 
-            $tietBd = (($hashVal >> 2) % 3) * 3 + 1; 
-            $soTiet = 3;
-            // Giáo dục thể chất có số tiết đặc thù
-            $maHpStr = $hpDetails[$hpId]['ma_hp'];
-            if ($maHpStr === '1120172' || $maHpStr === '1120173' || $maHpStr === '1120174') {
+            
+            // Phân bổ theo ca học của QNU: sáng (Ca 1: tiết 1-2, Ca 2: tiết 3-5), chiều (Ca 3: tiết 6-7, Ca 4: tiết 8-10)
+            $slot = ($hashVal >> 2) % 4;
+            if ($slot == 0) {
+                $tietBd = 1;
                 $soTiet = 2;
+            } elseif ($slot == 1) {
+                $tietBd = 3;
+                $soTiet = 3;
+            } elseif ($slot == 2) {
+                $tietBd = 6;
+                $soTiet = 2;
+            } else {
+                $tietBd = 8;
+                $soTiet = 3;
             }
             
             $phongHoc = $lhp['phong_hoc'];

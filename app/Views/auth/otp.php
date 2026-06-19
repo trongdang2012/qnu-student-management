@@ -63,6 +63,17 @@ $page_title = 'Xác thực OTP';
             trong vòng 5 phút.</div>
         </div>
 
+        <?php if (isset($_GET['local_bypass'])): ?>
+          <div class="alert alert-warning" style="margin-top: 10px; display: flex; align-items: flex-start; gap: 10px;">
+            <i class="fas fa-exclamation-triangle" style="margin-top: 3px; flex-shrink: 0;"></i>
+            <div>
+              <strong>[Chế độ nhà phát triển - Lỗi gửi mail]</strong><br>
+              Mã OTP của bạn là: <strong style="font-size: 16px; color: #c0392b;"><?= e($_SESSION['login_otp'] ?? '') ?></strong><br>
+              (Đã lưu mã này vào file <code>scratch/otp.txt</code>)
+            </div>
+          </div>
+        <?php endif; ?>
+
         <form action="<?= BASE_URL ?>/auth/otp" method="POST" id="otpForm" data-validate-form novalidate>
           <div class="form-group">
             <label for="otp"><i class="fas fa-key"></i> Mã xác thực <span class="required">*</span></label>

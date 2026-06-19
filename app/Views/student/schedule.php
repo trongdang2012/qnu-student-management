@@ -142,9 +142,9 @@ function getColorForSubject(string $maHp): array {
           <table class="tkb-grid-table" style="width:100%; border-collapse:collapse; min-width:900px;">
             <thead>
               <tr style="background:#1e3a8a; color:#fff;">
-                <th style="width:90px; text-align:center; padding:12px; border:1px solid #cbd5e1; font-weight:700;">Buổi</th>
+                <th style="width:90px; background:#1e3a8a; color:#fff; text-align:center; padding:12px; border:1px solid #cbd5e1; font-weight:700;">Buổi</th>
                 <?php foreach ($thu_list as $thu): ?>
-                  <th style="text-align:center; padding:12px; border:1px solid #cbd5e1;">
+                  <th style="background:#1e3a8a; color:#fff; text-align:center; padding:12px; border:1px solid #cbd5e1;">
                     <div style="font-weight:700; font-size:14px; color:#fff;"><?= e(tenThu($thu)) ?></div>
                     <div style="font-size:11px; font-weight:normal; margin-top:4px; opacity:0.9;"><?= $ngay_trong_tuan[$thu] ?></div>
                   </th>
@@ -182,7 +182,7 @@ function getColorForSubject(string $maHp): array {
                               <div style="margin-bottom:3px;">-Môn: <?= e($subject['ten_hp']) ?> (<?= e($subject['ma_hp']) ?>)</div>
                               <div style="margin-bottom:3px;">-Nhóm: <?= $nhom ?></div>
                               <div style="margin-bottom:3px;">-Lớp: <?= e($sv['lop'] ?? 'KTPM47') ?></div>
-                              <div style="margin-bottom:3px;">-Tiết: <?= $start_tiet ?>-><?= $end_tiet ?></div>
+                              <div style="margin-bottom:3px;">-Tiết: <?= $start_tiet === $end_tiet ? $start_tiet : "$start_tiet-$end_tiet" ?></div>
                               <?php if (!empty($subject['giang_vien'])): ?>
                                 <div style="border-top: 1px dashed rgba(0,0,0,0.1); margin-top:4px; padding-top:4px; color:#475569;">-GV: <?= e($subject['giang_vien']) ?></div>
                               <?php endif; ?>

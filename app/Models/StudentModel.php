@@ -348,7 +348,7 @@ class StudentModel {
     }
 
     public function getImprovementSuggestions($studentId) {
-        // Lấy tối đa 5 môn học có điểm tích lũy hệ 4 thấp (từ 1.0 đến dưới 2.5) để đề xuất học cải thiện
+        // Lấy tối đa 10 môn học có điểm tích lũy hệ 4 thấp (từ 1.0 đến dưới 3.2 - tức dưới mức giỏi B+) để đề xuất cải thiện lên A+
         $sql = "SELECT temp.hoc_phan_id, hp.ma_hp, hp.ten_hp, hp.so_tin_chi, temp.max_he4, temp.max_tong, temp.max_chu
                 FROM (
                     SELECT d.hoc_phan_id, MAX(d.diem_he4) as max_he4, MAX(d.diem_tong) as max_tong, MAX(d.diem_chu) as max_chu
@@ -357,9 +357,9 @@ class StudentModel {
                     GROUP BY d.hoc_phan_id
                 ) as temp
                 JOIN hoc_phan hp ON hp.id = temp.hoc_phan_id
-                WHERE temp.max_he4 < 2.5 AND temp.max_he4 >= 1.0
+                WHERE temp.max_he4 < 3.2 AND temp.max_he4 >= 1.0
                 ORDER BY temp.max_he4 ASC, hp.so_tin_chi DESC
-                LIMIT 5";
+                LIMIT 10";
         return $this->db->fetchAll($sql, ['sid' => $studentId]);
     }
 

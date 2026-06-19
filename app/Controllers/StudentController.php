@@ -339,12 +339,26 @@ class StudentController extends Controller {
             $improves = $studentModel->getImprovementSuggestions($sv['id']);
             $improvement_list = [];
             foreach ($improves as $imp) {
-                // Giả lập nếu cải thiện môn học này lên A (4.0)
+                // Giả lập nếu cải thiện môn học này lên A+ (4.0)
                 $cur_val = (float)$imp['max_he4'];
                 $tc_imp = (int)$imp['so_tin_chi'];
                 $points_new = $points_current - ($cur_val * $tc_imp) + (4.0 * $tc_imp);
                 $cpa_new = round($points_new / $tc_tich_luy, 2);
                 $cpa_remain_avg_new = ($tc_remain > 0) ? ($points_target - $points_new) / $tc_remain : 0;
+
+                // Tính toán mức độ ưu tiên cải thiện một cách thông minh
+                $diem_chenh_lech = 4.0 - $cur_val;
+                $weighted_gain = $diem_chenh_lech * $tc_imp; // Trọng số kéo điểm CPA
+                
+                $uu_tien = 'Trung bình';
+                $badge_class = 'info';
+                if ($weighted_gain >= 6.0) {
+                    $uu_tien = 'Rất cao';
+                    $badge_class = 'danger';
+                } elseif ($weighted_gain >= 4.0) {
+                    $uu_tien = 'Cao';
+                    $badge_class = 'warning';
+                }
 
                 $improvement_list[] = [
                     'ma_hp' => $imp['ma_hp'],
@@ -353,7 +367,10 @@ class StudentController extends Controller {
                     'diem_chu' => $imp['max_chu'],
                     'diem_he4' => $cur_val,
                     'cpa_new' => $cpa_new,
-                    'cpa_remain_avg_new' => max(1.0, $cpa_remain_avg_new)
+                    'cpa_remain_avg_new' => max(1.0, $cpa_remain_avg_new),
+                    'chenh_lech' => $diem_chenh_lech,
+                    'uu_tien' => $uu_tien,
+                    'badge_class' => $badge_class
                 ];
             }
 

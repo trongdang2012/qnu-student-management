@@ -394,7 +394,7 @@
       <?php if (!empty($analysis['improvements'])): ?>
         <div style="margin-top: 10px; border-top: 1px solid #edf2f7; padding-top: 20px;">
           <h4 style="margin: 0 0 8px; color: #b02a37; font-weight: 700; font-size: 15px;"><i class="fas fa-lightbulb" style="color:var(--warning);"></i> Gợi ý cải thiện điểm thông minh:</h4>
-          <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;">Hệ thống phát hiện các học phần đã đạt nhưng điểm số còn thấp. Nếu bạn đăng ký học cải thiện các môn này lên điểm **A (4.0)**, áp lực cho các môn học còn lại sẽ được giảm bớt:</p>
+          <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;">Hệ thống tự động xếp hạng mức độ ưu tiên học cải thiện. Nếu bạn đăng ký học cải thiện các môn học cũ lên điểm tối đa **A+ (4.0)**, điểm CPA của bạn sẽ tăng và áp lực đạt điểm của các môn học còn lại sẽ giảm rõ rệt:</p>
           
           <div class="table-wrap" style="margin-top:0;">
             <table style="font-size: 12.5px;">
@@ -404,8 +404,10 @@
                   <th>Tên học phần</th>
                   <th style="text-align:center">Tín chỉ</th>
                   <th style="text-align:center">Điểm hiện tại</th>
-                  <th style="text-align:center">CPA tích lũy mới</th>
-                  <th style="text-align:center">Điểm TB các môn còn lại mới</th>
+                  <th style="text-align:center; color:#c0392b;">Mức ưu tiên</th>
+                  <th style="text-align:center">Hiệu quả kéo</th>
+                  <th style="text-align:center">CPA mới</th>
+                  <th style="text-align:center">Điểm TB môn còn lại mới</th>
                 </tr>
               </thead>
               <tbody>
@@ -416,6 +418,12 @@
                     <td style="text-align:center"><?= $imp['so_tin_chi'] ?> TC</td>
                     <td style="text-align:center;">
                       <span class="badge badge-warning" style="background: rgba(255,193,7,0.15); color: #856404; font-weight:bold;"><?= $imp['diem_chu'] ?> (<?= number_format($imp['diem_he4'], 1) ?>)</span>
+                    </td>
+                    <td style="text-align:center;">
+                      <span class="badge badge-<?= $imp['badge_class'] ?>" style="font-weight:700; padding:3px 10px;"><?= $imp['uu_tien'] ?></span>
+                    </td>
+                    <td style="text-align:center; font-weight:500; color:#c0392b;">
+                      +<?= number_format($imp['chenh_lech'], 1) ?> (lên A+)
                     </td>
                     <td style="text-align:center; font-weight: bold; color: var(--success);">
                       <?= number_format($imp['cpa_new'], 2) ?>

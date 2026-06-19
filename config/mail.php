@@ -12,7 +12,7 @@ define('MAIL_USERNAME', 'dangvantrong201206@gmail.com');
 
 // Mật khẩu ứng dụng (App Password) - lấy trong phần bảo mật của Google Account
 // KHÔNG phải mật khẩu đăng nhập Gmail thông thường.
-define('MAIL_PASSWORD', 'afmx abvx bmro nhxu');
+define('MAIL_PASSWORD', 'duba quho brii gzgh');
 
 // Cổng SMTP (Thường là 587 cho TLS hoặc 465 cho SSL)
 define('MAIL_PORT', 587);
