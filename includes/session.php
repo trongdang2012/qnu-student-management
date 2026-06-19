@@ -78,12 +78,10 @@ function formatMoney(float $amount): string {
 // ─── Chuyển điểm số → điểm chữ ──────────────────────────────────
 function diemChu(float $diem): string {
     if ($diem >= 9.0) return 'A+';
-    if ($diem >= 8.5) return 'A';
-    if ($diem >= 8.0) return 'B+';
-    if ($diem >= 7.0) return 'B';
-    if ($diem >= 6.5) return 'C+';
-    if ($diem >= 5.5) return 'C';
-    if ($diem >= 5.0) return 'D+';
+    if ($diem >= 8.0) return 'A';
+    if ($diem >= 7.0) return 'B+';
+    if ($diem >= 6.0) return 'B';
+    if ($diem >= 5.0) return 'C';
     if ($diem >= 4.0) return 'D';
     return 'F';
 }
@@ -91,20 +89,18 @@ function diemChu(float $diem): string {
 // ─── Chuyển điểm số → hệ 4 ──────────────────────────────────────
 function diemHe4(float $diem): float {
     if ($diem >= 9.0) return 4.0;
-    if ($diem >= 8.5) return 3.7;
     if ($diem >= 8.0) return 3.5;
     if ($diem >= 7.0) return 3.0;
-    if ($diem >= 6.5) return 2.5;
-    if ($diem >= 5.5) return 2.0;
-    if ($diem >= 5.0) return 1.5;
-    if ($diem >= 4.0) return 1.0;
+    if ($diem >= 6.0) return 2.5;
+    if ($diem >= 5.0) return 2.0;
+    if ($diem >= 4.0) return 1.5;
     return 0.0;
 }
 
 // ─── Màu badge trạng thái điểm ───────────────────────────────────
 function badgeDiemChu(string $chu): string {
     $map = ['A+'=>'success','A'=>'success','B+'=>'primary','B'=>'primary',
-            'C+'=>'warning','C'=>'warning','D+'=>'secondary','D'=>'secondary','F'=>'danger'];
+            'C'=>'warning','D'=>'secondary','F'=>'danger'];
     return $map[$chu] ?? 'secondary';
 }
 

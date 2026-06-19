@@ -365,98 +365,153 @@ echo " - Đã tạo xong sinh viên các lớp thuộc 50 ngành khác (Tổng s
 // 5. KHỞI TẠO MÔN HỌC (HỌC PHẦN) VÀ CTDT CHI TIẾT THEO MÃ QNU THẬT
 echo "5. Đang khởi tạo danh sách môn học (Học phần) thực tế của QNU...\n";
 
-// ma_hp (mã số), ten_hp, so_tin_chi, loai, hoc_ky, so_tiet_ly_thuyet, so_tiet_thuc_hanh, loai_phong (thuong, maytinh, lab, lon, thechat)
+// ma_hp, ten_hp, so_tin_chi, loai, hoc_ky, so_tiet_ly_thuyet, so_tiet_thuc_hanh, loai_phong, ma_hp_tien_quyet
 $subjectsDef = [
     // A. Khối môn học đại cương dùng chung cho QNU (tất cả các ngành học)
-    ['1130293', 'Triết học Mác - Lênin', 4, 'Đại cương', 1, 54, 12, 'lon'],
-    ['1130294', 'Kinh tế chính trị Mác - Lênin', 3, 'Đại cương', 2, 40, 10, 'lon'],
-    ['1130049', 'Pháp luật đại cương', 2, 'Đại cương', 2, 27, 6, 'lon'],
-    ['1130295', 'Chủ nghĩa xã hội khoa học', 2, 'Đại cương', 3, 27, 6, 'lon'],
-    ['1130296', 'Lịch sử Đảng Cộng sản Việt Nam', 3, 'Đại cương', 4, 40, 10, 'lon'],
-    ['1130297', 'Tư tưởng Hồ Chí Minh', 2, 'Đại cương', 5, 27, 6, 'lon'],
-    ['1090061', 'Tiếng Anh 1', 3, 'Đại cương', 1, 30, 15, 'thuong'],
-    ['1090166', 'Tiếng Anh 2', 4, 'Đại cương', 2, 40, 20, 'thuong'],
-    ['1050242', 'Tin học cơ sở', 3, 'Đại cương', 1, 30, 30, 'maytinh'],
-    ['1120172', 'Giáo dục thể chất 1 (Bóng đá 1)', 1, 'Đại cương', 1, 4, 26, 'thechat'],
-    ['1120173', 'Giáo dục thể chất 2 (Bóng đá 2)', 1, 'Đại cương', 2, 4, 26, 'thechat'],
-    ['1120174', 'Giáo dục thể chất 3 (Bóng đá 3)', 1, 'Đại cương', 3, 4, 26, 'thechat'],
-    ['1120168', 'Giáo dục quốc phòng-An ninh 1', 3, 'Đại cương', 2, 37, 8, 'lon'],
-    ['1120169', 'Giáo dục quốc phòng-An ninh 2', 2, 'Đại cương', 2, 22, 8, 'lon'],
-    ['1120170', 'Giáo dục quốc phòng-An ninh 3', 2, 'Đại cương', 2, 14, 16, 'lon'],
-    ['1120171', 'Giáo dục quốc phòng-An ninh 4', 2, 'Đại cương', 2, 4, 56, 'lon'],
+    ['1130299', 'Triết học Mác - Lênin', 3, 'Đại cương', 1, 40, 0, 'lon', null],
+    ['1130300', 'Kinh tế chính trị Mác - Lênin', 2, 'Đại cương', 2, 27, 0, 'lon', '1130299'],
+    ['1130049', 'Pháp luật đại cương', 2, 'Đại cương', 2, 27, 0, 'lon', null],
+    ['1130301', 'Chủ nghĩa xã hội khoa học', 2, 'Đại cương', 3, 27, 0, 'lon', '1130300'],
+    ['1130302', 'Lịch sử Đảng Cộng sản Việt Nam', 2, 'Đại cương', 4, 27, 0, 'lon', '1130301'],
+    ['1130091', 'Tư tưởng Hồ Chí Minh', 2, 'Đại cương', 5, 27, 0, 'lon', '1130302'],
+    ['1090061', 'Tiếng Anh 1', 3, 'Đại cương', 1, 45, 0, 'thuong', null],
+    ['1090166', 'Tiếng Anh 2', 4, 'Đại cương', 2, 60, 0, 'thuong', '1090061'],
+    ['1050242', 'Tin học cơ sở', 3, 'Đại cương', 1, 30, 30, 'maytinh', null],
+    
+    // Thể chất 1 (Học kỳ 1 tự chọn Nhóm 01)
+    ['1120239', 'Giáo dục thể chất 1 (Pickle ball 1)', 1, 'Đại cương', 1, 4, 26, 'thechat', null],
+    ['1120181', 'Giáo dục thể chất 1 (Cầu lông 1)', 1, 'Đại cương', 1, 4, 26, 'thechat', null],
+    ['1120184', 'Giáo dục thể chất 1 (Võ cổ truyền Việt Nam 1)', 1, 'Đại cương', 1, 4, 26, 'thechat', null],
+    ['1120187', 'Giáo dục thể chất 1 (Võ Taekwondo 1)', 1, 'Đại cương', 1, 4, 26, 'thechat', null],
+    ['1120190', 'Giáo dục thể chất 1 (Võ Karatedo 1)', 1, 'Đại cương', 1, 4, 26, 'thechat', null],
+    ['1120172', 'Giáo dục thể chất 1 (Bóng đá 1)', 1, 'Đại cương', 1, 4, 26, 'thechat', null],
+    ['1120175', 'Giáo dục thể chất 1 (Bóng chuyền 1)', 1, 'Đại cương', 1, 4, 26, 'thechat', null],
+    
+    // Thể chất 2 (Học kỳ 2 tự chọn Nhóm 02)
+    ['1120173', 'Giáo dục thể chất 2 (Bóng đá 2)', 1, 'Đại cương', 2, 4, 26, 'thechat', null],
+    ['1120176', 'Giáo dục thể chất 2 (Bóng chuyền 2)', 1, 'Đại cương', 2, 4, 26, 'thechat', null],
+    ['1120182', 'Giáo dục thể chất 2 (Cầu lông 2)', 1, 'Đại cương', 2, 4, 26, 'thechat', null],
+    
+    // Thể chất 3 (Học kỳ 3 tự chọn Nhóm 03)
+    ['1120174', 'Giáo dục thể chất 3 (Bóng đá 3)', 1, 'Đại cương', 3, 4, 26, 'thechat', null],
+    ['1120177', 'Giáo dục thể chất 3 (Bóng chuyền 3)', 1, 'Đại cương', 3, 4, 26, 'thechat', null],
+    ['1120183', 'Giáo dục thể chất 3 (Cầu lông 3)', 1, 'Đại cương', 3, 4, 26, 'thechat', null],
+    
+    // Giáo dục quốc phòng (Học kỳ 4)
+    ['1120168', 'Giáo dục quốc phòng - An ninh 1', 3, 'Đại cương', 4, 37, 0, 'lon', null],
+    ['1120169', 'Giáo dục quốc phòng - An ninh 2', 2, 'Đại cương', 4, 22, 0, 'lon', null],
+    ['1120170', 'Giáo dục quốc phòng - An ninh 3', 2, 'Đại cương', 4, 14, 16, 'lon', null],
+    ['1120171', 'Giáo dục quốc phòng - An ninh 4', 2, 'Đại cương', 4, 4, 56, 'lon', null],
     
     // B. Các môn học chuyên ngành Giáo dục chính trị (GDCT 2025)
-    ['1130221', 'Mỹ học và giáo dục thẩm mỹ', 2, 'Bắt buộc', 1, 30, 0, 'thuong'],
-    ['2010155', 'Dẫn luận ngôn ngữ và Tiếng Việt thực hành', 2, 'Bắt buộc', 1, 25, 5, 'thuong'],
-    ['1130220', 'Đạo đức học và giáo dục đạo đức', 2, 'Bắt buộc', 1, 30, 0, 'thuong'],
-    ['1100086', 'Tâm lý học', 3, 'Bắt buộc', 2, 30, 15, 'thuong'],
-    ['1130451', 'Lôgích học', 2, 'Bắt buộc', 2, 27, 6, 'thuong'],
-    ['1100038', 'Xã hội học', 2, 'Bắt buộc', 2, 20, 5, 'thuong'],
-    ['2030410', 'Giáo dục học', 4, 'Bắt buộc', 3, 36, 20, 'thuong'],
-    ['1130450', 'Pháp luật dân sự, lao động, hôn nhân và gia đình', 2, 'Bắt buộc', 3, 20, 7, 'thuong'],
-    ['1130070', 'Quản lý kinh tế', 2, 'Bắt buộc', 3, 30, 0, 'thuong'],
-    ['1130162', 'Pháp luật quốc tế', 2, 'Bắt buộc', 3, 25, 5, 'thuong'],
-    ['2010156', 'Giao tiếp sư phạm', 2, 'Bắt buộc', 4, 20, 20, 'thuong'],
-    ['2010171', 'Hoạt động trải nghiệm, hướng nghiệp ở trường phổ thông', 2, 'Bắt buộc', 4, 20, 20, 'thuong'],
+    ['1130221', 'Mỹ học và giáo dục thẩm mỹ', 2, 'Bắt buộc', 1, 30, 0, 'thuong', null],
+    ['2010155', 'Dẫn luận ngôn ngữ và Tiếng Việt thực hành', 2, 'Bắt buộc', 1, 25, 5, 'thuong', null],
+    ['1130220', 'Đạo đức học và giáo dục đạo đức', 2, 'Bắt buộc', 1, 30, 0, 'thuong', null],
+    ['1100086', 'Tâm lý học', 3, 'Bắt buộc', 2, 30, 15, 'thuong', null],
+    ['1130451', 'Lôgích học', 2, 'Bắt buộc', 2, 27, 6, 'thuong', null],
+    ['1100038', 'Xã hội học', 2, 'Bắt buộc', 2, 20, 5, 'thuong', null],
+    ['2030410', 'Giáo dục học', 4, 'Bắt buộc', 3, 36, 20, 'thuong', null],
+    ['1130450', 'Pháp luật dân sự, lao động, hôn nhân và gia đình', 2, 'Bắt buộc', 3, 20, 7, 'thuong', null],
+    ['1130070', 'Quản lý kinh tế', 2, 'Bắt buộc', 3, 30, 0, 'thuong', null],
+    ['1130162', 'Pháp luật quốc tế', 2, 'Bắt buộc', 3, 25, 5, 'thuong', null],
+    ['2010156', 'Giao tiếp sư phạm', 2, 'Bắt buộc', 4, 20, 20, 'thuong', null],
+    ['2010171', 'Hoạt động trải nghiệm, hướng nghiệp ở trường phổ thông', 2, 'Bắt buộc', 4, 20, 20, 'thuong', null],
     
-    // C. Các môn học chuyên ngành Kỹ thuật phần mềm (KTPM)
-    ['1050109', 'Lập trình căn bản', 4, 'Bắt buộc', 1, 45, 30, 'maytinh'],
-    ['1050201', 'Cấu trúc dữ liệu và giải thuật', 3, 'Bắt buộc', 2, 30, 30, 'maytinh'],
-    ['1050202', 'Lập trình hướng đối tượng', 3, 'Bắt buộc', 2, 30, 30, 'maytinh'],
-    ['1050203', 'Cơ sở dữ liệu', 3, 'Bắt buộc', 2, 30, 30, 'maytinh'],
-    ['1050204', 'Mạng máy tính', 3, 'Bắt buộc', 3, 30, 30, 'maytinh'],
-    ['1050205', 'Hệ điều hành', 3, 'Bắt buộc', 3, 30, 30, 'maytinh'],
-    ['1050301', 'Cơ sở ngành Kỹ thuật phần mềm', 3, 'Bắt buộc', 3, 30, 30, 'maytinh'],
-    ['1050302', 'Lập trình ứng dụng Web', 3, 'Bắt buộc', 4, 30, 30, 'maytinh'],
-    ['1050303', 'Phân tích và thiết kế phần mềm', 3, 'Bắt buộc', 4, 30, 30, 'maytinh'],
-    ['1050304', 'Thiết kế giao diện người dùng', 2, 'Bắt buộc', 4, 15, 30, 'maytinh'],
+    // C. Các môn học chuyên ngành Kỹ thuật phần mềm (KTPM) thực tế
+    // Học kỳ 1
+    ['1010038', 'Đại số tuyến tính', 3, 'Bắt buộc', 1, 45, 0, 'thuong', null],
+    ['1010245', 'Giải tích', 3, 'Bắt buộc', 1, 45, 0, 'thuong', null],
+    ['1050074', 'Toán logic', 2, 'Bắt buộc', 1, 30, 0, 'thuong', null],
+    ['1050124', 'Thực hành máy tính (lắp ráp, cài đặt, bảo trì)', 1, 'Bắt buộc', 1, 0, 30, 'maytinh', null],
+    ['1050192', 'Giới thiệu ngành và hướng nghiệp', 2, 'Bắt buộc', 1, 30, 0, 'thuong', null],
+    
+    // Học kỳ 2
+    ['1050133', 'Lập trình cơ bản', 4, 'Bắt buộc', 2, 45, 30, 'maytinh', null],
+    ['1050016', 'Hệ quản trị cơ sở dữ liệu', 3, 'Bắt buộc', 2, 30, 30, 'maytinh', null],
+    ['2030003', 'Kỹ năng giao tiếp', 2, 'Bắt buộc', 2, 25, 10, 'thuong', null],
+    
+    // Học kỳ 3
+    ['1050024', 'Lập trình hướng đối tượng', 3, 'Bắt buộc', 3, 30, 30, 'maytinh', '1050133'],
+    ['1050075', 'Toán rời rạc', 3, 'Bắt buộc', 3, 45, 0, 'thuong', null],
+    ['1050003', 'Cấu trúc dữ liệu và giải thuật', 4, 'Bắt buộc', 3, 40, 40, 'maytinh', '1050133'],
+    ['1010126', 'Xác suất thống kê', 3, 'Bắt buộc', 3, 45, 0, 'thuong', '1010245'],
+    ['1050228', 'Cơ sở dữ liệu', 3, 'Bắt buộc', 3, 45, 0, 'maytinh', null],
+    
+    // Học kỳ 4
+    ['1050261', 'Thực tập nhận thức', 1, 'Bắt buộc', 4, 0, 0, 'thuong', null],
+    ['1050197', 'Mạng máy tính', 3, 'Bắt buộc', 4, 30, 30, 'maytinh', null],
+    ['1050200', 'Lập trình ứng dụng Web', 3, 'Bắt buộc', 4, 30, 30, 'maytinh', '1050016'],
+    ['1050021', 'Kiến trúc máy tính', 3, 'Bắt buộc', 4, 45, 0, 'thuong', null],
+    ['1050194', 'Lập trình ứng dụng Desktop', 3, 'Bắt buộc', 4, 30, 30, 'maytinh', '1050133'],
+    ['1050202', 'Phân tích và thiết kế hệ thống thông tin', 3, 'Bắt buộc', 4, 30, 20, 'maytinh', null],
+    
+    // Học kỳ 5
+    ['1150422', 'Khởi nghiệp', 2, 'Bắt buộc', 5, 25, 0, 'thuong', '1130302'],
+    ['1050277', 'Tiếng Anh cho CNTT', 2, 'Bắt buộc', 5, 25, 0, 'thuong', '1090166'],
+    ['1050196', 'Hệ điều hành', 3, 'Bắt buộc', 5, 40, 10, 'maytinh', '1050021'],
+    ['1050201', 'Công nghệ phần mềm', 3, 'Bắt buộc', 5, 33, 12, 'maytinh', null],
+    ['1050264', 'Phân tích và thiết kế phần mềm', 3, 'Bắt buộc', 5, 35, 20, 'maytinh', null],
+    ['1050262', 'Công nghệ Java', 3, 'Tự chọn', 5, 30, 30, 'maytinh', null],
+    ['1050263', 'Công nghệ dotNET', 3, 'Tự chọn', 5, 30, 30, 'maytinh', null],
+    
+    // Học kỳ 6
+    ['1050220', 'Trí tuệ nhân tạo', 3, 'Bắt buộc', 6, 45, 0, 'maytinh', null],
+    ['1050216', 'Mẫu thiết kế phần mềm', 3, 'Bắt buộc', 6, 30, 30, 'maytinh', null],
+    ['1050210', 'Phát triển phần mềm hướng đối tượng', 3, 'Bắt buộc', 6, 30, 30, 'maytinh', null],
+    ['1050205', 'Đảm bảo chất lượng phần mềm', 3, 'Bắt buộc', 6, 30, 30, 'maytinh', null],
+    ['1050206', 'Lập trình ứng dụng Mobile', 3, 'Bắt buộc', 6, 30, 30, 'maytinh', null],
+    ['1050207', 'Quản lý dự án phần mềm', 3, 'Tự chọn', 6, 30, 30, 'maytinh', null],
+    ['1050211', 'Phát triển phần mềm nguồn mở', 3, 'Tự chọn', 6, 30, 30, 'maytinh', null],
+    
+    // Học kỳ 7
+    ['1050213', 'Một số vấn đề hiện đại của CNPM', 2, 'Bắt buộc', 7, 20, 20, 'maytinh', null],
+    ['1050214', 'Đồ án công nghệ phần mềm 1', 3, 'Bắt buộc', 7, 0, 0, 'maytinh', null],
+    ['1050215', 'Kiến trúc hướng dịch vụ', 3, 'Bắt buộc', 7, 33, 24, 'maytinh', null],
+    ['1050265', 'Phân tích dữ liệu lớn', 3, 'Bắt buộc', 7, 30, 30, 'maytinh', null],
+    ['1050267', 'Công nghệ Web', 3, 'Bắt buộc', 7, 30, 30, 'maytinh', null],
+    ['1050266', 'Lập trình hệ thống nhúng', 3, 'Tự chọn', 7, 30, 30, 'maytinh', null],
+    ['1050167', 'Lập trình Game', 3, 'Tự chọn', 7, 30, 30, 'maytinh', null],
+    
+    // Học kỳ 8
+    ['1050221', 'Điện toán đám mây', 3, 'Bắt buộc', 8, 30, 30, 'maytinh', null],
+    ['1050222', 'Học máy và ứng dụng', 3, 'Bắt buộc', 8, 40, 10, 'maytinh', null],
+    ['1050219', 'Đồ án công nghệ phần mềm 2', 4, 'Bắt buộc', 8, 0, 0, 'maytinh', null],
+    ['1050268', 'Lập trình mạng', 3, 'Tự chọn', 8, 30, 30, 'maytinh', null],
+    ['1050269', 'Lập trình trí tuệ nhân tạo', 3, 'Tự chọn', 8, 30, 30, 'maytinh', null],
+    ['1050270', 'Khai phá dữ liệu', 3, 'Tự chọn', 8, 35, 20, 'maytinh', null],
+    ['1050271', 'An toàn và bảo mật hệ thống thông tin', 3, 'Tự chọn', 8, 30, 20, 'maytinh', null],
+    
+    // Học kỳ 9
+    ['1050272', 'Thực tập tốt nghiệp', 3, 'Bắt buộc', 9, 0, 0, 'thuong', '1050261'],
+    ['1050331', 'Đồ án tốt nghiệp', 8, 'Bắt buộc', 9, 0, 0, 'maytinh', null],
     
     // D. Môn chuyên ngành cho các Khoa khác (mô phỏng theo khoa)
-    // Khoa Lý luận chính trị - Luật & QLNN (mã 113)
-    ['1130401', 'Luật Hiến pháp Việt Nam', 3, 'Bắt buộc', 3, 45, 0, 'thuong'],
-    ['1130402', 'Luật Dân sự 1', 3, 'Bắt buộc', 4, 45, 0, 'thuong'],
-    
-    // Khoa Khoa học tự nhiên (mã 121)
-    ['1210301', 'Sinh học đại cương', 3, 'Bắt buộc', 3, 30, 30, 'lab'],
-    ['1210302', 'Hóa học đại cương 2', 3, 'Bắt buộc', 4, 30, 30, 'lab'],
-    
-    // Khoa Khoa học xã hội & nhân văn (mã 110)
-    ['1100301', 'Cơ sở văn hóa Việt Nam', 3, 'Bắt buộc', 3, 45, 0, 'thuong'],
-    ['1100302', 'Xã hội học đại cương', 3, 'Bắt buộc', 4, 45, 0, 'thuong'],
-    
-    // Khoa Ngoại ngữ (mã 109)
-    ['1090301', 'Nghe nói Tiếng Anh nâng cao 1', 3, 'Bắt buộc', 3, 15, 60, 'thuong'],
-    ['1090302', 'Ngữ pháp Tiếng Anh nâng cao', 3, 'Bắt buộc', 4, 45, 0, 'thuong'],
-    
-    // Khoa Giáo dục tiểu học & mầm non (mã 203)
-    ['2030301', 'Tâm lý học trẻ em', 3, 'Bắt buộc', 3, 45, 0, 'thuong'],
-    ['2030302', 'Phương pháp dạy học Tiếng Việt ở tiểu học', 3, 'Bắt buộc', 4, 30, 30, 'thuong'],
-    
-    // Khoa Kỹ thuật & Công nghệ (mã 106)
-    ['1060301', 'Vẽ kỹ thuật xây dựng', 3, 'Bắt buộc', 3, 30, 30, 'lab'],
-    ['1060302', 'Kỹ thuật điện đại cương', 3, 'Bắt buộc', 4, 30, 30, 'lab'],
-    
-    // Khoa Toán & Thống kê (mã 102)
-    ['1020301', 'Đại số tuyến tính nâng cao', 3, 'Bắt buộc', 3, 45, 0, 'thuong'],
-    ['1020302', 'Xác suất thống kê toán', 3, 'Bắt buộc', 4, 45, 0, 'thuong'],
-    
-    // Khoa Kinh tế & Kế toán (mã 108)
-    ['1080301', 'Nguyên lý kế toán doanh nghiệp', 3, 'Bắt buộc', 3, 30, 30, 'thuong'],
-    ['1080302', 'Kinh tế học vi mô', 3, 'Bắt buộc', 4, 45, 0, 'thuong'],
-    
-    // Khoa Tài chính - Ngân hàng & QTKD (mã 108)
-    ['1080401', 'Quản trị tài chính', 3, 'Bắt buộc', 3, 45, 0, 'thuong'],
-    ['1080402', 'Quản trị học đại cương', 3, 'Bắt buộc', 4, 45, 0, 'thuong'],
-    
-    // Khoa Sư phạm (mã 201)
-    ['2010301', 'Tâm lý học sư phạm nâng cao', 3, 'Bắt buộc', 3, 45, 0, 'thuong'],
-    ['2010302', 'Giáo dục học phổ thông', 3, 'Bắt buộc', 4, 45, 0, 'thuong']
+    ['1130401', 'Luật Hiến pháp Việt Nam', 3, 'Bắt buộc', 3, 45, 0, 'thuong', null],
+    ['1130402', 'Luật Dân sự 1', 3, 'Bắt buộc', 4, 45, 0, 'thuong', null],
+    ['1210301', 'Sinh học đại cương', 3, 'Bắt buộc', 3, 30, 30, 'lab', null],
+    ['1210302', 'Hóa học đại cương 2', 3, 'Bắt buộc', 4, 30, 30, 'lab', null],
+    ['1100301', 'Cơ sở văn hóa Việt Nam', 3, 'Bắt buộc', 3, 45, 0, 'thuong', null],
+    ['1100302', 'Xã hội học đại cương', 3, 'Bắt buộc', 4, 45, 0, 'thuong', null],
+    ['1090301', 'Nghe nói Tiếng Anh nâng cao 1', 3, 'Bắt buộc', 3, 15, 60, 'thuong', null],
+    ['1090302', 'Ngữ pháp Tiếng Anh nâng cao', 3, 'Bắt buộc', 4, 45, 0, 'thuong', null],
+    ['2030301', 'Tâm lý học trẻ em', 3, 'Bắt buộc', 3, 45, 0, 'thuong', null],
+    ['2030302', 'Phương pháp dạy học Tiếng Việt ở tiểu học', 3, 'Bắt buộc', 4, 30, 30, 'thuong', null],
+    ['1060301', 'Vẽ kỹ thuật xây dựng', 3, 'Bắt buộc', 3, 30, 30, 'lab', null],
+    ['1060302', 'Kỹ thuật điện đại cương', 3, 'Bắt buộc', 4, 30, 30, 'lab', null],
+    ['1020301', 'Đại số tuyến tính nâng cao', 3, 'Bắt buộc', 3, 45, 0, 'thuong', null],
+    ['1020302', 'Xác suất thống kê toán', 3, 'Bắt buộc', 4, 45, 0, 'thuong', null],
+    ['1080301', 'Nguyên lý kế toán doanh nghiệp', 3, 'Bắt buộc', 3, 30, 30, 'thuong', null],
+    ['1080302', 'Kinh tế học vi mô', 3, 'Bắt buộc', 4, 45, 0, 'thuong', null],
+    ['1080401', 'Quản trị tài chính', 3, 'Bắt buộc', 3, 45, 0, 'thuong', null],
+    ['1080402', 'Quản trị học đại cương', 3, 'Bắt buộc', 4, 45, 0, 'thuong', null],
+    ['2010301', 'Tâm lý học sư phạm nâng cao', 3, 'Bắt buộc', 3, 45, 0, 'thuong', null],
+    ['2010302', 'Giáo dục học phổ thông', 3, 'Bắt buộc', 4, 45, 0, 'thuong', null]
 ];
 
 $hpInserted = []; // ma_hp => database_id
 $hpDetails = [];  // database_id => details_array
 
-$stmtHp = $conn->prepare("INSERT INTO hoc_phan (ma_hp, ten_hp, so_tin_chi, loai, hoc_ky, nien_khoa, so_tiet_ly_thuyet, so_tiet_thuc_hanh, khoa_phu_trach, mo_ta, trang_thai_hoat_dong) VALUES (?, ?, ?, ?, ?, '2024-2028', ?, ?, ?, ?, 1)");
+$stmtHp = $conn->prepare("INSERT INTO hoc_phan (ma_hp, ten_hp, so_tin_chi, loai, hoc_ky, nien_khoa, so_tiet_ly_thuyet, so_tiet_thuc_hanh, khoa_phu_trach, mo_ta, trang_thai_hoat_dong, ma_hp_tien_quyet) VALUES (?, ?, ?, ?, ?, '2024-2028', ?, ?, ?, ?, 1, ?)");
 
 // Ánh xạ khoa phụ trách
 $prefixToKhoa = [
@@ -464,6 +519,7 @@ $prefixToKhoa = [
     '109' => 'Khoa Ngoại ngữ',
     '105' => 'Khoa Công nghệ thông tin',
     '112' => 'Khoa Giáo dục Thể chất',
+    '115' => 'Khoa Kinh tế & Kế toán',
     '201' => 'Khoa Sư phạm',
     '121' => 'Khoa Khoa học tự nhiên',
     '110' => 'Khoa Khoa học xã hội & nhân văn',
@@ -482,17 +538,17 @@ foreach ($subjectsDef as $sub) {
     $lt = $sub[5];
     $th = $sub[6];
     $loaiPhong = $sub[7];
+    $prereq = isset($sub[8]) ? $sub[8] : null;
     
     $prefix = substr($maHp, 0, 3);
     $khoaName = isset($prefixToKhoa[$prefix]) ? $prefixToKhoa[$prefix] : 'Khoa Sư phạm';
-    // Một số môn thuộc Tài chính ngân hàng sử dụng mã 108 nhưng thuộc khoa Tài chính - Ngân hàng & QTKD
     if ($maHp === '1080401' || $maHp === '1080402') {
         $khoaName = 'Khoa Tài chính - Ngân hàng & Quản trị kinh doanh';
     }
     
     $mota = "Môn học học phần $tenHp.";
     
-    $stmtHp->bind_param("ssisiisss", $maHp, $tenHp, $soTc, $loai, $hk, $lt, $th, $khoaName, $mota);
+    $stmtHp->bind_param("ssisiiisss", $maHp, $tenHp, $soTc, $loai, $hk, $lt, $th, $khoaName, $mota, $prereq);
     if ($stmtHp->execute()) {
         $hpId = $conn->insert_id;
         $hpInserted[$maHp] = $hpId;
@@ -528,43 +584,32 @@ foreach ($allNganhs as $ng) {
     $tenNganh = $ng['ten_nganh'];
     $khoaNameOfNganh = $khoaDbMap[$ng['khoa_id']];
     
-    // 1. Gán 16 môn đại cương dùng chung
-    $daiCuongMaHps = [
-        '1130293', '1130294', '1130049', '1130295', '1130296', '1130297',
-        '1090061', '1090166', '1050242', '1120172', '1120173', '1120174',
-        '1120168', '1120169', '1120170', '1120171'
-    ];
-    foreach ($daiCuongMaHps as $maHp) {
-        if (isset($hpInserted[$maHp])) {
-            $hpId = $hpInserted[$maHp];
-            $hk = $hpDetails[$hpId]['hoc_ky'];
-            $stmtCtdt->bind_param("iii", $nganhId, $hpId, $hk);
-            $stmtCtdt->execute();
-        }
-    }
-    
-    // 2. Gán các môn học chuyên ngành
-    if ($tenNganh === 'Giáo dục chính trị') {
-        // Gán chính xác các môn chuyên ngành GDCT từ ảnh PDF
-        $gdctChuyenNganhMaHps = [
-            '1130221', '2010155', '1130220', '1100086', '1130451', '1100038',
-            '2030410', '1130450', '1130070', '1130162', '2010156', '2010171'
+    if ($tenNganh === 'Kỹ thuật phần mềm') {
+        // Gán toàn bộ môn học KTPM vào đúng các học kỳ thiết kế
+        $ktpmAllMaHps = [
+            // HK1
+            '1130299', '1090061', '1010038', '1010245', '1050074', '1050124', '1050192',
+            '1120239', '1120181', '1120184', '1120187', '1120190', '1120172', '1120175',
+            // HK2
+            '1130300', '1130049', '1090166', '1050133', '1050016', '2030003',
+            '1120173', '1120176', '1120182', // PE 2 Group 02
+            // HK3
+            '1130301', '1050024', '1050075', '1050003', '1010126', '1050228',
+            '1120174', '1120177', '1120183', // PE 3 Group 03
+            // HK4
+            '1130302', '1120168', '1120169', '1120170', '1120171', '1050261', '1050197', '1050200', '1050021', '1050194', '1050202',
+            // HK5
+            '1130091', '1150422', '1050277', '1050196', '1050201', '1050264', '1050262', '1050263',
+            // HK6
+            '1050220', '1050216', '1050210', '1050205', '1050206', '1050207', '1050211',
+            // HK7
+            '1050213', '1050214', '1050215', '1050265', '1050267', '1050266', '1050167',
+            // HK8
+            '1050221', '1050222', '1050219', '1050268', '1050269', '1050270', '1050271',
+            // HK9
+            '1050272', '1050331'
         ];
-        foreach ($gdctChuyenNganhMaHps as $maHp) {
-            if (isset($hpInserted[$maHp])) {
-                $hpId = $hpInserted[$maHp];
-                $hk = $hpDetails[$hpId]['hoc_ky'];
-                $stmtCtdt->bind_param("iii", $nganhId, $hpId, $hk);
-                $stmtCtdt->execute();
-            }
-        }
-    } elseif ($tenNganh === 'Kỹ thuật phần mềm' || $tenNganh === 'Công nghệ thông tin' || $tenNganh === 'Trí tuệ nhân tạo') {
-        // Gán các môn chuyên ngành CNTT
-        $cnttChuyenNganhMaHps = [
-            '1050109', '1050201', '1050202', '1050203', '1050204', '1050205',
-            '1050301', '1050302', '1050303', '1050304'
-        ];
-        foreach ($cnttChuyenNganhMaHps as $maHp) {
+        foreach ($ktpmAllMaHps as $maHp) {
             if (isset($hpInserted[$maHp])) {
                 $hpId = $hpInserted[$maHp];
                 $hk = $hpDetails[$hpId]['hoc_ky'];
@@ -573,21 +618,63 @@ foreach ($allNganhs as $ng) {
             }
         }
     } else {
-        // Đối với các ngành khác, gán môn chuyên ngành của khoa đó
-        foreach ($hpDetails as $hpId => $detail) {
-            $maHp = $detail['ma_hp'];
-            $khoaPhuTrach = $detail['khoa_phu_trach'];
-            
-            // Bỏ qua môn đại cương và môn thuộc ngành đặc biệt
-            $prefix = substr($maHp, 0, 3);
-            if (in_array($maHp, $daiCuongMaHps) || $prefix === '105' || $maHp === '1130221' || $maHp === '2010155' || $maHp === '1130220' || $maHp === '1100086' || $maHp === '1130451' || $maHp === '1100038' || $maHp === '2030410' || $maHp === '1130450' || $maHp === '1130070' || $maHp === '1130162' || $maHp === '2010156' || $maHp === '2010171') {
-                continue;
-            }
-            
-            if ($khoaPhuTrach === $khoaNameOfNganh) {
-                $hk = $detail['hoc_ky'];
+        // Gán 9 môn đại cương dùng chung cho các ngành khác
+        $daiCuongMaHps = [
+            '1130299', '1130300', '1130049', '1130301', '1130302', '1130091',
+            '1090061', '1090166', '1050242', '1120172', '1120173', '1120174',
+            '1120168', '1120169', '1120170', '1120171'
+        ];
+        foreach ($daiCuongMaHps as $maHp) {
+            if (isset($hpInserted[$maHp])) {
+                $hpId = $hpInserted[$maHp];
+                $hk = $hpDetails[$hpId]['hoc_ky'];
                 $stmtCtdt->bind_param("iii", $nganhId, $hpId, $hk);
                 $stmtCtdt->execute();
+            }
+        }
+        
+        // Gán các môn học chuyên ngành
+        if ($tenNganh === 'Giáo dục chính trị') {
+            $gdctChuyenNganhMaHps = [
+                '1130221', '2010155', '1130220', '1100086', '1130451', '1100038',
+                '2030410', '1130450', '1130070', '1130162', '2010156', '2010171'
+            ];
+            foreach ($gdctChuyenNganhMaHps as $maHp) {
+                if (isset($hpInserted[$maHp])) {
+                    $hpId = $hpInserted[$maHp];
+                    $hk = $hpDetails[$hpId]['hoc_ky'];
+                    $stmtCtdt->bind_param("iii", $nganhId, $hpId, $hk);
+                    $stmtCtdt->execute();
+                }
+            }
+        } elseif ($tenNganh === 'Công nghệ thông tin' || $tenNganh === 'Trí tuệ nhân tạo') {
+            $cnttChuyenNganhMaHps = [
+                '1050133', '1050016', '1050024', '1050075', '1050003', '1010126', '1050228',
+                '1050197', '1050200', '1050021', '1050194', '1050202', '1050196', '1050201'
+            ];
+            foreach ($cnttChuyenNganhMaHps as $maHp) {
+                if (isset($hpInserted[$maHp])) {
+                    $hpId = $hpInserted[$maHp];
+                    $hk = $hpDetails[$hpId]['hoc_ky'];
+                    $stmtCtdt->bind_param("iii", $nganhId, $hpId, $hk);
+                    $stmtCtdt->execute();
+                }
+            }
+        } else {
+            foreach ($hpDetails as $hpId => $detail) {
+                $maHp = $detail['ma_hp'];
+                $khoaPhuTrach = $detail['khoa_phu_trach'];
+                
+                $prefix = substr($maHp, 0, 3);
+                if (in_array($maHp, $daiCuongMaHps) || $prefix === '105' || $maHp === '1130221' || $maHp === '2010155' || $maHp === '1130220' || $maHp === '1100086' || $maHp === '1130451' || $maHp === '1100038' || $maHp === '2030410' || $maHp === '1130450' || $maHp === '1130070' || $maHp === '1130162' || $maHp === '2010156' || $maHp === '2010171') {
+                    continue;
+                }
+                
+                if ($khoaPhuTrach === $khoaNameOfNganh) {
+                    $hk = $detail['hoc_ky'];
+                    $stmtCtdt->bind_param("iii", $nganhId, $hpId, $hk);
+                    $stmtCtdt->execute();
+                }
             }
         }
     }
@@ -616,40 +703,56 @@ $phongs = [
 
 $lopHocPhanList = [];
 
-$stmtLhp = $conn->prepare("INSERT INTO lop_hoc_phan (ma_lop_hp, hoc_phan_id, giang_vien, hoc_ky, nam_hoc, si_so_toi_da, si_so_hien_tai, ngay_bat_dau, ngay_ket_thuc, trang_thai_mo_lop) VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?, 'Đang mở')");
+$stmtLhp = $conn->prepare("INSERT INTO lop_hoc_phan (ma_lop_hp, hoc_phan_id, giang_vien, hoc_ky, nam_hoc, si_so_toi_da, si_so_hien_tai, ngay_bat_dau, ngay_ket_thuc, ngay_bat_dau_dk, ngay_ket_thuc_dk, trang_thai_mo_lop) VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?)");
 
 foreach ($hpDetails as $hpId => $hp) {
     $maHp = $hp['ma_hp'];
     $hkCtdt = $hp['hoc_ky'];
     
     // Phân bổ thời gian thực tế
+    $ngayBdDk = null;
+    $ngayKtDk = null;
+    $trangThaiMoLop = 'Đang mở';
+    
     if ($hkCtdt == 1) {
         $hkThucTe = 1;
         $namHocThucTe = '2024-2025';
         $ngayBd = '2024-09-05';
         $ngayKt = '2025-01-15';
+        $ngayBdDk = '2024-08-15 00:00:00';
+        $ngayKtDk = '2024-08-30 23:59:59';
+        $trangThaiMoLop = 'Đã đóng';
     } elseif ($hkCtdt == 2) {
         $hkThucTe = 2;
         $namHocThucTe = '2024-2025';
         $ngayBd = '2025-01-15';
         $ngayKt = '2025-05-30';
+        $ngayBdDk = '2025-01-05 00:00:00';
+        $ngayKtDk = '2025-01-20 23:59:59';
+        $trangThaiMoLop = 'Đã đóng';
     } elseif ($hkCtdt == 3) {
         $hkThucTe = 1;
         $namHocThucTe = '2025-2026';
         $ngayBd = '2025-09-05';
         $ngayKt = '2026-01-15';
-    } else { // Kỳ 4
+        $ngayBdDk = '2025-08-15 00:00:00';
+        $ngayKtDk = '2025-08-30 23:59:59';
+        $trangThaiMoLop = 'Đã đóng';
+    } else { // Kỳ 4 (Kỳ hiện tại)
         $hkThucTe = 2;
         $namHocThucTe = '2025-2026';
         $ngayBd = '2026-01-15';
         $ngayKt = '2026-05-30';
+        $ngayBdDk = '2026-06-01 00:00:00';
+        $ngayKtDk = '2026-06-30 23:59:59'; // Bao phủ thời điểm hiện tại 2026-06-18
+        $trangThaiMoLop = 'Đang mở';
     }
     
     $maLopHp = $maHp . "-L01";
     $giangVien = $giangViens[array_rand($giangViens)];
     $sisoMax = 80;
     
-    $stmtLhp->bind_param("sisssiss", $maLopHp, $hpId, $giangVien, $hkThucTe, $namHocThucTe, $sisoMax, $ngayBd, $ngayKt);
+    $stmtLhp->bind_param("sisssisssss", $maLopHp, $hpId, $giangVien, $hkThucTe, $namHocThucTe, $sisoMax, $ngayBd, $ngayKt, $ngayBdDk, $ngayKtDk, $trangThaiMoLop);
     if ($stmtLhp->execute()) {
         $lhpId = $conn->insert_id;
         
@@ -709,7 +812,52 @@ foreach ($sinhVienList as $sv) {
     
     $myCtdt = isset($ctdtByNganh[$nganhId]) ? $ctdtByNganh[$nganhId] : [];
     
+    // Lọc môn học đối với khóa K47: chỉ đăng ký học kỳ 1, 2, 3, 4
+    $filteredCtdt = [];
+    $gdtc1_candidates = [];
+    $gdtc2_candidates = [];
+    $gdtc3_candidates = [];
+    
     foreach ($myCtdt as $item) {
+        $hpId = $item['hp_id'];
+        $hkCtdt = $item['hk_ctdt'];
+        
+        if (!isset($hpDetails[$hpId])) continue;
+        $hp = $hpDetails[$hpId];
+        $maHp = $hp['ma_hp'];
+        
+        // Không đăng ký các học kỳ tương lai (5-9)
+        if ($hkCtdt > 4) {
+            continue;
+        }
+        
+        // Giáo dục thể chất ở học kỳ 1, 2, 3
+        if (strpos($maHp, '112') === 0 && $hkCtdt < 4) {
+            if ($hkCtdt == 1) {
+                $gdtc1_candidates[] = $item;
+            } elseif ($hkCtdt == 2) {
+                $gdtc2_candidates[] = $item;
+            } elseif ($hkCtdt == 3) {
+                $gdtc3_candidates[] = $item;
+            }
+        } else {
+            // Các môn học bắt buộc/đại cương khác bao gồm cả Giáo dục quốc phòng ở HK4
+            $filteredCtdt[] = $item;
+        }
+    }
+    
+    // Mỗi học kỳ 1, 2, 3 chỉ chọn đúng 1 học phần Giáo dục thể chất ngẫu nhiên để học
+    if (!empty($gdtc1_candidates)) {
+        $filteredCtdt[] = $gdtc1_candidates[array_rand($gdtc1_candidates)];
+    }
+    if (!empty($gdtc2_candidates)) {
+        $filteredCtdt[] = $gdtc2_candidates[array_rand($gdtc2_candidates)];
+    }
+    if (!empty($gdtc3_candidates)) {
+        $filteredCtdt[] = $gdtc3_candidates[array_rand($gdtc3_candidates)];
+    }
+    
+    foreach ($filteredCtdt as $item) {
         $hpId = $item['hp_id'];
         $hkCtdt = $item['hk_ctdt'];
         
@@ -721,62 +869,68 @@ foreach ($sinhVienList as $sv) {
         $namHocThucTe = $lhp['nam_hoc'];
         
         // 1. Đăng ký học phần
-        $hkThucTeStr = (string)$hkThucTe;
-        $stmtDk->bind_param("iiss", $svId, $lhpId, $hkThucTeStr, $namHocThucTe);
-        if ($stmtDk->execute()) {
-            $countDk++;
-            $conn->query("UPDATE lop_hoc_phan SET si_so_hien_tai = si_so_hien_tai + 1 WHERE id = $lhpId");
-        }
+        // Kiểm tra sĩ số hiện tại của lớp trước khi chèn đăng ký giả lập
+        $resLhp = $conn->query("SELECT si_so_hien_tai, si_so_toi_da FROM lop_hoc_phan WHERE id = $lhpId");
+        $lhpRow = $resLhp->fetch_assoc();
+        $curEnrolled = $lhpRow ? (int)$lhpRow['si_so_hien_tai'] : 0;
+        $maxEnrolled = $lhpRow ? (int)$lhpRow['si_so_toi_da'] : 80;
         
-        // 2. Thời khóa biểu (Thứ và tiết cố định theo từng lớp sinh hoạt để đồng bộ)
-        $hashVal = crc32($sv['lop_sinh_hoat_id'] . '_' . $hpId);
-        $thu = ($hashVal % 6) + 2; 
-        $tietBd = (($hashVal >> 2) % 3) * 3 + 1; 
-        $soTiet = 3;
-        // Giáo dục thể chất có số tiết đặc thù
-        $maHpStr = $hpDetails[$hpId]['ma_hp'];
-        if ($maHpStr === '1120172' || $maHpStr === '1120173' || $maHpStr === '1120174') {
-            $soTiet = 2;
-        }
-        
-        $phongHoc = $lhp['phong_hoc'];
-        $giangVien = $lhp['giang_vien'];
-        $ngayBd = $lhp['ngay_bat_dau'];
-        $ngayKt = $lhp['ngay_ket_thuc'];
-        
-        $stmtTkb->bind_param("iiiiisssisss", $svId, $hpId, $thu, $tietBd, $soTiet, $phongHoc, $giangVien, $hkThucTe, $namHocThucTe, $lhpId, $ngayBd, $ngayKt);
-        if ($stmtTkb->execute()) {
-            $countTkb++;
-        }
-        
-        // 3. Điểm học tập cho kỳ trước (< 4)
-        if ($hkCtdt < 4) {
-            $diemCc = rand(80, 100) / 10.0;
-            $diemGk = rand(60, 95) / 10.0;
-            $diemCk = rand(50, 98) / 10.0;
-            
-            if (rand(1, 100) <= 2) { // Trượt môn (tỷ lệ 2%)
-                $diemCc = rand(70, 90) / 10.0;
-                $diemGk = rand(30, 50) / 10.0;
-                $diemCk = rand(20, 39) / 10.0;
+        if ($curEnrolled < $maxEnrolled) {
+            $hkThucTeStr = (string)$hkThucTe;
+            $stmtDk->bind_param("iiss", $svId, $lhpId, $hkThucTeStr, $namHocThucTe);
+            if ($stmtDk->execute()) {
+                $countDk++;
+                $conn->query("UPDATE lop_hoc_phan SET si_so_hien_tai = si_so_hien_tai + 1 WHERE id = $lhpId");
             }
             
-            $diemTong = round($diemCc * 0.1 + $diemGk * 0.3 + $diemCk * 0.6, 2);
+            // 2. Thời khóa biểu (Thứ và tiết cố định theo từng lớp sinh hoạt để đồng bộ)
+            $hashVal = crc32($sv['lop_sinh_hoat_id'] . '_' . $hpId);
+            $thu = ($hashVal % 6) + 2; 
+            $tietBd = (($hashVal >> 2) % 3) * 3 + 1; 
+            $soTiet = 3;
+            // Giáo dục thể chất có số tiết đặc thù
+            $maHpStr = $hpDetails[$hpId]['ma_hp'];
+            if ($maHpStr === '1120172' || $maHpStr === '1120173' || $maHpStr === '1120174') {
+                $soTiet = 2;
+            }
             
-            $diemHe4 = 0.0;
-            $diemChu = 'F';
-            if ($diemTong >= 9.0) { $diemChu = 'A+'; $diemHe4 = 4.0; }
-            elseif ($diemTong >= 8.5) { $diemChu = 'A';  $diemHe4 = 3.7; }
-            elseif ($diemTong >= 8.0) { $diemChu = 'B+'; $diemHe4 = 3.5; }
-            elseif ($diemTong >= 7.0) { $diemChu = 'B';  $diemHe4 = 3.0; }
-            elseif ($diemTong >= 6.5) { $diemChu = 'C+'; $diemHe4 = 2.5; }
-            elseif ($diemTong >= 5.5) { $diemChu = 'C';  $diemHe4 = 2.0; }
-            elseif ($diemTong >= 5.0) { $diemChu = 'D+'; $diemHe4 = 1.5; }
-            elseif ($diemTong >= 4.0) { $diemChu = 'D';  $diemHe4 = 1.0; }
+            $phongHoc = $lhp['phong_hoc'];
+            $giangVien = $lhp['giang_vien'];
+            $ngayBd = $lhp['ngay_bat_dau'];
+            $ngayKt = $lhp['ngay_ket_thuc'];
             
-            $stmtDiem->bind_param("iiiiddddsd", $svId, $hpId, $hkThucTe, $namHocThucTe, $diemCc, $diemGk, $diemCk, $diemTong, $diemChu, $diemHe4);
-            if ($stmtDiem->execute()) {
-                $countDiem++;
+            $stmtTkb->bind_param("iiiiisssisss", $svId, $hpId, $thu, $tietBd, $soTiet, $phongHoc, $giangVien, $hkThucTe, $namHocThucTe, $lhpId, $ngayBd, $ngayKt);
+            if ($stmtTkb->execute()) {
+                $countTkb++;
+            }
+            
+            // 3. Điểm học tập cho kỳ trước (< 4)
+            if ($hkCtdt < 4) {
+                $diemCc = rand(80, 100) / 10.0;
+                $diemGk = rand(60, 95) / 10.0;
+                $diemCk = rand(50, 98) / 10.0;
+                
+                if (rand(1, 100) <= 2) { // Trượt môn (tỷ lệ 2%)
+                    $diemCc = rand(70, 90) / 10.0;
+                    $diemGk = rand(30, 50) / 10.0;
+                    $diemCk = rand(20, 39) / 10.0;
+                }
+                
+                $diemTong = round($diemCc * 0.1 + $diemGk * 0.3 + $diemCk * 0.6, 2);
+                
+                $diemHe4 = 0.0;
+                $diemChu = 'F';
+                if ($diemTong >= 9.0) { $diemChu = 'A+'; $diemHe4 = 4.0; }
+                elseif ($diemTong >= 8.0) { $diemChu = 'A';  $diemHe4 = 3.5; }
+                elseif ($diemTong >= 7.0) { $diemChu = 'B+'; $diemHe4 = 3.0; }
+                elseif ($diemTong >= 6.0) { $diemChu = 'B';  $diemHe4 = 2.5; }
+                elseif ($diemTong >= 5.0) { $diemChu = 'C';  $diemHe4 = 2.0; }
+                elseif ($diemTong >= 4.0) { $diemChu = 'D';  $diemHe4 = 1.5; }
+                
+                $stmtDiem->bind_param("iiiiddddsd", $svId, $hpId, $hkThucTe, $namHocThucTe, $diemCc, $diemGk, $diemCk, $diemTong, $diemChu, $diemHe4);
+                if ($stmtDiem->execute()) {
+                    $countDiem++;
+                }
             }
         }
     }

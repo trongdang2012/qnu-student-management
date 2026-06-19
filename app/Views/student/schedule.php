@@ -2,7 +2,45 @@
 $list_hk = [1,2,3,4,5,6,7,8];
 $thu_list  = [2,3,4,5,6,7,8];
 $tiet_list = range(1, 10);
-$gio = [1=>'7:00',2=>'7:55',3=>'8:50',4=>'9:55',5=>'10:50',6=>'13:00',7=>'13:55',8=>'14:50',9=>'15:55',10=>'16:50'];
+$gio = [
+    1 => '07:00 - 07:50',
+    2 => '07:50 - 08:40',
+    3 => '08:50 - 09:40',
+    4 => '09:40 - 10:30',
+    5 => '10:40 - 11:30',
+    6 => '13:00 - 13:50',
+    7 => '13:50 - 14:40',
+    8 => '14:50 - 15:40',
+    9 => '15:40 - 16:30',
+    10 => '16:40 - 17:30'
+];
+$tiet_gio = [
+    1 => ['start' => '07:00', 'end' => '07:50'],
+    2 => ['start' => '07:50', 'end' => '08:40'],
+    3 => ['start' => '08:50', 'end' => '09:40'],
+    4 => ['start' => '09:40', 'end' => '10:30'],
+    5 => ['start' => '10:40', 'end' => '11:30'],
+    6 => ['start' => '13:00', 'end' => '13:50'],
+    7 => ['start' => '13:50', 'end' => '14:40'],
+    8 => ['start' => '14:50', 'end' => '15:40'],
+    9 => ['start' => '15:40', 'end' => '16:30'],
+    10 => ['start' => '16:40', 'end' => '17:30']
+];
+
+function getColorForSubject(string $maHp): array {
+    $hash = md5($maHp);
+    $colors = [
+        ['bg' => '#eef2ff', 'border' => '#6366f1', 'text' => '#4f46e5'], // Indigo
+        ['bg' => '#f0fdf4', 'border' => '#22c55e', 'text' => '#16a34a'], // Green
+        ['bg' => '#fff7ed', 'border' => '#f97316', 'text' => '#ea580c'], // Orange
+        ['bg' => '#faf5ff', 'border' => '#a855f7', 'text' => '#9333ea'], // Purple
+        ['bg' => '#ecfeff', 'border' => '#06b6d4', 'text' => '#0891b2'], // Cyan
+        ['bg' => '#fff1f2', 'border' => '#f43f5e', 'text' => '#e11d48'], // Rose
+        ['bg' => '#fef8e7', 'border' => '#eab308', 'text' => '#ca8a04'], // Yellow
+    ];
+    $index = hexdec(substr($hash, 0, 4)) % count($colors);
+    return $colors[$index];
+}
 ?>
 <?php require_once ROOT . '/includes/header.php'; ?>
 <?php require_once ROOT . '/includes/navbar_student.php'; ?>
@@ -66,53 +104,93 @@ $gio = [1=>'7:00',2=>'7:55',3=>'8:50',4=>'9:55',5=>'10:50',6=>'13:00',7=>'13:55'
       </div>
       <div class="card-body" style="padding:16px">
         <div class="table-wrap">
-          <table class="tkb-table">
+          <?php
+          // Gom nhóm môn học theo buổi
+          $grid_buoi = [];
+          foreach ($thu_list as $thu) {
+              $grid_buoi[$thu]['sang'] = [];
+              $grid_buoi[$thu]['chieu'] = [];
+              $grid_buoi[$thu]['toi'] = [];
+          }
+
+          foreach ($scheduleData['tkb'] as $row) {
+              $thu = (int)$row['thu'];
+              $tiet_bd = (int)$row['tiet_bat_dau'];
+              if ($tiet_bd <= 5) {
+                  $grid_buoi[$thu]['sang'][] = $row;
+              } elseif ($tiet_bd <= 10) {
+                  $grid_buoi[$thu]['chieu'][] = $row;
+              } else {
+                  $grid_buoi[$thu]['toi'][] = $row;
+              }
+          }
+
+          // Lấy ngày trong tuần hiện hành
+          $today = new DateTime();
+          $dayOfWeek = (int)$today->format('N');
+          $monday = clone $today;
+          if ($dayOfWeek > 1) {
+              $monday->modify('-' . ($dayOfWeek - 1) . ' days');
+          }
+          $ngay_trong_tuan = [];
+          for ($i = 0; $i < 7; $i++) {
+              $d = clone $monday;
+              $d->modify('+' . $i . ' days');
+              $ngay_trong_tuan[$i + 2] = $d->format('d/m/Y');
+          }
+          ?>
+          <table class="tkb-grid-table" style="width:100%; border-collapse:collapse; min-width:900px;">
             <thead>
-              <tr>
-                <th style="width:80px;text-align:center">Tiết</th>
+              <tr style="background:#1e3a8a; color:#fff;">
+                <th style="width:90px; text-align:center; padding:12px; border:1px solid #cbd5e1; font-weight:700;">Buổi</th>
                 <?php foreach ($thu_list as $thu): ?>
-                  <th style="text-align:center"><?= e(tenThu($thu)) ?></th>
+                  <th style="text-align:center; padding:12px; border:1px solid #cbd5e1;">
+                    <div style="font-weight:700; font-size:14px; color:#fff;"><?= e(tenThu($thu)) ?></div>
+                    <div style="font-size:11px; font-weight:normal; margin-top:4px; opacity:0.9;"><?= $ngay_trong_tuan[$thu] ?></div>
+                  </th>
                 <?php endforeach; ?>
               </tr>
             </thead>
             <tbody>
-              <?php
-              $rendered = [];
-              foreach ($tiet_list as $tiet):
-              ?>
+              <?php foreach (['sang' => 'Sáng', 'chieu' => 'Chiều', 'toi' => 'Tối'] as $buoi_key => $buoi_name): ?>
                 <tr>
-                  <td class="tkb-time">
-                    <strong><?= $tiet ?></strong>
-                    <span><?= e($gio[$tiet] ?? '') ?></span>
+                  <td class="tkb-session-cell" style="text-align:center; vertical-align:middle; font-weight:700; background:#f8fafc; border:1px solid #cbd5e1; color:#1e293b; padding:15px 10px;">
+                    <strong><?= $buoi_name ?></strong>
                   </td>
-                  <?php foreach ($thu_list as $thu):
-                    $cell_key = $thu . '_' . $tiet;
-                    if (isset($rendered[$cell_key])) continue;
-                    $subject = $scheduleData['grid'][$thu][$tiet] ?? null;
+                  <?php foreach ($thu_list as $thu): 
+                    $subjects = $grid_buoi[$thu][$buoi_key];
                   ?>
-                    <?php if ($subject && (int)$subject['tiet_bat_dau'] === $tiet): ?>
-                      <?php
-                        $rowspan = min((int)$subject['so_tiet'], count($tiet_list) - $tiet + 1);
-                        for ($t2 = $tiet + 1; $t2 < $tiet + $rowspan; $t2++) {
-                            $rendered[$thu . '_' . $t2] = true;
-                        }
-                      ?>
-                      <td class="tkb-cell-filled" rowspan="<?= $rowspan ?>">
-                        <div class="tkb-subject"
-                             title="<?= e($subject['ten_hp']) ?> | <?= e($subject['giang_vien'] ?? '') ?> | Phòng <?= e($subject['phong_hoc'] ?? '') ?>">
-                          <div class="sub-name"><?= e($subject['ten_hp']) ?></div>
-                          <div class="sub-code"><?= e($subject['ma_hp']) ?></div>
-                          <?php if (!empty($subject['phong_hoc'])): ?>
-                            <div class="sub-room"><i class="fas fa-door-open" style="font-size:10px"></i> <?= e($subject['phong_hoc']) ?></div>
-                          <?php endif; ?>
-                          <?php if (!empty($subject['giang_vien'])): ?>
-                            <div class="sub-gv"><i class="fas fa-chalkboard-teacher" style="font-size:10px"></i> <?= e($subject['giang_vien']) ?></div>
-                          <?php endif; ?>
+                    <td class="tkb-grid-cell" style="vertical-align:top; border:1px solid #cbd5e1; background:#fff; padding:10px; width:14.28%; min-height:160px;">
+                      <?php if (!empty($subjects)): ?>
+                        <div style="display:flex; flex-direction:column; gap:10px; height:100%;">
+                          <?php foreach ($subjects as $subject): 
+                            $col = getColorForSubject($subject['ma_hp']);
+                            $start_tiet = (int)$subject['tiet_bat_dau'];
+                            $end_tiet = $start_tiet + (int)$subject['so_tiet'] - 1;
+                            
+                            // Tách nhóm từ ma_lop_hp
+                            $nhom = '01';
+                            if (!empty($subject['ma_lop_hp'])) {
+                                $parts = explode('-', $subject['ma_lop_hp']);
+                                $last = end($parts);
+                                $nhom = str_replace('L', '', $last);
+                            }
+                          ?>
+                            <div class="tkb-subject-card" 
+                                 style="background:<?= $col['bg'] ?>; border-left:4px solid <?= $col['border'] ?>; border-radius:8px; padding:10px; font-size:12px; line-height:1.6; text-align:center; box-shadow:0 1px 3px rgba(0,0,0,0.05); color:#1e293b; transition:transform 0.15s; font-family:inherit;"
+                                 onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                              <div style="margin-bottom:3px;">-Môn: <?= e($subject['ten_hp']) ?> (<?= e($subject['ma_hp']) ?>)</div>
+                              <div style="margin-bottom:3px;">-Nhóm: <?= $nhom ?></div>
+                              <div style="margin-bottom:3px;">-Lớp: <?= e($sv['lop'] ?? 'KTPM47') ?></div>
+                              <div style="margin-bottom:3px;">-Tiết: <?= $start_tiet ?>-><?= $end_tiet ?></div>
+                              <?php if (!empty($subject['giang_vien'])): ?>
+                                <div style="border-top: 1px dashed rgba(0,0,0,0.1); margin-top:4px; padding-top:4px; color:#475569;">-GV: <?= e($subject['giang_vien']) ?></div>
+                              <?php endif; ?>
+                            </div>
+                          <?php endforeach; ?>
                         </div>
-                      </td>
-                    <?php else: ?>
-                      <td class="tkb-empty"></td>
-                    <?php endif; ?>
+                      <?php endif; ?>
+                    </td>
                   <?php endforeach; ?>
                 </tr>
               <?php endforeach; ?>

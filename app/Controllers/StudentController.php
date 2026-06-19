@@ -239,9 +239,139 @@ class StudentController extends Controller {
 
         $progressInfo = $studentModel->getProgressInfo($sv['id'], $sv['nganh']);
 
+        // Phân tích GPA mục tiêu
+        $analysis = null;
+        $target = $progressInfo['gpa_muc_tieu'];
+        if ($target) {
+            $cpa = $progressInfo['cpa'];
+            $tc_tich_luy = $progressInfo['tc_tich_luy'];
+            $tc_total = $progressInfo['tc_total'];
+            $tc_dat = $progressInfo['tc_dat_total'];
+            $tc_remain = max(0, $tc_total - $tc_dat);
+
+            $points_current = $cpa * $tc_tich_luy;
+            $points_target = $target * $tc_total;
+            $points_need = $points_target - $points_current;
+
+            if ($tc_remain > 0) {
+                $cpa_remain_avg = $points_need / $tc_remain;
+            } else {
+                $cpa_remain_avg = 0;
+            }
+
+            $status = 'possible'; // 'possible', 'impossible', 'achieved'
+            if ($cpa_remain_avg > 4.0) {
+                $status = 'impossible';
+            } elseif ($cpa_remain_avg <= 1.0) {
+                $status = 'achieved';
+            }
+
+            // Tính toán số môn học còn lại
+            $avg_credit_per_course = 3.0;
+            $estimated_courses = ceil($tc_remain / $avg_credit_per_course);
+
+            // Gợi ý tổ hợp môn học còn lại
+            $scenarios = [];
+            if ($status === 'possible') {
+                // Scenario 1: Đạt A và B
+                // A (4.0), B (3.0)
+                // x * 4.0 + y * 3.0 = points_need, x + y = tc_remain => x = points_need - 3*tc_remain
+                $x_A = $points_need - 3.0 * $tc_remain;
+                $y_B = $tc_remain - $x_A;
+
+                if ($x_A >= 0 && $x_A <= $tc_remain) {
+                    $m_A = round($x_A / 3.0);
+                    $m_B = max(0, $estimated_courses - $m_A);
+                    $scenarios[] = [
+                        'title' => 'Tập trung đạt kết quả Xuất sắc (Điểm A/A+ & B)',
+                        'detail' => "Cần khoảng <strong>{$m_A} môn</strong> đạt điểm <strong>A/A+</strong> (hệ 4 là 4.0, hoặc từ 8.5 trở lên) và <strong>{$m_B} môn</strong> đạt điểm <strong>B/B+</strong> (hệ 4 là 3.0, hoặc từ 7.0 trở lên)."
+                    ];
+                } else if ($x_A < 0) {
+                    // Cần điểm trung bình thấp hơn B
+                    // x * 3.0 + y * 2.0 = points_need => x = points_need - 2*tc_remain
+                    $x_B = $points_need - 2.0 * $tc_remain;
+                    $y_C = $tc_remain - $x_B;
+                    $m_B = round($x_B / 3.0);
+                    $m_C = max(0, $estimated_courses - $m_B);
+                    $scenarios[] = [
+                        'title' => 'Tự tin đạt kết quả Khá (Điểm B/B+ & C/C+)',
+                        'detail' => "Cần khoảng <strong>{$m_B} môn</strong> đạt điểm <strong>B/B+</strong> (từ 7.0 trở lên) và <strong>{$m_C} môn</strong> đạt điểm <strong>C/C+</strong> (từ 5.5 trở lên)."
+                    ];
+                } else {
+                    // Cần điểm trung bình cao hơn B (B+ và A)
+                    // x * 4.0 + y * 3.5 = points_need => 0.5x = points_need - 3.5*tc_remain => x = 2 * (points_need - 3.5*tc_remain)
+                    $x_A2 = 2.0 * ($points_need - 3.5 * $tc_remain);
+                    $y_Bplus = $tc_remain - $x_A2;
+                    $m_A = round($x_A2 / 3.0);
+                    $m_Bplus = max(0, $estimated_courses - $m_A);
+                    $scenarios[] = [
+                        'title' => 'Nỗ lực đạt tối đa điểm số (Điểm A/A+ & B+)',
+                        'detail' => "Cần khoảng <strong>{$m_A} môn</strong> đạt điểm <strong>A/A+</strong> (từ 8.5 trở lên) và <strong>{$m_Bplus} môn</strong> đạt điểm <strong>B+</strong> (từ 7.8 trở lên)."
+                    ];
+                }
+
+                // Scenario 2: Đồng đều
+                $needed_grade_chu = 'A/A+';
+                $needed_grade_so = '8.5 - 10';
+                if ($cpa_remain_avg <= 1.5) {
+                    $needed_grade_chu = 'D+';
+                    $needed_grade_so = '4.8 - 5.4';
+                } elseif ($cpa_remain_avg <= 2.0) {
+                    $needed_grade_chu = 'C';
+                    $needed_grade_so = '5.5 - 6.2';
+                } elseif ($cpa_remain_avg <= 2.5) {
+                    $needed_grade_chu = 'C+';
+                    $needed_grade_so = '6.3 - 6.9';
+                } elseif ($cpa_remain_avg <= 3.0) {
+                    $needed_grade_chu = 'B';
+                    $needed_grade_so = '7.0 - 7.7';
+                } elseif ($cpa_remain_avg <= 3.5) {
+                    $needed_grade_chu = 'B+';
+                    $needed_grade_so = '7.8 - 8.4';
+                }
+                $scenarios[] = [
+                    'title' => 'Phân bổ học lực đồng đều',
+                    'detail' => "Tất cả các môn còn lại cần đạt điểm trung bình tối thiểu là <strong>" . number_format($cpa_remain_avg, 2) . "</strong> (tương đương điểm chữ <strong>{$needed_grade_chu}</strong>, từ <strong>{$needed_grade_so}</strong> hệ 10)."
+                ];
+            }
+
+            // Gợi ý cải thiện điểm
+            $improves = $studentModel->getImprovementSuggestions($sv['id']);
+            $improvement_list = [];
+            foreach ($improves as $imp) {
+                // Giả lập nếu cải thiện môn học này lên A (4.0)
+                $cur_val = (float)$imp['max_he4'];
+                $tc_imp = (int)$imp['so_tin_chi'];
+                $points_new = $points_current - ($cur_val * $tc_imp) + (4.0 * $tc_imp);
+                $cpa_new = round($points_new / $tc_tich_luy, 2);
+                $cpa_remain_avg_new = ($tc_remain > 0) ? ($points_target - $points_new) / $tc_remain : 0;
+
+                $improvement_list[] = [
+                    'ma_hp' => $imp['ma_hp'],
+                    'ten_hp' => $imp['ten_hp'],
+                    'so_tin_chi' => $tc_imp,
+                    'diem_chu' => $imp['max_chu'],
+                    'diem_he4' => $cur_val,
+                    'cpa_new' => $cpa_new,
+                    'cpa_remain_avg_new' => max(1.0, $cpa_remain_avg_new)
+                ];
+            }
+
+            $analysis = [
+                'target' => $target,
+                'cpa_remain_avg' => $cpa_remain_avg,
+                'status' => $status,
+                'estimated_courses' => $estimated_courses,
+                'scenarios' => $scenarios,
+                'improvements' => $improvement_list,
+                'tc_remain' => $tc_remain
+            ];
+        }
+
         $this->view('student/progress', [
             'sv' => $sv,
             'progressInfo' => $progressInfo,
+            'analysis' => $analysis,
             'page_title' => 'Tiến độ học tập',
             'active_menu' => 'ca_nhan'
         ]);
@@ -345,5 +475,34 @@ class StudentController extends Controller {
             }
             return $this->json(['success' => true]);
         }
+    }
+
+    public function saveGpaTarget() {
+        $this->requireStudent();
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            return $this->json(['success' => false, 'message' => 'Yêu cầu không hợp lệ.']);
+        }
+        
+        $studentModel = new StudentModel();
+        $sv = $studentModel->getStudentInfo($_SESSION['user_id']);
+        if (!$sv) return $this->json(['success' => false, 'message' => 'Lỗi xác thực.']);
+
+        $gpaTarget = isset($_POST['gpa_muc_tieu']) && $_POST['gpa_muc_tieu'] !== '' ? (float)$_POST['gpa_muc_tieu'] : null;
+        
+        if ($gpaTarget !== null && ($gpaTarget < 1.0 || $gpaTarget > 4.0)) {
+            return $this->json(['success' => false, 'message' => 'Điểm GPA mục tiêu hệ 4 phải nằm trong khoảng từ 1.0 đến 4.0.']);
+        }
+
+        $db = \App\Core\Database::getInstance();
+        $stmt = $db->query("UPDATE sinh_vien SET gpa_muc_tieu = :gpa WHERE id = :sid", [
+            'gpa' => $gpaTarget,
+            'sid' => $sv['id']
+        ]);
+
+        if ($stmt) {
+            return $this->json(['success' => true, 'message' => 'Đã cập nhật mục tiêu học tập thành công!']);
+        }
+
+        return $this->json(['success' => false, 'message' => 'Lỗi lưu dữ liệu.']);
     }
 }

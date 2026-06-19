@@ -265,18 +265,20 @@ class AdminScheduleModel {
             SELECT l.id, l.ma_lop_hp, h.ma_hp, h.ten_hp, h.so_tin_chi, l.giang_vien, l.ngay_bat_dau, l.ngay_ket_thuc
             FROM lop_hoc_phan l
             JOIN hoc_phan h ON l.hoc_phan_id = h.id
-            WHERE l.hoc_ky = :hk
-              AND l.nam_hoc = :nh
+            WHERE l.hoc_ky = :hk1
+              AND l.nam_hoc = :nh1
               AND l.id NOT IN (
                   SELECT DISTINCT lop_hoc_phan_id FROM thoi_khoa_bieu
-                  WHERE hoc_ky = :hk AND nam_hoc = :nh
+                  WHERE hoc_ky = :hk2 AND nam_hoc = :nh2
               )
             ORDER BY l.ma_lop_hp ASC
         ";
 
         $classes = $this->db->fetchAll($sql, [
-            'hk' => $hk,
-            'nh' => $nh
+            'hk1' => $hk,
+            'nh1' => $nh,
+            'hk2' => $hk,
+            'nh2' => $nh
         ]);
 
         if (empty($classes)) {

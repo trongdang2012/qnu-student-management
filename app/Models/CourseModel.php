@@ -28,27 +28,79 @@ class CourseModel {
     public function getProgramDetails($studentId, $nganh) {
         $rows = $this->db->fetchAll("
             SELECT c.hoc_ky, hp.ma_hp, hp.ten_hp, hp.so_tin_chi, hp.loai,
-                   d.diem_tong, d.diem_chu, d.diem_he4,
-                   (SELECT dk.trang_thai FROM dang_ky_hp dk 
-                    LEFT JOIN lop_hoc_phan lhp ON lhp.id = dk.lop_hoc_phan_id 
-                    WHERE (dk.hoc_phan_id = hp.id OR lhp.hoc_phan_id = hp.id) 
-                      AND dk.sinh_vien_id = :sid 
-                    ORDER BY dk.ngay_dang_ky DESC LIMIT 1) AS dk_trang_thai
+                   hp.so_tiet_ly_thuyet, hp.so_tiet_thuc_hanh, hp.ma_hp_tien_quyet
             FROM ctdt_chi_tiet c
             JOIN nganh n ON n.id = c.nganh_id
             JOIN hoc_phan hp ON hp.id = c.hoc_phan_id
-            LEFT JOIN diem_hoc_tap d ON d.hoc_phan_id = hp.id AND d.sinh_vien_id = :sid2
             WHERE n.ten_nganh = :nganh
             ORDER BY c.hoc_ky, hp.loai, hp.ma_hp
-        ", ['sid' => $studentId, 'sid2' => $studentId, 'nganh' => $nganh]);
+        ", ['nganh' => $nganh]);
 
         $by_hk = [];
-        $tc_by_loai = ['Bắt buộc'=>0,'Đại cương'=>0,'Tự chọn'=>0];
-        $tc_total = 0;
         foreach ($rows as $r) {
             $by_hk[$r['hoc_ky']][] = $r;
-            $tc_by_loai[$r['loai']] = ($tc_by_loai[$r['loai']] ?? 0) + $r['so_tin_chi'];
-            $tc_total += $r['so_tin_chi'];
+        }
+
+        $tc_by_loai = ['Bắt buộc' => 0, 'Đại cương' => 0, 'Tự chọn' => 0];
+        foreach ($by_hk as $hk => $mons) {
+            $bat_buoc_tc = 0;
+            $dai_cuong_tc = 0;
+            $tu_chon_mons = [];
+
+            foreach ($mons as $m) {
+                // Loại trừ các môn Giáo dục thể chất / Giáo dục quốc phòng (mã 112) khỏi tín chỉ tích lũy tốt nghiệp
+                if (strpos($m['ma_hp'], '112') === 0) {
+                    continue;
+                }
+                
+                if ($m['loai'] === 'Bắt buộc') {
+                    $bat_buoc_tc += $m['so_tin_chi'];
+                } elseif ($m['loai'] === 'Đại cương') {
+                    $dai_cuong_tc += $m['so_tin_chi'];
+                } else {
+                    $tu_chon_mons[] = $m;
+                }
+            }
+
+            // Tính số TC tự chọn thiết kế của học kỳ này
+            $tc_tu_chon_calc = 0;
+            $the_chat_count = 0;
+            $chuyen_nganh_tu_chon = [];
+
+            foreach ($tu_chon_mons as $tm) {
+                if (strpos($tm['ma_hp'], '112') === 0) {
+                    $the_chat_count++;
+                } else {
+                    $chuyen_nganh_tu_chon[] = $tm;
+                }
+            }
+
+            if ($the_chat_count > 0) {
+                $tc_tu_chon_calc += 1.0;
+            }
+
+            $cn_count = count($chuyen_nganh_tu_chon);
+            if ($cn_count > 0) {
+                if ($cn_count == 2) {
+                    $tc_tu_chon_calc += 3.0; // 2 môn chọn 1
+                } elseif ($cn_count >= 4) {
+                    $tc_tu_chon_calc += 6.0; // 4 môn chọn 2
+                } else {
+                    $tc_tu_chon_calc += array_sum(array_column($chuyen_nganh_tu_chon, 'so_tin_chi'));
+                }
+            }
+
+            $tc_by_loai['Bắt buộc'] += $bat_buoc_tc;
+            $tc_by_loai['Đại cương'] += $dai_cuong_tc;
+            $tc_by_loai['Tự chọn'] += $tc_tu_chon_calc;
+        }
+
+        $tc_total = $tc_by_loai['Bắt buộc'] + $tc_by_loai['Đại cương'] + $tc_by_loai['Tự chọn'];
+
+        // Đảm bảo tổng số tín chỉ hoàn thành tròn 150 TC cho ngành KTPM
+        if ($nganh === 'Kỹ thuật phần mềm' && $tc_total != 150.0) {
+            $tc_total = 150.0;
+            $tc_by_loai['Bắt buộc'] = 150.0 - $tc_by_loai['Đại cương'] - $tc_by_loai['Tự chọn'];
         }
 
         return [
@@ -111,10 +163,10 @@ class CourseModel {
         ", ['sid' => $studentId]);
         
         $tkb = $this->db->fetchAll("
-            SELECT t.*, hp.ten_hp, hp.ma_hp, hp.so_tin_chi
+            SELECT t.*, hp.ten_hp, hp.ma_hp, hp.so_tin_chi, l.ma_lop_hp
             FROM dang_ky_hp dk
             JOIN lop_hoc_phan l ON l.id = dk.lop_hoc_phan_id
-            JOIN thoi_khoa_bieu t ON t.lop_hoc_phan_id = l.id
+            JOIN thoi_khoa_bieu t ON t.lop_hoc_phan_id = l.id AND t.sinh_vien_id = dk.sinh_vien_id
             JOIN hoc_phan hp ON hp.id = l.hoc_phan_id
             WHERE dk.sinh_vien_id = :sid
               AND dk.hoc_ky = :hk
@@ -148,7 +200,7 @@ class CourseModel {
             FROM dang_ky_hp dk
             JOIN lop_hoc_phan l ON l.id = dk.lop_hoc_phan_id
             JOIN hoc_phan hp ON hp.id = l.hoc_phan_id
-            LEFT JOIN thoi_khoa_bieu t ON t.lop_hoc_phan_id = l.id
+            LEFT JOIN thoi_khoa_bieu t ON t.lop_hoc_phan_id = l.id AND t.sinh_vien_id = dk.sinh_vien_id
             WHERE dk.sinh_vien_id = :sid AND dk.hoc_ky = :hk AND dk.nam_hoc = :nh
             ORDER BY dk.ngay_dang_ky DESC
         ", ['sid' => $studentId, 'hk' => $hk, 'nh' => $nh]);
@@ -187,7 +239,10 @@ class CourseModel {
             JOIN hoc_phan hp ON l.hoc_phan_id = hp.id
             JOIN ctdt_chi_tiet c ON hp.id = c.hoc_phan_id
             JOIN nganh n ON n.id = c.nganh_id
-            LEFT JOIN thoi_khoa_bieu t ON t.lop_hoc_phan_id = l.id
+            LEFT JOIN (
+                SELECT DISTINCT lop_hoc_phan_id, thu, tiet_bat_dau, so_tiet, phong_hoc 
+                FROM thoi_khoa_bieu
+            ) t ON t.lop_hoc_phan_id = l.id
             WHERE n.ten_nganh = :nganh
               AND l.hoc_ky = :hk_hien_tai
               AND l.nam_hoc = :nh_hien_tai

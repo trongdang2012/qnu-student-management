@@ -47,11 +47,11 @@
         $hour = (int)date('H');
         $greeting = 'Xin chào';
         if ($hour >= 5 && $hour < 12) {
-            $greeting = 'Good Morning';
+            $greeting = 'Chào buổi sáng';
         } elseif ($hour >= 12 && $hour < 18) {
-            $greeting = 'Good Afternoon';
+            $greeting = 'Chào buổi chiều';
         } else {
-            $greeting = 'Good Evening';
+            $greeting = 'Chào buổi tối';
         }
         ?>
         <div class="welcome-banner-modern">

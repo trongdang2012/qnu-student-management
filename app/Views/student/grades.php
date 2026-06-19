@@ -26,7 +26,7 @@ function colorCPA(float $cpa): string {
         <span>›</span><span>Điểm học tập</span>
       </div>
       <h1><i class="fas fa-graduation-cap"></i> Bảng điểm học tập</h1>
-      <p>Tra cứu điểm chi tiết và CPA của bạn.</p>
+      <p>Tra cứu điểm chi tiết và CPA của bạn. <span style="color: #dc3545; font-weight: 500;">(Những môn có dấu * sẽ không tính điểm trung bình mà chỉ là môn điều kiện).</span></p>
     </div>
 
     <!-- Tổng quan CPA -->
@@ -92,77 +92,171 @@ function colorCPA(float $cpa): string {
     </div>
 
     <!-- Bảng điểm -->
+    <?php
+    $accumulated_tc_tich_luy = 0;
+    $accumulated_sum_diem_he4 = 0;
+    $accumulated_sum_diem_he10 = 0;
+    $accumulated_tc_tinh_diem = 0;
+    ?>
     <?php foreach ($gradesData['by_nh_hk'] as $nh => $hk_groups): ?>
       <?php foreach ($hk_groups as $hk => $mons):
-        // CPA từng kỳ
-        $sum_tc = 0; $sum_diem = 0;
+        $hk_tc_dang_ky = 0;
+        $hk_tc_dat = 0;
+        $hk_tc_truot = 0;
+        $hk_sum_diem_he4 = 0;
+        $hk_sum_diem_he10 = 0;
+        $hk_tc_tinh_diem = 0;
+
         foreach ($mons as $m) {
-            if (!is_null($m['diem_he4'])) { $sum_tc += $m['so_tin_chi']; $sum_diem += $m['diem_he4'] * $m['so_tin_chi']; }
+            $ma_hp = $m['ma_hp'];
+            $tc = (int)$m['so_tin_chi'];
+            $diem_he4 = $m['diem_he4'];
+            $diem_tong = $m['diem_tong'];
+            $is_dieu_kien = (strpos($ma_hp, '112') === 0);
+
+            $hk_tc_dang_ky += $tc;
+
+            if (!is_null($diem_he4)) {
+                if ($diem_he4 >= 1.0) {
+                    $hk_tc_dat += $tc;
+                    if (!$is_dieu_kien) {
+                        $accumulated_tc_tich_luy += $tc;
+                    }
+                } else {
+                    $hk_tc_truot += $tc;
+                }
+
+                if (!$is_dieu_kien) {
+                    $hk_sum_diem_he4 += $diem_he4 * $tc;
+                    $hk_sum_diem_he10 += $diem_tong * $tc;
+                    $hk_tc_tinh_diem += $tc;
+
+                    $accumulated_sum_diem_he4 += $diem_he4 * $tc;
+                    $accumulated_sum_diem_he10 += $diem_tong * $tc;
+                    $accumulated_tc_tinh_diem += $tc;
+                }
+            }
         }
-        $cpa_hk = $sum_tc > 0 ? round($sum_diem / $sum_tc, 2) : 0;
+
+        $gpa_hk_he4 = $hk_tc_tinh_diem > 0 ? round($hk_sum_diem_he4 / $hk_tc_tinh_diem, 2) : 0;
+        $gpa_hk_he10 = $hk_tc_tinh_diem > 0 ? round($hk_sum_diem_he10 / $hk_tc_tinh_diem, 2) : 0;
+
+        $gpa_tich_luy_he4 = $accumulated_tc_tinh_diem > 0 ? round($accumulated_sum_diem_he4 / $accumulated_tc_tinh_diem, 2) : 0;
+        $gpa_tich_luy_he10 = $accumulated_tc_tinh_diem > 0 ? round($accumulated_sum_diem_he10 / $accumulated_tc_tinh_diem, 2) : 0;
       ?>
       <div class="card mb-16 fade-in">
-        <div class="card-header">
-          <h3><i class="fas fa-book"></i>
-            HK<?= (int)$hk ?> — <?= e($nh) ?>
-          </h3>
-          <span style="font-size:14px;color:var(--text-muted)">
-            GPA kỳ: <strong style="color:<?= colorCPA($cpa_hk) ?>"><?= number_format($cpa_hk,2) ?></strong>
-          </span>
-        </div>
         <div class="table-wrap">
-        <table id="diemTable">
-          <thead><tr>
-            <th>Mã HP</th>
-            <th>Tên học phần</th>
-            <th style="text-align:center">TC</th>
-            <th style="text-align:center">CC (10%)</th>
-            <th style="text-align:center">GK (30%)</th>
-            <th style="text-align:center">CK (60%)</th>
-            <th style="text-align:center">Điểm TK</th>
-            <th style="text-align:center">Hệ 4</th>
-            <th style="text-align:center">Xếp loại</th>
-          </tr></thead>
+        <table id="diemTable" style="margin-bottom: 0;">
+          <thead>
+            <tr style="background: #e6f0fa; color: #1d2c5e;">
+              <th style="width: 60px; text-align:center">STT</th>
+              <th style="width: 120px;">Mã học phần</th>
+              <th>Tên học phần</th>
+              <th style="width: 80px; text-align:center">Tín chỉ</th>
+              <th style="width: 100px; text-align:center">Điểm 10</th>
+              <th style="width: 100px; text-align:center">Điểm 4</th>
+              <th style="width: 100px; text-align:center">Điểm chữ</th>
+              <th style="width: 100px; text-align:center">Kết quả</th>
+              <th style="width: 80px; text-align:center">Chi tiết</th>
+            </tr>
+          </thead>
           <tbody>
-          <?php foreach ($mons as $m): ?>
-          <tr>
-            <td><code style="font-size:13px"><?= e($m['ma_hp']) ?></code></td>
-            <td><?= e($m['ten_hp']) ?></td>
-            <td style="text-align:center"><?= (int)$m['so_tin_chi'] ?></td>
-            <td style="text-align:center"><?= is_null($m['diem_cc']) ? '—' : number_format((float)$m['diem_cc'],1) ?></td>
-            <td style="text-align:center"><?= is_null($m['diem_gk']) ? '—' : number_format((float)$m['diem_gk'],1) ?></td>
-            <td style="text-align:center"><?= is_null($m['diem_ck']) ? '—' : number_format((float)$m['diem_ck'],1) ?></td>
-            <td style="text-align:center;font-weight:700;font-size:16px;color:<?= is_null($m['diem_tong']) ? 'var(--text-muted)' : (($m['diem_tong']>=5)?'var(--text)':'var(--danger)') ?>">
-              <?= is_null($m['diem_tong']) ? '—' : number_format((float)$m['diem_tong'],1) ?>
-            </td>
-            <td style="text-align:center">
-              <?= is_null($m['diem_he4']) ? '<span style="color:var(--text-muted)">—</span>' : number_format((float)$m['diem_he4'],1) ?>
-            </td>
-            <td style="text-align:center">
-              <?php if (!is_null($m['diem_chu'])): ?>
-                <span class="badge badge-<?= badgeDiemChu($m['diem_chu']) ?>" style="font-size:14px;padding:4px 14px">
-                  <?= e($m['diem_chu']) ?>
-                </span>
-              <?php else: ?>
-                <span style="color:var(--text-muted)">—</span>
-              <?php endif; ?>
-            </td>
-          </tr>
-          <?php endforeach; ?>
-          </tbody>
-          <tfoot>
-            <tr style="background:#f0f4ff;font-weight:700">
-              <td colspan="2" style="border:1px solid var(--border);padding:10px 14px;text-align:right">
-                GPA học kỳ:
-              </td>
-              <td style="border:1px solid var(--border);text-align:center"><?= $sum_tc ?></td>
-              <td colspan="5" style="border:1px solid var(--border)"></td>
-              <td style="border:1px solid var(--border);text-align:center;color:<?= colorCPA($cpa_hk) ?>">
-                <?= number_format($cpa_hk,2) ?>
+            <!-- Dòng tiêu đề học kỳ chạy ngang bảng -->
+            <tr style="background: #eef4fc; font-weight: 700; border-bottom: 2px solid #cbd5e1;">
+              <td colspan="9" style="padding: 10px 14px; color: #1d2c5e; font-size: 14px;">
+                Năm học: <?= e($nh) ?> - Học kỳ: HK<?= sprintf("%02d", $hk) ?>
               </td>
             </tr>
-          </tfoot>
+            
+            <?php 
+            $stt = 1;
+            foreach ($mons as $m): 
+              $ma_hp = $m['ma_hp'];
+              $is_dieu_kien = (strpos($ma_hp, '112') === 0);
+              $dat_mon = !is_null($m['diem_he4']) && $m['diem_he4'] >= 1.0;
+              $chua_co = is_null($m['diem_tong']);
+            ?>
+            <tr style="transition: background 0.15s;">
+              <td style="text-align:center; color: #666; font-size: 13.5px;"><?= $stt++ ?></td>
+              <td><code style="font-size:13px; color: #334155; font-weight: 500;"><?= e($m['ma_hp']) ?></code></td>
+              <td style="font-weight: 500; color: #1e293b;">
+                <?= e($m['ten_hp']) ?><?= $is_dieu_kien ? ' <span style="color:#ef4444; font-weight:bold;">*</span>' : '' ?>
+              </td>
+              <td style="text-align:center"><?= (int)$m['so_tin_chi'] ?></td>
+              
+              <!-- Điểm 10 -->
+              <td style="text-align:center; font-weight:700; color:<?= $chua_co ? 'var(--text-muted)' : (($m['diem_tong']>=5)?'#1e293b':'var(--danger)') ?>">
+                <?= $chua_co ? '—' : number_format((float)$m['diem_tong'],1) ?>
+              </td>
+              
+              <!-- Điểm 4 -->
+              <td style="text-align:center; font-weight:600;">
+                <?= $chua_co ? '—' : number_format((float)$m['diem_he4'],1) ?>
+              </td>
+              
+              <!-- Điểm chữ -->
+              <td style="text-align:center">
+                <?php if (!$chua_co && !is_null($m['diem_chu'])): ?>
+                  <span class="badge badge-<?= badgeDiemChu($m['diem_chu']) ?>" style="font-size:12.5px; padding:3px 10px; font-weight:600;">
+                    <?= e($m['diem_chu']) ?>
+                  </span>
+                <?php else: ?>
+                  <span style="color:var(--text-muted)">—</span>
+                <?php endif; ?>
+              </td>
+              
+              <!-- Kết quả -->
+              <td style="text-align:center">
+                <?php if ($chua_co): ?>
+                  <span style="color:var(--text-muted)">—</span>
+                <?php elseif ($dat_mon): ?>
+                  <span style="color:var(--success); font-size: 1.15rem;"><i class="fas fa-check-circle"></i></span>
+                <?php else: ?>
+                  <span style="color:var(--danger); font-size: 1.15rem;"><i class="fas fa-times-circle"></i></span>
+                <?php endif; ?>
+              </td>
+              
+              <!-- Chi tiết -->
+              <td style="text-align:center">
+                <span onclick="toggleGradeDetail(this, 'detail-<?= $m['id'] ?>')" style="color: #64748b; cursor: pointer; transition: all 0.15s; display: inline-block; padding: 4px 8px;" onmouseover="this.style.color='var(--primary)'" onmouseout="this.style.color='#64748b'">
+                  <i class="fas fa-chevron-down" style="font-size: 12px; transition: transform 0.2s;"></i>
+                </span>
+              </td>
+            </tr>
+            <tr id="detail-<?= $m['id'] ?>" class="detail-row" style="display: none; background: #f8fafc;">
+              <td colspan="9" style="padding: 12px 20px; border-bottom: 1px solid var(--border);">
+                <div style="display: flex; gap: 40px; justify-content: flex-start; align-items: center; font-size: 13.5px; color: #475569; flex-wrap: wrap;">
+                  <div><strong>• Điểm chuyên cần (10%):</strong> <span style="font-weight: 600; color: #0f172a;"><?= is_null($m['diem_cc']) ? '—' : number_format((float)$m['diem_cc'], 1) ?></span></div>
+                  <div><strong>• Điểm giữa kỳ (30%):</strong> <span style="font-weight: 600; color: #0f172a;"><?= is_null($m['diem_gk']) ? '—' : number_format((float)$m['diem_gk'], 1) ?></span></div>
+                  <div><strong>• Điểm cuối kỳ (60%):</strong> <span style="font-weight: 600; color: #0f172a;"><?= is_null($m['diem_ck']) ? '—' : number_format((float)$m['diem_ck'], 1) ?></span></div>
+                  <div style="margin-left: auto; font-style: italic; color: #94a3b8; font-size: 12.5px;">* Công thức: Tổng = CC×0.1 + GK×0.3 + CK×0.6</div>
+                </div>
+              </td>
+            </tr>
+            <?php endforeach; ?>
+          </tbody>
         </table>
+        </div>
+        
+        <!-- Phần thống kê dưới bảng -->
+        <div class="grades-summary-footer" style="padding: 18px 24px; background: #fafcff; border-top: 1px solid var(--border); border-radius: 0 0 12px 12px; font-size: 14.5px; color: #334155; line-height: 1.6;">
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <div><strong>• Tổng số tín chỉ:</strong> <?= $hk_tc_dang_ky ?></div>
+            <div style="display: flex; gap: 40px; flex-wrap: wrap;">
+              <span><strong>• Số tín chỉ đạt:</strong> <span style="color: var(--success); font-weight: 600;"><?= $hk_tc_dat ?></span></span>
+              <span><strong>• Số tín chỉ không đạt:</strong> <span style="color: var(--danger); font-weight: 600;"><?= $hk_tc_truot ?></span></span>
+            </div>
+            <div style="display: flex; gap: 40px; flex-wrap: wrap; margin-top: 2px;">
+              <span><strong>• Điểm trung bình học kỳ (Hệ 10):</strong> <span style="font-weight: 600;"><?= number_format($gpa_hk_he10, 2) ?></span></span>
+              <span><strong>• Điểm trung bình học kỳ (Hệ 4):</strong> <span style="color: var(--primary); font-weight: 700;"><?= number_format($gpa_hk_he4, 2) ?></span></span>
+            </div>
+            
+            <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 10px; padding-top: 10px; border-top: 1px dashed #cbd5e1;">
+              <div><strong>• Số tín chỉ tích lũy:</strong> <span style="color: var(--success); font-weight: 600;"><?= $accumulated_tc_tich_luy ?></span></div>
+              <div><strong>• Điểm trung bình tích lũy (Hệ 10):</strong> <span style="font-weight: 600;"><?= number_format($gpa_tich_luy_he10, 2) ?></span></div>
+              <div><strong>• Điểm trung bình tích lũy (Hệ 4):</strong> <span style="color: var(--primary); font-weight: 700;"><?= number_format($gpa_tich_luy_he4, 2) ?></span></div>
+            </div>
+          </div>
         </div>
       </div>
       <?php endforeach; ?>
@@ -180,5 +274,23 @@ function colorCPA(float $cpa): string {
 
   </div>
 </div>
+
+<script>
+function toggleGradeDetail(btn, rowId) {
+    const detailRow = document.getElementById(rowId);
+    if (!detailRow) return;
+    
+    const icon = btn.querySelector('i');
+    if (detailRow.style.display === 'none') {
+        detailRow.style.display = 'table-row';
+        if (icon) icon.style.transform = 'rotate(180deg)';
+        btn.style.color = 'var(--primary)';
+    } else {
+        detailRow.style.display = 'none';
+        if (icon) icon.style.transform = 'rotate(0deg)';
+        btn.style.color = '#64748b';
+    }
+}
+</script>
 
 <?php require_once ROOT . '/includes/footer.php'; ?>

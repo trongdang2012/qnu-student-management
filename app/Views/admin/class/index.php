@@ -24,7 +24,7 @@
       $classAlerts = $classAlerts ?? [];
       $capacityTotal = max(0, (int)($classStats['capacity_total'] ?? 0));
       $enrolledTotal = max(0, (int)($classStats['enrolled_total'] ?? 0));
-      $fillRate = $capacityTotal > 0 ? round(($enrolledTotal / $capacityTotal) * 100, 1) : 0;
+      $fillRate = $capacityTotal > 0 ? min(100, round(($enrolledTotal / $capacityTotal) * 100, 1)) : 0;
     ?>
 
     <style>

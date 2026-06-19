@@ -71,6 +71,7 @@ $router->get('/student/cap-nhat', 'StudentController@updateProfile');
 $router->post('/student/cap-nhat', 'StudentController@processUpdateProfile');
 $router->post('/student/doi-mat-khau', 'StudentController@processChangePassword');
 $router->get('/student/tien-do', 'StudentController@progress');
+$router->post('/student/tien-do/dat-muc-tieu', 'StudentController@saveGpaTarget');
 
 $router->get('/student/thong-bao', 'StudentController@notifications');
 $router->post('/student/thong-bao/doc', 'StudentController@markNotificationRead');

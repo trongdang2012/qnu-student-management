@@ -16,3 +16,8 @@ sim_otp_cookie.txt
 .vscode/
 .DS_Store
 Thumbs.db
+
+# Bỏ qua công cụ cloudflared và thư mục scratch tạm thời
+tools/cloudflared.exe
+scratch/
+

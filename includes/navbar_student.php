@@ -110,7 +110,7 @@ $_menu = $active_menu ?? '';
             $unreadCount = isset($sv) ? $studentModel->getUnreadNotificationCount($sv['id']) : 0;
             if ($unreadCount > 0): 
           ?>
-            <span class="badge-dot" id="bellBadge" style="position:absolute; top: 0px; right: 0px; width: 8px; height: 8px; background:#dc3545; border-radius:50%; border: 1.5px solid #fff;"></span>
+            <span class="badge-count" id="bellBadge" style="position:absolute; top: -7px; right: -7px; min-width: 16px; height: 16px; padding: 0 3px; background:#dc3545; color: #fff; font-size: 9px; font-weight: bold; border-radius:50%; border: 1.5px solid #fff; display: flex; align-items: center; justify-content: center; line-height: 1;"><?= $unreadCount ?></span>
           <?php endif; ?>
         </a>
 
@@ -205,29 +205,7 @@ $_menu = $active_menu ?? '';
       </div>
     </div><!-- /navbar-actions -->
 
-<!-- ========================================================================= -->
-<!-- MODAL XEM CHI TIẾT THÔNG BÁO (DÙNG CHUNG) -->
-<!-- ========================================================================= -->
-<div id="noticeDetailModal" class="modal-backdrop" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 99999; align-items: center; justify-content: center;">
-  <div class="modal-card card fade-in" id="modal_notice_card" style="width: 520px; max-width: 90%; box-shadow: 0 15px 40px rgba(0,0,0,0.25); border-radius: 12px; overflow: hidden; border-left: none; background:#fff;">
-    <div class="card-header" style="padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; background: #f8f9fa; border-bottom: 1px solid var(--border);">
-      <h3 id="modal_notice_title" style="margin: 0; font-size: 15.5px; color: var(--text); font-weight:700; line-height:1.4;">Tiêu đề thông báo</h3>
-      <span style="cursor: pointer; font-size: 24px; font-weight: bold; line-height: 1; color:#888;" onclick="closeNoticeDetailModal()">&times;</span>
-    </div>
-    <div class="card-body" style="padding: 20px 24px;">
-      <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 16px; display: flex; justify-content: space-between; border-bottom: 1px dashed var(--border); padding-bottom: 10px;">
-        <span><i class="far fa-clock"></i> <span id="modal_notice_time">Thời gian</span></span>
-        <span><i class="far fa-user"></i> Người gửi: <strong id="modal_notice_sender" style="color:var(--text);">Ban Đào tạo</strong></span>
-      </div>
-      <div id="modal_notice_content" style="font-size: 14px; line-height: 1.6; color: #444; white-space: pre-wrap; word-break: break-word; max-height: 300px; overflow-y:auto; padding-right:5px;">
-        Nội dung chi tiết thông báo...
-      </div>
-      <div style="text-align: right; margin-top: 24px; border-top: 1px solid #f1f3f5; padding-top:15px;">
-        <button class="btn btn-secondary" onclick="closeNoticeDetailModal()" style="padding: 8px 20px; font-size:13px; border-radius:6px; cursor:pointer;">Đóng lại</button>
-      </div>
-    </div>
-  </div>
-</div>
+
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -389,3 +367,27 @@ function closeNoticeDetailModal() {
 
   </div><!-- /navbar-inner -->
 </nav>
+
+<!-- ========================================================================= -->
+<!-- MODAL XEM CHI TIẾT THÔNG BÁO (DÙNG CHUNG) -->
+<!-- ========================================================================= -->
+<div id="noticeDetailModal" class="modal-backdrop" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 99999; align-items: center; justify-content: center;">
+  <div class="modal-card card fade-in" id="modal_notice_card" style="width: 520px; max-width: 90%; box-shadow: 0 15px 40px rgba(0,0,0,0.25); border-radius: 12px; overflow: hidden; border-left: none; background:#fff;">
+    <div class="card-header" style="padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; background: #f8f9fa; border-bottom: 1px solid var(--border);">
+      <h3 id="modal_notice_title" style="margin: 0; font-size: 15.5px; color: var(--text); font-weight:700; line-height:1.4;">Tiêu đề thông báo</h3>
+      <span style="cursor: pointer; font-size: 24px; font-weight: bold; line-height: 1; color:#888;" onclick="closeNoticeDetailModal()">&times;</span>
+    </div>
+    <div class="card-body" style="padding: 20px 24px;">
+      <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 16px; display: flex; justify-content: space-between; border-bottom: 1px dashed var(--border); padding-bottom: 10px;">
+        <span><i class="far fa-clock"></i> <span id="modal_notice_time">Thời gian</span></span>
+        <span><i class="far fa-user"></i> Người gửi: <strong id="modal_notice_sender" style="color:var(--text);">Ban Đào tạo</strong></span>
+      </div>
+      <div id="modal_notice_content" style="font-size: 14px; line-height: 1.6; color: #444; white-space: pre-wrap; word-break: break-word; max-height: 300px; overflow-y:auto; padding-right:5px;">
+        Nội dung chi tiết thông báo...
+      </div>
+      <div style="text-align: right; margin-top: 24px; border-top: 1px solid #f1f3f5; padding-top:15px;">
+        <button class="btn btn-secondary" onclick="closeNoticeDetailModal()" style="padding: 8px 20px; font-size:13px; border-radius:6px; cursor:pointer;">Đóng lại</button>
+      </div>
+    </div>
+  </div>
+</div>

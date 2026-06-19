@@ -1,11 +1,15 @@
 <?php require_once ROOT . '/includes/header.php'; ?>
+<?php require_once ROOT . '/includes/navbar_student.php'; ?>
 
-<div class="student-layout">
-  <?php require_once ROOT . '/includes/navbar_student.php'; ?>
+<div class="student-wrapper">
+  <div class="student-container">
 
-  <main class="student-main">
-    <div class="page-header fade-in">
-      <h2><i class="fas fa-bell"></i> Thông báo của tôi</h2>
+    <div class="page-title fade-in">
+      <div class="breadcrumb">
+        <a href="<?= BASE_URL ?>/student/dashboard">Tổng quan</a>
+        <span>›</span><span>Thông báo</span>
+      </div>
+      <h1><i class="fas fa-bell"></i> Thông báo của tôi</h1>
       <p>Danh sách các thông báo từ hệ thống</p>
     </div>
 
@@ -60,8 +64,8 @@
         </div>
       <?php endif; ?>
     </div>
-  </main>
-</div>
+  </div><!-- /container -->
+</div><!-- /wrapper -->
 
 <script>
 function viewNoticeDetail(el, id, tieuDe, nguoiGui, thoiGian, noiDung, loai) {
