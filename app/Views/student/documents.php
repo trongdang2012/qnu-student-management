@@ -399,8 +399,8 @@ function formatSize(int $bytes): string {
     </div>
 
     <!-- Khối hiển thị Danh sách tài liệu chia sẻ -->
-    <h2 style="font-size:17px; font-weight:600; color:#fff; margin:24px 0 16px 4px; display:flex; align-items:center; gap:10px;">
-      <i class="fas fa-globe-asia" style="color:#00d2fc"></i> Tài liệu từ mọi người chia sẻ
+    <h2 style="font-size:17px; font-weight:600; color:var(--text-dark); margin:24px 0 16px 4px; display:flex; align-items:center; gap:10px;">
+      <i class="fas fa-globe-asia" style="color:var(--primary)"></i> Tài liệu từ mọi người chia sẻ
     </h2>
 
     <?php if (empty($tl_list)): ?>
@@ -414,7 +414,16 @@ function formatSize(int $bytes): string {
     <?php else: ?>
       <div class="tl-grid">
       <?php foreach ($tl_list as $tl): ?>
-        <div class="tl-card shadow-sm fade-in" style="border-radius:12px; border:1px solid #eef2f5; display:flex; flex-direction:column; justify-content:space-between; height: 100%;">
+        <div class="tl-card shadow-sm fade-in btn-view-detail" 
+             style="border-radius:12px; border:1px solid #eef2f5; display:flex; flex-direction:column; justify-content:space-between; height: 100%; cursor:pointer;"
+             data-tieu-de="<?= e($tl['tieu_de']) ?>"
+             data-nguoi-dang="<?= e($tl['ho_ten'] ?: 'Admin') ?>"
+             data-dung-luong="<?= formatSize((int)$tl['kich_thuoc']) ?>"
+             data-luot-tai="<?= (int)$tl['luot_tai'] ?>"
+             data-ngay-dang="<?= date('d/m/Y H:i', strtotime($tl['ngay_dang'])) ?>"
+             data-hoc-phan="<?= e($tl['ten_hp'] ?: 'Không có') ?>"
+             data-mo-ta="<?= e($tl['mo_ta'] ?: 'Không có mô tả') ?>"
+             data-download-url="<?= !empty($tl['duong_dan']) && file_exists(UPLOAD_DIR . $tl['duong_dan']) ? BASE_URL . '/student/download?id=' . (int)$tl['id'] : '' ?>">
           <div>
             <div style="display:flex;gap:12px;align-items:flex-start">
               <?= fileIcon($tl['loai_file'] ?? '') ?>
@@ -429,51 +438,29 @@ function formatSize(int $bytes): string {
                 <?php endif; ?>
               </div>
             </div>
-
-            <?php if (!empty($tl['mo_ta'])): ?>
-              <div style="font-size:12.5px;color:var(--text-muted);line-height:1.5; margin-top:10px; background:#fafbfc; padding:8px 10px; border-radius:6px;">
-                <?= e(mb_strimwidth($tl['mo_ta'], 0, 75, '...')) ?>
-              </div>
-            <?php endif; ?>
           </div>
 
-          <div>
-            <div class="tl-meta" style="margin-top:12px; border-top:1px solid #f8f9fa; padding-top:10px; display:flex; flex-wrap:wrap; gap:10px;">
-              <span title="Người đăng"><i class="fas fa-user"></i> <?= e($tl['ho_ten'] ?: 'Admin') ?></span>
-              <span title="Dung lượng"><i class="fas fa-file"></i> <?= formatSize((int)$tl['kich_thuoc']) ?></span>
-              <span title="Lượt tải"><i class="fas fa-download"></i> <?= (int)$tl['luot_tai'] ?></span>
-              <span title="Chế độ chia sẻ" style="font-weight:600;color:#198754;">Công khai</span>
-            </div>
-            
-            <div style="font-size:11px;color:var(--text-muted); margin-top:6px; display:flex; justify-content:space-between; align-items:center;">
-              <span><i class="fas fa-clock"></i> <?= date('d/m/Y H:i', strtotime($tl['ngay_dang'])) ?></span>
-              <?php if ($tl['sinh_vien_id'] == $sv['id']): ?>
-                <span class="badge" style="background-color:#e1f5fe; color:#0288d1; font-size:10px; padding:2px 6px; border-radius:4px; font-weight:600;">Của tôi</span>
-              <?php endif; ?>
-            </div>
+          <div class="tl-actions" style="margin-top:16px; gap:8px;">
+            <?php if (!empty($tl['duong_dan']) && file_exists(UPLOAD_DIR . $tl['duong_dan'])): ?>
+              <a href="<?= BASE_URL ?>/student/download?id=<?= (int)$tl['id'] ?>"
+                 class="btn btn-primary btn-sm btn-download-file" style="flex:1;justify-content:center; border-radius:6px; padding:7px;" onclick="event.stopPropagation();">
+                <i class="fas fa-download"></i> Tải xuống
+              </a>
+            <?php else: ?>
+              <span class="btn btn-secondary btn-sm" style="flex:1;opacity:.5;cursor:not-allowed;justify-content:center; border-radius:6px; padding:7px;" onclick="event.stopPropagation();">
+                <i class="fas fa-exclamation-triangle"></i> File không tồn tại
+              </span>
+            <?php endif; ?>
 
-            <div class="tl-actions" style="margin-top:12px; gap:8px;">
-              <?php if (!empty($tl['duong_dan']) && file_exists(UPLOAD_DIR . $tl['duong_dan'])): ?>
-                <a href="<?= BASE_URL ?>/student/download?id=<?= (int)$tl['id'] ?>"
-                   class="btn btn-primary btn-sm" style="flex:1;justify-content:center; border-radius:6px; padding:7px;">
-                  <i class="fas fa-download"></i> Tải xuống
-                </a>
-              <?php else: ?>
-                <span class="btn btn-secondary btn-sm" style="flex:1;opacity:.5;cursor:not-allowed;justify-content:center; border-radius:6px; padding:7px;">
-                  <i class="fas fa-exclamation-triangle"></i> File không tồn tại
-                </span>
-              <?php endif; ?>
-
-              <?php if ($tl['sinh_vien_id'] == $sv['id']): ?>
-                <form method="POST" action="<?= BASE_URL ?>/student/tai-lieu" style="display:inline" class="delete-doc-form">
-                  <input type="hidden" name="action" value="xoa">
-                  <input type="hidden" name="tl_id" value="<?= (int)$tl['id'] ?>">
-                  <button type="button" class="btn btn-danger btn-sm btn-delete-submit" style="border-radius:6px; padding:7px;" data-title="<?= e($tl['tieu_de']) ?>">
-                    <i class="fas fa-trash"></i>
-                  </button>
-                </form>
-              <?php endif; ?>
-            </div>
+            <?php if ($tl['sinh_vien_id'] == $sv['id']): ?>
+              <form method="POST" action="<?= BASE_URL ?>/student/tai-lieu" style="display:inline" class="delete-doc-form" onclick="event.stopPropagation();">
+                <input type="hidden" name="action" value="xoa">
+                <input type="hidden" name="tl_id" value="<?= (int)$tl['id'] ?>">
+                <button type="button" class="btn btn-danger btn-sm btn-delete-submit" style="border-radius:6px; padding:7px;" data-title="<?= e($tl['tieu_de']) ?>">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </form>
+            <?php endif; ?>
           </div>
 
         </div>
@@ -688,6 +675,64 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (result.isConfirmed) {
                     form.submit();
                 }
+            });
+        });
+    });
+
+    // JS hiển thị popup chi tiết tài liệu bằng SweetAlert2
+    const detailCards = document.querySelectorAll('.btn-view-detail');
+    detailCards.forEach(card => {
+        card.addEventListener('click', function() {
+            const tieuDe = this.getAttribute('data-tieu-de');
+            const nguoiDang = this.getAttribute('data-nguoi-dang');
+            const dungLuong = this.getAttribute('data-dung-luong');
+            const luotTai = this.getAttribute('data-luot-tai');
+            const ngayDang = this.getAttribute('data-ngay-dang');
+            const hocPhan = this.getAttribute('data-hoc-phan');
+            const moTa = this.getAttribute('data-mo-ta');
+            const downloadUrl = this.getAttribute('data-download-url');
+            
+            let footerBtn = '';
+            if (downloadUrl) {
+                footerBtn = `<a href="${downloadUrl}" class="swal2-confirm swal2-styled" style="background-color:var(--primary); text-decoration:none; display:inline-flex; align-items:center; gap:8px; margin: 0 5px; padding: 10px 24px; border-radius: 6px;"><i class="fas fa-download"></i> Tải xuống tài liệu</a>`;
+            } else {
+                footerBtn = `<button class="swal2-confirm swal2-styled" style="background-color:#6c757d; cursor:not-allowed; margin: 0 5px; padding: 10px 24px; border-radius: 6px;" disabled><i class="fas fa-exclamation-triangle"></i> File không tồn tại</button>`;
+            }
+
+            Swal.fire({
+                title: '<span style="font-size:18px;font-weight:700;color:var(--primary);"><i class="fas fa-info-circle"></i> Chi tiết tài liệu học tập</span>',
+                html: `
+                    <div style="text-align: left; font-size: 14px; margin-top: 10px;">
+                        <div style="margin-bottom: 12px; line-height: 1.5;">
+                            <strong>Tiêu đề:</strong> <span style="color:var(--text-dark); font-weight: 500;">${tieuDe}</span>
+                        </div>
+                        <div style="margin-bottom: 8px;">
+                           <strong>Học phần:</strong> <span class="badge badge-info" style="font-size:12px; padding: 3px 8px; font-weight: 500; background-color:#e1f5fe; color:#0288d1; border-radius:4px;"><i class="fas fa-book"></i> ${hocPhan}</span>
+                        </div>
+                        <hr style="border:0; border-top:1px solid #eee; margin:12px 0;">
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;">
+                            <div><strong>Người chia sẻ:</strong> <br><i class="fas fa-user" style="color:var(--text-muted)"></i> ${nguoiDang}</div>
+                            <div><strong>Ngày đăng:</strong> <br><i class="fas fa-clock" style="color:var(--text-muted)"></i> ${ngayDang}</div>
+                        </div>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;">
+                            <div><strong>Dung lượng:</strong> <br><i class="fas fa-file" style="color:var(--text-muted)"></i> ${dungLuong}</div>
+                            <div><strong>Lượt tải:</strong> <br><i class="fas fa-download" style="color:var(--text-muted)"></i> ${luotTai} lượt</div>
+                        </div>
+                        <hr style="border:0; border-top:1px solid #eee; margin:12px 0;">
+                        <div style="background: #f8f9fa; padding: 12px; border-radius: 8px; border: 1px solid #eef2f5;">
+                            <strong>Mô tả ngắn:</strong>
+                            <div style="color: var(--text-muted); margin-top: 6px; white-space: pre-wrap; line-height: 1.5; font-style: italic;">
+                                ${moTa}
+                            </div>
+                        </div>
+                    </div>
+                `,
+                showCancelButton: true,
+                showConfirmButton: false,
+                cancelButtonText: 'Đóng',
+                cancelButtonColor: '#6c757d',
+                footer: footerBtn,
+                width: '550px'
             });
         });
     });
