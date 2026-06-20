@@ -117,22 +117,28 @@ qnu-student-management/
   define('BASE_URL', 'http://localhost/qnu-student-management');
   ```
 
-### 4. Khởi tạo Cơ sở dữ liệu
+### 4. Khởi tạo Cơ sở dữ liệu & Bảng điểm mẫu
 1. Tạo một cơ sở dữ liệu mới trong phpMyAdmin với tên `qnu_sms` và bảng mã collation `utf8mb4_unicode_ci`.
 2. Import file cấu trúc CSDL tại `config/schema.sql`.
-3. Import file dữ liệu mẫu tại `config/seed_qnu_data.sql` để hệ thống có đầy đủ dữ liệu mẫu mở rộng phục vụ việc thử nghiệm.
+3. Bạn có thể nạp dữ liệu mẫu và bảng điểm học tập bằng 1 trong 2 cách sau:
+   * **Cách 1 (Đơn giản nhất):** Đăng nhập Admin (`admin` / `password`), truy cập vào trang **Đồng bộ CSDL** (hoặc Backup & Restore), chọn file `config/seed_qnu_data.sql` và nhấn import trực tiếp trên giao diện web.
+   * **Cách 2:** Chạy script seeder thông qua dòng lệnh:
+     ```bash
+     C:\xampp\php\php.exe database/seeder.php
+     ```
 
 ---
 
 ## 🔑 Tài khoản thử nghiệm (Demo Accounts)
 
-Hệ thống đã cấu hình sẵn các tài khoản demo tương ứng với các vai trò để bạn trải nghiệm:
+Hệ thống đã cấu hình sẵn các tài khoản demo tương ứng với các vai trò (sau khi nạp dữ liệu ở Bước 4) để bạn trải nghiệm:
 
 | Tên đăng nhập | Mật khẩu | Vai trò | Mô tả |
 | :--- | :--- | :--- | :--- |
-| **admin** | `password` | **Quản trị viên (Admin)** | Toàn quyền kiểm soát và vận hành hệ thống |
-| **sv001** | `password` | **Sinh viên** | Nguyễn Văn An - Sinh viên ngành CNTT |
-| **sv002** | `password` | **Sinh viên** | Trần Thị Bình - Sinh viên ngành CNTT |
+| **admin** | `password` | **Quản trị viên (Admin)** | Toàn quyền kiểm soát, quản lý và vận hành hệ thống |
+| **4751190001** | `Student@123` | **Sinh viên** | Sinh viên thuộc lớp chuyên ngành KTPM K47 |
+| **4751190002** | `Student@123` | **Sinh viên** | Sinh viên thuộc lớp chuyên ngành KTPM K47 |
+| *Cú pháp chung:* | `Student@123` | **Sinh viên** | Mã sinh viên lớp KTPM K47 từ `4751190001` đến `4751190060` |
 
 ---
 
