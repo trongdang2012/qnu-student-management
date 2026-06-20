@@ -782,7 +782,7 @@ echo " - Đã tạo xong " . count($lopHocPhanList) . " Lớp học phần.\n\n"
 // 7. SINH THỜI KHÓA BIỂU, ĐĂNG KÝ HỌC PHẦN, ĐIỂM, RÈN LUYỆN, HỌC PHÍ CHO TỪNG SINH VIÊN
 echo "7. Đang sinh dữ liệu hoạt động (Thời khóa biểu, Đăng ký học phần, Điểm số, Rèn luyện, Học phí)... \n";
 
-$stmtDk = $conn->prepare("INSERT INTO dang_ky_hp (sinh_vien_id, lop_hoc_phan_id, hoc_ky, nam_hoc, trang_thai) VALUES (?, ?, ?, ?, 'Đã duyệt')");
+$stmtDk = $conn->prepare("INSERT INTO dang_ky_hp (sinh_vien_id, lop_hoc_phan_id, hoc_phan_id, hoc_ky, nam_hoc, trang_thai) VALUES (?, ?, ?, ?, ?, 'Đã duyệt')");
 $stmtDiem = $conn->prepare("INSERT INTO diem_hoc_tap (sinh_vien_id, hoc_phan_id, hoc_ky, nam_hoc, diem_cc, diem_gk, diem_ck, diem_tong, diem_chu, diem_he4) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 $stmtTkb = $conn->prepare("INSERT INTO thoi_khoa_bieu (sinh_vien_id, hoc_phan_id, thu, tiet_bat_dau, so_tiet, phong_hoc, giang_vien, hoc_ky, nam_hoc, lop_hoc_phan_id, ngay_bat_dau, ngay_ket_thuc) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 $stmtDrl = $conn->prepare("INSERT INTO diem_ren_luyen (sinh_vien_id, hoc_ky, nam_hoc, diem, xep_loai, ghi_chu) VALUES (?, ?, ?, ?, ?, 'Hoàn thành tốt các hoạt động phong trào và học tập.')");
@@ -806,6 +806,33 @@ $countTkb = 0;
 $countDk = 0;
 $countDiem = 0;
 
+$trongGrades = [
+    '1010038' => [9.3, 4.0, 'A+'],
+    '1010245' => [9.4, 4.0, 'A+'],
+    '1050074' => [9.0, 4.0, 'A+'],
+    '1050124' => [9.0, 4.0, 'A+'],
+    '1050192' => [8.9, 3.5, 'A'],
+    '1090061' => [8.8, 3.5, 'A'],
+    '1120181' => [8.0, 3.5, 'A'],
+    '1130299' => [8.9, 3.5, 'A'],
+    '1050016' => [10.0, 4.0, 'A+'],
+    '1050133' => [10.0, 4.0, 'A+'],
+    '1090166' => [8.5, 3.5, 'A'],
+    '1120182' => [6.0, 2.5, 'B'],
+    '1130049' => [8.5, 3.5, 'A'],
+    '1130300' => [8.8, 3.5, 'A'],
+    '2030003' => [9.5, 4.0, 'A+'],
+    '1130301' => [9.0, 4.0, 'A+'],
+    '1150422' => [9.3, 4.0, 'A+'],
+    '1010126' => [9.6, 4.0, 'A+'],
+    '1050003' => [9.0, 4.0, 'A+'],
+    '1050024' => [9.8, 4.0, 'A+'],
+    '1050075' => [8.6, 3.5, 'A'],
+    '1050228' => [8.8, 3.5, 'A'],
+    '1120183' => [8.4, 3.5, 'A'],
+    '1130302' => [8.1, 3.5, 'A']
+];
+
 foreach ($sinhVienList as $sv) {
     $svId = $sv['id'];
     $nganhId = $sv['nganh_id'];
@@ -828,7 +855,11 @@ foreach ($sinhVienList as $sv) {
         
         // Không đăng ký các học kỳ tương lai (5-9)
         if ($hkCtdt > 4) {
-            continue;
+            if ($sv['ma_sv'] === '4751190039' && $maHp === '1150422') {
+                // Cho phép đi tiếp
+            } else {
+                continue;
+            }
         }
         
         // Giáo dục thể chất ở học kỳ 1, 2, 3
@@ -847,96 +878,156 @@ foreach ($sinhVienList as $sv) {
     }
     
     // Mỗi học kỳ 1, 2, 3 chỉ chọn đúng 1 học phần Giáo dục thể chất ngẫu nhiên để học
-    if (!empty($gdtc1_candidates)) {
-        $filteredCtdt[] = $gdtc1_candidates[array_rand($gdtc1_candidates)];
-    }
-    if (!empty($gdtc2_candidates)) {
-        $filteredCtdt[] = $gdtc2_candidates[array_rand($gdtc2_candidates)];
-    }
-    if (!empty($gdtc3_candidates)) {
-        $filteredCtdt[] = $gdtc3_candidates[array_rand($gdtc3_candidates)];
+    if ($sv['ma_sv'] === '4751190039') {
+        foreach ($gdtc1_candidates as $cand) {
+            if ($hpDetails[$cand['hp_id']]['ma_hp'] === '1120181') { $filteredCtdt[] = $cand; break; }
+        }
+        foreach ($gdtc2_candidates as $cand) {
+            if ($hpDetails[$cand['hp_id']]['ma_hp'] === '1120182') { $filteredCtdt[] = $cand; break; }
+        }
+        foreach ($gdtc3_candidates as $cand) {
+            if ($hpDetails[$cand['hp_id']]['ma_hp'] === '1120183') { $filteredCtdt[] = $cand; break; }
+        }
+    } else {
+        if (!empty($gdtc1_candidates)) {
+            $filteredCtdt[] = $gdtc1_candidates[array_rand($gdtc1_candidates)];
+        }
+        if (!empty($gdtc2_candidates)) {
+            $filteredCtdt[] = $gdtc2_candidates[array_rand($gdtc2_candidates)];
+        }
+        if (!empty($gdtc3_candidates)) {
+            $filteredCtdt[] = $gdtc3_candidates[array_rand($gdtc3_candidates)];
+        }
     }
     
     foreach ($filteredCtdt as $item) {
         $hpId = $item['hp_id'];
         $hkCtdt = $item['hk_ctdt'];
-        
-        if (!isset($lhpByHp[$hpId])) continue;
-        $lhp = $lhpByHp[$hpId];
-        $lhpId = $lhp['id'];
-        
-        $hkThucTe = $lhp['hoc_ky'];
-        $namHocThucTe = $lhp['nam_hoc'];
-        
-        // 1. Đăng ký học phần
-        // Kiểm tra sĩ số hiện tại của lớp trước khi chèn đăng ký giả lập
-        $resLhp = $conn->query("SELECT si_so_hien_tai, si_so_toi_da FROM lop_hoc_phan WHERE id = $lhpId");
-        $lhpRow = $resLhp->fetch_assoc();
-        $curEnrolled = $lhpRow ? (int)$lhpRow['si_so_hien_tai'] : 0;
-        $maxEnrolled = $lhpRow ? (int)$lhpRow['si_so_toi_da'] : 80;
-        
-        if ($curEnrolled < $maxEnrolled) {
-            $hkThucTeStr = (string)$hkThucTe;
-            $stmtDk->bind_param("iiss", $svId, $lhpId, $hkThucTeStr, $namHocThucTe);
-            if ($stmtDk->execute()) {
-                $countDk++;
-                $conn->query("UPDATE lop_hoc_phan SET si_so_hien_tai = si_so_hien_tai + 1 WHERE id = $lhpId");
-            }
+        $maHp = $hpDetails[$hpId]['ma_hp'];
+
+        $isTrong = ($sv['ma_sv'] === '4751190039');
+
+        // Logic học vượt của Đặng Văn Trọng
+        if ($isTrong && ($maHp === '1130301' || $maHp === '1150422')) {
+            // Học vượt kỳ phụ HK3 2024-2025
+            $hkThucTe = 3;
+            $namHocThucTe = '2024-2025';
+            $lhpId = null;
+            $phongHoc = null;
+            $giangVien = null;
+            $ngayBd = null;
+            $ngayKt = null;
+        } elseif ($isTrong && $maHp === '1130302') {
+            // Học vượt Lịch sử Đảng vào HK1 2025-2026
+            $hkThucTe = 1;
+            $namHocThucTe = '2025-2026';
+            $lhpId = null;
+            $phongHoc = null;
+            $giangVien = null;
+            $ngayBd = null;
+            $ngayKt = null;
+        } else {
+            if (!isset($lhpByHp[$hpId])) continue;
+            $lhp = $lhpByHp[$hpId];
+            $lhpId = $lhp['id'];
             
-            // 2. Thời khóa biểu (Thứ và tiết cố định theo từng lớp sinh hoạt để đồng bộ)
-            $hashVal = crc32($sv['lop_sinh_hoat_id'] . '_' . $hpId);
-            $thu = ($hashVal % 6) + 2; 
-            
-            // Phân bổ theo ca học của QNU: sáng (Ca 1: tiết 1-2, Ca 2: tiết 3-5), chiều (Ca 3: tiết 6-7, Ca 4: tiết 8-10)
-            $slot = ($hashVal >> 2) % 4;
-            if ($slot == 0) {
-                $tietBd = 1;
-                $soTiet = 2;
-            } elseif ($slot == 1) {
-                $tietBd = 3;
-                $soTiet = 3;
-            } elseif ($slot == 2) {
-                $tietBd = 6;
-                $soTiet = 2;
-            } else {
-                $tietBd = 8;
-                $soTiet = 3;
-            }
-            
+            $hkThucTe = $lhp['hoc_ky'];
+            $namHocThucTe = $lhp['nam_hoc'];
             $phongHoc = $lhp['phong_hoc'];
             $giangVien = $lhp['giang_vien'];
             $ngayBd = $lhp['ngay_bat_dau'];
             $ngayKt = $lhp['ngay_ket_thuc'];
+        }
+        
+        // 1. Đăng ký học phần
+        $registered = false;
+        if ($lhpId !== null) {
+            $resLhp = $conn->query("SELECT si_so_hien_tai, si_so_toi_da FROM lop_hoc_phan WHERE id = $lhpId");
+            $lhpRow = $resLhp->fetch_assoc();
+            $curEnrolled = $lhpRow ? (int)$lhpRow['si_so_hien_tai'] : 0;
+            $maxEnrolled = $lhpRow ? (int)$lhpRow['si_so_toi_da'] : 80;
             
-            $stmtTkb->bind_param("iiiiisssisss", $svId, $hpId, $thu, $tietBd, $soTiet, $phongHoc, $giangVien, $hkThucTe, $namHocThucTe, $lhpId, $ngayBd, $ngayKt);
-            if ($stmtTkb->execute()) {
-                $countTkb++;
+            if ($curEnrolled < $maxEnrolled) {
+                $hkThucTeStr = (string)$hkThucTe;
+                $stmtDk->bind_param("iiiss", $svId, $lhpId, $hpId, $hkThucTeStr, $namHocThucTe);
+                if ($stmtDk->execute()) {
+                    $countDk++;
+                    $conn->query("UPDATE lop_hoc_phan SET si_so_hien_tai = si_so_hien_tai + 1 WHERE id = $lhpId");
+                    $registered = true;
+                }
             }
-            
-            // 3. Điểm học tập cho kỳ trước (< 4)
-            if ($hkCtdt < 4) {
-                $diemCc = rand(80, 100) / 10.0;
-                $diemGk = rand(60, 95) / 10.0;
-                $diemCk = rand(50, 98) / 10.0;
+        } else {
+            // Môn học vượt kỳ phụ không có lớp học phần cụ thể
+            $hkThucTeStr = (string)$hkThucTe;
+            $stmtDk->bind_param("iiiss", $svId, $lhpId, $hpId, $hkThucTeStr, $namHocThucTe);
+            if ($stmtDk->execute()) {
+                $countDk++;
+                $registered = true;
+            }
+        }
+        
+        if ($registered) {
+            // 2. Thời khóa biểu (Chỉ chèn nếu có lớp học phần)
+            if ($lhpId !== null) {
+                $hashVal = crc32($sv['lop_sinh_hoat_id'] . '_' . $hpId);
+                $thu = ($hashVal % 6) + 2; 
                 
-                if (rand(1, 100) <= 2) { // Trượt môn (tỷ lệ 2%)
-                    $diemCc = rand(70, 90) / 10.0;
-                    $diemGk = rand(30, 50) / 10.0;
-                    $diemCk = rand(20, 39) / 10.0;
+                $slot = ($hashVal >> 2) % 4;
+                if ($slot == 0) {
+                    $tietBd = 1;
+                    $soTiet = 2;
+                } elseif ($slot == 1) {
+                    $tietBd = 3;
+                    $soTiet = 3;
+                } elseif ($slot == 2) {
+                    $tietBd = 6;
+                    $soTiet = 2;
+                } else {
+                    $tietBd = 8;
+                    $soTiet = 3;
                 }
                 
-                $diemTong = round($diemCc * 0.1 + $diemGk * 0.3 + $diemCk * 0.6, 2);
+                $stmtTkb->bind_param("iiiiisssisss", $svId, $hpId, $thu, $tietBd, $soTiet, $phongHoc, $giangVien, $hkThucTe, $namHocThucTe, $lhpId, $ngayBd, $ngayKt);
+                if ($stmtTkb->execute()) {
+                    $countTkb++;
+                }
+            }
+            
+            // 3. Điểm học tập cho kỳ trước (< 4) hoặc luôn chèn nếu là Đặng Văn Trọng và có điểm trong mảng
+            $hasDiemTrong = $isTrong && isset($trongGrades[$maHp]);
+            if ($hkCtdt < 4 || $hasDiemTrong) {
+                if ($hasDiemTrong) {
+                    $diemCc = null;
+                    $diemGk = null;
+                    $diemCk = null;
+                    $diemTong = $trongGrades[$maHp][0];
+                    $diemHe4 = $trongGrades[$maHp][1];
+                    $diemChu = $trongGrades[$maHp][2];
+                } else {
+                    $diemCc = rand(80, 100) / 10.0;
+                    $diemGk = rand(60, 95) / 10.0;
+                    $diemCk = rand(50, 98) / 10.0;
+                    
+                    if (rand(1, 100) <= 2) { // Trượt môn (tỷ lệ 2%)
+                        $diemCc = rand(70, 90) / 10.0;
+                        $diemGk = rand(30, 50) / 10.0;
+                        $diemCk = rand(20, 39) / 10.0;
+                    }
+                    
+                    $diemTong = round($diemCc * 0.1 + $diemGk * 0.3 + $diemCk * 0.6, 2);
+                    
+                    $diemHe4 = 0.0;
+                    $diemChu = 'F';
+                    if ($diemTong >= 9.0) { $diemChu = 'A+'; $diemHe4 = 4.0; }
+                    elseif ($diemTong >= 8.0) { $diemChu = 'A';  $diemHe4 = 3.5; }
+                    elseif ($diemTong >= 7.0) { $diemChu = 'B+'; $diemHe4 = 3.0; }
+                    elseif ($diemTong >= 6.0) { $diemChu = 'B';  $diemHe4 = 2.5; }
+                    elseif ($diemTong >= 5.0) { $diemChu = 'C';  $diemHe4 = 2.0; }
+                    elseif ($diemTong >= 4.0) { $diemChu = 'D';  $diemHe4 = 1.5; }
+                }
                 
-                $diemHe4 = 0.0;
-                $diemChu = 'F';
-                if ($diemTong >= 9.0) { $diemChu = 'A+'; $diemHe4 = 4.0; }
-                elseif ($diemTong >= 8.0) { $diemChu = 'A';  $diemHe4 = 3.5; }
-                elseif ($diemTong >= 7.0) { $diemChu = 'B+'; $diemHe4 = 3.0; }
-                elseif ($diemTong >= 6.0) { $diemChu = 'B';  $diemHe4 = 2.5; }
-                elseif ($diemTong >= 5.0) { $diemChu = 'C';  $diemHe4 = 2.0; }
-                elseif ($diemTong >= 4.0) { $diemChu = 'D';  $diemHe4 = 1.5; }
-                
-                $stmtDiem->bind_param("iiiiddddsd", $svId, $hpId, $hkThucTe, $namHocThucTe, $diemCc, $diemGk, $diemCk, $diemTong, $diemChu, $diemHe4);
+                // Đã sửa kiểu bind_param: đổi "iiiiddddsd" thành "iiisddddsd"
+                $stmtDiem->bind_param("iiisddddsd", $svId, $hpId, $hkThucTe, $namHocThucTe, $diemCc, $diemGk, $diemCk, $diemTong, $diemChu, $diemHe4);
                 if ($stmtDiem->execute()) {
                     $countDiem++;
                 }
@@ -951,14 +1042,20 @@ foreach ($sinhVienList as $sv) {
         [1, '2025-2026']
     ];
     foreach ($drlConfigs as $conf) {
-        $drlDiem = rand(72, 95);
-        $xepLoai = 'Khá';
-        if ($drlDiem >= 90) $xepLoai = 'Xuất sắc';
-        elseif ($drlDiem >= 80) $xepLoai = 'Tốt';
-        elseif ($drlDiem >= 65) $xepLoai = 'Khá';
-        else $xepLoai = 'Trung bình';
+        if ($sv['ma_sv'] === '4751190039') {
+            $drlDiem = 100;
+            $xepLoai = 'Xuất sắc';
+        } else {
+            $drlDiem = rand(72, 95);
+            $xepLoai = 'Khá';
+            if ($drlDiem >= 90) $xepLoai = 'Xuất sắc';
+            elseif ($drlDiem >= 80) $xepLoai = 'Tốt';
+            elseif ($drlDiem >= 65) $xepLoai = 'Khá';
+            else $xepLoai = 'Trung bình';
+        }
         
-        $stmtDrl->bind_param("iiiss", $svId, $conf[0], $conf[1], $drlDiem, $xepLoai);
+        // Sửa kiểu bind_param: đổi "isiss" thành "iisis"
+        $stmtDrl->bind_param("iisis", $svId, $conf[0], $conf[1], $drlDiem, $xepLoai);
         $stmtDrl->execute();
     }
     

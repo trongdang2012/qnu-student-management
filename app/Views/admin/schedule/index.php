@@ -40,6 +40,11 @@
       .ops-tag{display:inline-flex;align-items:center;border-radius:999px;padding:2px 8px;font-size:12px;background:#eef2ff;color:#3730a3;margin-top:4px}
       .capacity-bar{height:8px;background:#e5e7eb;border-radius:999px;overflow:hidden;margin-top:8px}
       .capacity-bar span{display:block;height:100%;background:#16a34a}
+      .ops-scroll{max-height:220px;overflow-y:auto;padding-right:6px}
+      .ops-scroll::-webkit-scrollbar{width:4px}
+      .ops-scroll::-webkit-scrollbar-track{background:#f1f5f9;border-radius:4px}
+      .ops-scroll::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:4px}
+      .ops-scroll::-webkit-scrollbar-thumb:hover{background:#94a3b8}
       @media (max-width: 1100px){.ops-panel{grid-template-columns:1fr}.ops-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
     </style>
 
@@ -60,15 +65,17 @@
         <?php if (empty($unscheduledClasses)): ?>
           <p style="margin:0;color:#16a34a;font-size:13px">Tất cả lớp trong kỳ đã có thời khóa biểu.</p>
         <?php else: ?>
-          <ul class="ops-list">
-            <?php foreach ($unscheduledClasses as $c): ?>
-              <li>
-                <strong><?= e($c['ma_lop_hp']) ?></strong> - <?= e($c['ten_hp']) ?><br>
-                <span class="ops-tag"><?= (int)$c['si_so_hien_tai'] ?>/<?= (int)$c['si_so_toi_da'] ?> SV</span>
-                <?php if (empty($c['giang_vien'])): ?><span class="ops-tag">Thiếu giảng viên</span><?php endif; ?>
-              </li>
-            <?php endforeach; ?>
-          </ul>
+          <div class="ops-scroll">
+            <ul class="ops-list">
+              <?php foreach ($unscheduledClasses as $c): ?>
+                <li>
+                  <strong><?= e($c['ma_lop_hp']) ?></strong> - <?= e($c['ten_hp']) ?><br>
+                  <span class="ops-tag"><?= (int)$c['si_so_hien_tai'] ?>/<?= (int)$c['si_so_toi_da'] ?> SV</span>
+                  <?php if (empty($c['giang_vien'])): ?><span class="ops-tag">Thiếu giảng viên</span><?php endif; ?>
+                </li>
+              <?php endforeach; ?>
+            </ul>
+          </div>
         <?php endif; ?>
       </div>
       <div class="ops-card">
@@ -76,14 +83,16 @@
         <?php if (empty($roomUtilization)): ?>
           <p style="margin:0;color:#6b7280;font-size:13px">Chưa có dữ liệu sử dụng phòng.</p>
         <?php else: ?>
-          <ul class="ops-list">
-            <?php foreach ($roomUtilization as $r): ?>
-              <li>
-                <strong><?= e($r['phong_hoc']) ?></strong>
-                <span class="ops-tag"><?= (int)$r['period_total'] ?> tiết / <?= (int)$r['schedule_total'] ?> ca</span>
-              </li>
-            <?php endforeach; ?>
-          </ul>
+          <div class="ops-scroll">
+            <ul class="ops-list">
+              <?php foreach ($roomUtilization as $r): ?>
+                <li>
+                  <strong><?= e($r['phong_hoc']) ?></strong>
+                  <span class="ops-tag"><?= (int)$r['period_total'] ?> tiết / <?= (int)$r['schedule_total'] ?> ca</span>
+                </li>
+              <?php endforeach; ?>
+            </ul>
+          </div>
         <?php endif; ?>
       </div>
     </div>
@@ -103,7 +112,7 @@
           <div class="stat-value"><?= count($phongsList) ?> phòng</div>
         </div>
       </div>
-      <div class="stat-card" style="cursor:pointer" onclick="if(confirm('Xếp lại toàn bộ lịch học tự động cho các lớp trong kỳ này? Lịch cũ sẽ bị xóa.')) location.href='<?= BASE_URL ?>/admin/thoi-khoa-bieu/optimize?hoc_ky=<?= $hocKy ?>&nam_hoc=<?= urlencode($namHoc) ?>'">
+      <div class="stat-card" style="cursor:pointer" onclick="confirmOptimize()">
         <i class="fas fa-wand-magic-sparkles"></i>
         <div>
           <h3>Xếp TKB tự động</h3>
@@ -262,7 +271,7 @@
                                 <div style="font-size:11px; color:#555; margin-top:4px;"><i class="fas fa-user-tie"></i> <?= e($cell['giang_vien']) ?></div>
                                 <div style="margin-top:6px; display:flex; justify-content:center; gap:4px">
                                   <a href="?action=edit&id=<?= (int)$cell['id'] ?>&hoc_ky=<?= $hocKy ?>&nam_hoc=<?= urlencode($namHoc) ?>" class="btn btn-sm btn-info" style="padding:2px 6px; font-size:10px;"><i class="fas fa-edit"></i></a>
-                                  <form method="POST" action="<?= BASE_URL ?>/admin/thoi-khoa-bieu/delete" style="display:inline" onsubmit="return confirm('Xóa ca học này?')">
+                                  <form method="POST" action="<?= BASE_URL ?>/admin/thoi-khoa-bieu/delete" style="display:inline" onsubmit="return confirmDelete(this)">
                                     <input type="hidden" name="id" value="<?= (int)$cell['id'] ?>">
                                     <input type="hidden" name="hoc_ky_keep" value="<?= $hocKy ?>">
                                     <input type="hidden" name="nam_hoc_keep" value="<?= e($namHoc) ?>">
@@ -337,7 +346,7 @@
                         <a class="btn btn-sm btn-info" href="?action=edit&id=<?= (int)$row['id'] ?>&hoc_ky=<?= $hocKy ?>&nam_hoc=<?= urlencode($namHoc) ?>&search=<?= urlencode($search) ?>">
                           <i class="fas fa-edit"></i> Sửa
                         </a>
-                        <form method="POST" action="<?= BASE_URL ?>/admin/thoi-khoa-bieu/delete" style="display:inline" onsubmit="return confirm('Bạn có muốn xóa ca học này không?')">
+                        <form method="POST" action="<?= BASE_URL ?>/admin/thoi-khoa-bieu/delete" style="display:inline" onsubmit="return confirmDelete(this)">
                           <input type="hidden" name="id" value="<?= (int)$row['id'] ?>">
                           <input type="hidden" name="hoc_ky_keep" value="<?= $hocKy ?>">
                           <input type="hidden" name="nam_hoc_keep" value="<?= e($namHoc) ?>">
@@ -389,5 +398,98 @@ function closeModal() {
 }
 function showAddForm() {
   document.getElementById('formModal').classList.add('active');
+}
+
+function confirmOptimize() {
+  Swal.fire({
+    title: 'Xác nhận xếp lịch?',
+    text: 'Xếp lại toàn bộ lịch học tự động cho các lớp trong kỳ này? Lịch cũ sẽ bị xóa.',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#3085d6',
+    cancelButtonColor: '#d33',
+    confirmButtonText: 'Đồng ý',
+    cancelButtonText: 'Hủy'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      // Hiển thị modal tiến trình xếp lịch
+      Swal.fire({
+        title: 'Đang xếp lịch tự động',
+        html: `
+          <p style="font-size:14px;color:#6b7280;margin-bottom:15px;">Thuật toán đang tính toán phân bổ lịch học tối ưu cho các lớp...</p>
+          <div style="background: #e2e8f0; border-radius: 9999px; height: 16px; overflow: hidden; position: relative;">
+            <div id="swal-progress-bar" style="background: #10b981; height: 100%; width: 0%; transition: width 0.1s ease; border-radius: 9999px;"></div>
+          </div>
+          <div id="swal-progress-text" style="margin-top: 8px; font-size: 14px; font-weight: 600; color: #374151; text-align: center;">0%</div>
+        `,
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        showConfirmButton: false,
+        didOpen: () => {
+          const progressBar = document.getElementById('swal-progress-bar');
+          const progressText = document.getElementById('swal-progress-text');
+          let progress = 0;
+          
+          // Chạy tiến trình giả lập từ 0% đến 95%
+          const timer = setInterval(() => {
+            if (progress < 95) {
+              const increment = Math.floor(Math.random() * 5) + 2; // Tăng ngẫu nhiên từ 2% đến 6%
+              progress = Math.min(95, progress + increment);
+              progressBar.style.width = progress + '%';
+              progressText.innerText = progress + '%';
+            }
+          }, 150);
+
+          // Gửi request AJAX
+          fetch('<?= BASE_URL ?>/admin/thoi-khoa-bieu/optimize?hoc_ky=<?= $hocKy ?>&nam_hoc=<?= urlencode($namHoc) ?>&ajax=1')
+            .then(response => response.json())
+            .then(data => {
+              clearInterval(timer);
+              // Đạt 100%
+              progressBar.style.width = '100%';
+              progressText.innerText = '100%';
+              
+              setTimeout(() => {
+                Swal.fire({
+                  title: data.success ? 'Thành công!' : 'Thất bại!',
+                  text: data.message,
+                  icon: data.success ? 'success' : 'error',
+                  confirmButtonText: 'Đồng ý'
+                }).then(() => {
+                  location.reload();
+                });
+              }, 400);
+            })
+            .catch(error => {
+              clearInterval(timer);
+              Swal.fire({
+                title: 'Lỗi kết nối!',
+                text: 'Không thể kết nối tới máy chủ. Vui lòng thử lại sau.',
+                icon: 'error',
+                confirmButtonText: 'Đóng'
+              });
+            });
+        }
+      });
+    }
+  });
+}
+
+function confirmDelete(form) {
+  Swal.fire({
+    title: 'Xác nhận xóa?',
+    text: 'Bạn có chắc chắn muốn xóa ca học này không?',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#d33',
+    cancelButtonColor: '#3085d6',
+    confirmButtonText: 'Xóa',
+    cancelButtonText: 'Hủy'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      form.submit();
+    }
+  });
+  return false;
 }
 </script>

@@ -113,20 +113,14 @@ class CourseModel {
     public function getGrades($studentId, $nh_filter = '') {
         $list_nh = $this->db->fetchAll("SELECT DISTINCT nam_hoc FROM diem_hoc_tap WHERE sinh_vien_id=:sid ORDER BY nam_hoc DESC", ['sid' => $studentId]);
         
-        $params = ['sid' => $studentId];
-        $where_nh = '';
-        if ($nh_filter) {
-            $where_nh = "AND d.nam_hoc=:nh";
-            $params['nh'] = $nh_filter;
-        }
-
+        // Luôn lấy toàn bộ điểm để tính tích lũy cộng dồn chính xác qua các kỳ ở tầng View
         $diem_list = $this->db->fetchAll("
             SELECT d.*, hp.ten_hp, hp.ma_hp, hp.so_tin_chi, hp.loai
             FROM diem_hoc_tap d
             JOIN hoc_phan hp ON hp.id = d.hoc_phan_id
-            WHERE d.sinh_vien_id = :sid $where_nh
+            WHERE d.sinh_vien_id = :sid
             ORDER BY d.nam_hoc, d.hoc_ky, hp.ten_hp
-        ", $params);
+        ", ['sid' => $studentId]);
 
         $by_nh_hk = [];
         foreach ($diem_list as $d) {

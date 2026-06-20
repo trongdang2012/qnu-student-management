@@ -186,10 +186,21 @@ class ScheduleController extends Controller {
     public function optimize() {
         $hocKy = max(1, min(8, (int)($_GET['hoc_ky'] ?? HOC_KY_HIEN_TAI)));
         $namHoc = trim($_GET['nam_hoc'] ?? NAM_HOC_HIEN_TAI);
+        $isAjax = isset($_GET['ajax']) && $_GET['ajax'] == 1;
 
         $res = $this->scheduleModel->optimizeSchedules($hocKy, $namHoc);
-        setFlash($res['status'], $res['message']);
         
+        if ($isAjax) {
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => $res['status'] === 'success',
+                'status' => $res['status'],
+                'message' => $res['message']
+            ]);
+            exit;
+        }
+
+        setFlash($res['status'], $res['message']);
         $this->redirect("/admin/thoi-khoa-bieu?hoc_ky=$hocKy&nam_hoc=" . urlencode($namHoc));
     }
 }

@@ -94,6 +94,7 @@ function colorCPA(float $cpa): string {
     <!-- Bảng điểm -->
     <?php
     $seen_subjects = []; // Mảng theo dõi điểm cao nhất của từng môn học tính đến thời điểm hiện tại để tính tích lũy cộng dồn
+    $rendered_count = 0;
     ?>
     <?php foreach ($gradesData['by_nh_hk'] as $nh => $hk_groups): ?>
       <?php foreach ($hk_groups as $hk => $mons):
@@ -163,6 +164,11 @@ function colorCPA(float $cpa): string {
 
         $gpa_tich_luy_he4 = $accumulated_tc_tinh_diem > 0 ? round($accumulated_sum_diem_he4 / $accumulated_tc_tinh_diem, 2) : 0;
         $gpa_tich_luy_he10 = $accumulated_tc_tinh_diem > 0 ? round($accumulated_sum_diem_he10 / $accumulated_tc_tinh_diem, 2) : 0;
+      ?>
+      <?php 
+      $should_render = !$nh_filter || ($nh === $nh_filter);
+      if ($should_render): 
+        $rendered_count++;
       ?>
       <div class="card mb-16 fade-in">
         <div class="table-wrap">
@@ -279,15 +285,16 @@ function colorCPA(float $cpa): string {
           </div>
         </div>
       </div>
+      <?php endif; // should_render ?>
       <?php endforeach; ?>
     <?php endforeach; ?>
 
-    <?php if (empty($gradesData['diem_list'])): ?>
+    <?php if ($rendered_count === 0): ?>
       <div class="card fade-in">
         <div class="card-body text-center" style="padding:40px">
           <div style="font-size:48px;margin-bottom:12px">📊</div>
           <h3 style="color:var(--text-muted)">Chưa có dữ liệu điểm</h3>
-          <p class="text-muted">Bạn chưa có điểm học phần nào được ghi nhận.</p>
+          <p class="text-muted">Không tìm thấy dữ liệu điểm phù hợp với bộ lọc đã chọn.</p>
         </div>
       </div>
     <?php endif; ?>
