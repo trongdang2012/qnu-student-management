@@ -21,18 +21,12 @@ Admin có toàn quyền quản lý hồ sơ sinh viên, lớp sinh hoạt, môn 
 ### 🎓 Phân hệ Sinh viên
 Sinh viên có quyền xem hồ sơ cá nhân, thực hiện đăng ký học phần, xem thời khóa biểu, tra cứu bảng điểm học tập chi tiết (CPA, tín chỉ tích lũy), xem điểm rèn luyện, xem học phí và chia sẻ tài liệu học tập.
 
-*   **Tài khoản Sinh viên tiêu biểu (Có bảng điểm chuẩn theo ảnh chụp màn hình):**
-    *   Tên sinh viên: **Đặng Văn Trọng**
-    *   Mã sinh viên (Username): `4751190039`
-    *   Mật khẩu đăng nhập: `Student@123`
-    *   *Lưu ý:* Sinh viên này đã được cập nhật điểm học tập chi tiết của 4 học kỳ (HK1 24-25, HK2 24-25, HK3 24-25, HK1 25-26) khớp chính xác 100% với ảnh chụp màn hình bảng điểm thực tế bạn cung cấp.
-
-*   **Các tài khoản Sinh viên lớp KTPM K47 khác:**
-    *   Mã sinh viên (Username): Từ `4751190001` đến `4751190060` (Bỏ qua số 0016, 0035, 0048 do không có trong danh sách gốc).
+*   **Các tài khoản Sinh viên lớp chuyên ngành (KTPM K47):**
+    *   Mã sinh viên (Username): Từ `4751190001` đến `4751190060` (Bỏ qua số 0016, 0035, 0048 do không có trong danh sách gốc). Các tài khoản này đã được cập nhật đầy đủ thông tin hồ sơ, đăng ký học phần, lịch học và bảng điểm học tập chi tiết qua các kỳ học.
     *   Mật khẩu đăng nhập: `Student@123`
     *   Ví dụ:
-        *   `4751190001` (Bùi Quốc Bảo) / Mật khẩu: `Student@123`
-        *   `4751190002` (Võ Nam Bằng) / Mật khẩu: `Student@123`
+        *   Tên đăng nhập: `4751190001`
+        *   Mật khẩu: `Student@123`
 
 *   **Các tài khoản Sinh viên của 50 ngành học khác:**
     *   Mã sinh viên (Username): Bắt đầu từ `4751200001` đến `4751200500`
@@ -79,7 +73,7 @@ Di chuyển thư mục dự án vào thư mục gốc của Web Server của b�
 4.  Nhấp nút **Go** (Thực hiện) để tạo các bảng CSDL cần thiết.
 
 #### **Bước 5: Khởi tạo dữ liệu học vụ & bảng điểm**
-Bạn có thể lựa chọn 1 trong 2 cách sau để nạp dữ liệu mẫu (bao gồm các ngành học, môn học và **bảng điểm chuẩn của Đặng Văn Trọng**):
+Bạn có thể lựa chọn 1 trong 2 cách sau để nạp dữ liệu mẫu (bao gồm các ngành học, môn học và bảng điểm học tập mẫu của sinh viên):
 
 *   **Cách 1: Nhập dữ liệu trực tiếp trên giao diện Web (Khuyên dùng - Đơn giản nhất)**
     1.  Mở trình duyệt, truy cập vào trang đăng nhập: `http://localhost/qnu-student-management/auth/login`
