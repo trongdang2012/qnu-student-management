@@ -1,0 +1,75 @@
+# 🎓 DANH SÁCH CÁC CHỨC NĂNG NGƯỜI DÙNG TƯƠNG TÁC TRỰC TIẾP
+## QNU Student Management System (Hệ thống Quản lý Sinh viên - Đại học Quy Nhơn)
+
+---
+
+### 2.2. Danh sách các chức năng người dùng tương tác trực tiếp
+
+| STT | Tên chức năng | Mô tả ngắn | Người dùng thực hiện |
+| :--- | :--- | :--- | :--- |
+| **I** | **PHÂN HỆ XÁC THỰC & TÀI KHOẢN** | | |
+| 1 | Đăng nhập tài khoản | Nhập thông tin tên đăng nhập và mật khẩu để truy cập vào hệ thống. | Sinh viên, Quản trị viên |
+| 2 | Nhập mã OTP xác thực | Nhập mã xác thực hai lớp (2FA) được gửi về Email cá nhân để xác minh đăng nhập. | Sinh viên, Quản trị viên |
+| 3 | Đổi mật khẩu cá nhân | Nhập mật khẩu cũ và thiết lập mật khẩu mới để tăng cường bảo mật cho tài khoản. | Sinh viên, Quản trị viên |
+| 4 | Yêu cầu khôi phục mật khẩu | Nhập Email đăng ký tài khoản để hệ thống gửi liên kết cấp lại mật khẩu khi bị quên. | Sinh viên, Quản trị viên |
+| 5 | Đăng xuất tài khoản | Nhấn nút đăng xuất để thoát khỏi phiên làm việc và đóng tài khoản trên thiết bị. | Sinh viên, Quản trị viên |
+| **II** | **PHÂN HỆ SINH VIÊN (STUDENT PORTAL)** | | |
+| 6 | Xem hồ sơ lý lịch cá nhân | Xem thông tin hồ sơ cá nhân đã lưu trên hệ thống (Họ tên, ngày sinh, lớp, ngành học, khóa học...). | Sinh viên |
+| 7 | Chỉnh sửa thông tin liên hệ | Chỉnh sửa số điện thoại di động, địa chỉ hiện tại và email liên lạc phụ. | Sinh viên |
+| 8 | Thay đổi ảnh đại diện (avatar) | Tải lên file ảnh chân dung cá nhân làm ảnh thẻ đại diện trên hồ sơ. | Sinh viên |
+| 9 | Xem bảng điểm tổng hợp | Xem danh sách điểm tổng kết tất cả các học phần đã học qua từng học kỳ. | Sinh viên |
+| 10 | Xem điểm thành phần chi tiết | Nhấp mở rộng để xem điểm chuyên cần (10%), giữa kỳ (30%) và cuối kỳ (60%) của từng môn học. | Sinh viên |
+| 11 | Xem điểm trung bình học kỳ | Xem điểm trung bình học kỳ (GPA) quy đổi hệ 10 và hệ 4. | Sinh viên |
+| 12 | Xem điểm tích lũy toàn khóa | Xem điểm trung bình tích lũy cộng dồn (CPA) quy đổi hệ 10 và hệ 4. | Sinh viên |
+| 13 | Xem tiến độ tích lũy tín chỉ | Theo dõi biểu đồ tiến độ phần trăm số tín chỉ đã hoàn thành so với chương trình đào tạo chuẩn. | Sinh viên |
+| 14 | Lọc bảng điểm theo năm học | Chọn bộ lọc năm học cụ thể để xem danh sách điểm môn học của năm học đó. | Sinh viên |
+| 15 | Tra cứu điểm rèn luyện | Xem điểm số đánh giá rèn luyện và xếp loại rèn luyện cá nhân theo từng học kỳ. | Sinh viên |
+| 16 | Xem danh sách môn học mở lớp | Xem danh sách tất cả các môn học được mở đăng ký trong học kỳ hiện tại. | Sinh viên |
+| 17 | Tìm kiếm lớp học phần | Gõ mã môn học hoặc tên môn học để tìm kiếm lớp học phần đăng ký trực tuyến. | Sinh viên |
+| 18 | Đăng ký lớp học phần | Nhấp chọn đăng ký tham gia lớp học phần mong muốn trong kỳ học. | Sinh viên |
+| 19 | Xem danh sách môn đã đăng ký | Xem lại danh sách các môn học đã đăng ký thành công trong kỳ học hiện tại. | Sinh viên |
+| 20 | Hủy lớp học phần đã đăng ký | Chọn hủy đăng ký lớp học phần đã đăng ký trước đó (trong thời gian mở cổng). | Sinh viên |
+| 21 | Xem thời khóa biểu cá nhân | Theo dõi lịch học hàng tuần dưới dạng bảng lưới trực quan theo Thứ và Tiết học. | Sinh viên |
+| 22 | Xem chi tiết lịch học theo kỳ | Xem thông tin chi tiết lịch học cá nhân (tên giảng viên, phòng học, ngày bắt đầu và kết thúc). | Sinh viên |
+| 23 | In/Xuất thời khóa biểu | Xuất lịch học cá nhân ra file hoặc kết nối máy in để in thời khóa biểu. | Sinh viên |
+| 24 | Tra cứu học phí học kỳ | Xem thông tin học phí phải đóng cho các môn học đã đăng ký trong kỳ học. | Sinh viên |
+| 25 | Xem lịch sử thanh toán học phí | Tra cứu tổng số tiền học phí đã nộp, số nợ học phí còn lại và lịch sử đóng tiền. | Sinh viên |
+| 26 | Xem kho tài liệu dùng chung | Duyệt danh sách các tài liệu học tập được chia sẻ công khai trên hệ thống. | Sinh viên |
+| 27 | Tìm kiếm tài liệu học tập | Tìm tài liệu theo từ khóa tên file tài liệu hoặc theo tên môn học. | Sinh viên |
+| 28 | Đăng tải tài liệu chia sẻ | Chọn tệp tin (PDF, Word, Powerpoint, Zip) tải lên hệ thống để chia sẻ cho các sinh viên khác. | Sinh viên |
+| 29 | Tải xuống tài liệu học tập | Chọn tải xuống các file tài liệu học tập hữu ích do người khác chia sẻ trên hệ thống. | Sinh viên |
+| 30 | Xóa tài liệu đã tải lên | Chủ động xóa các file tài liệu cá nhân mà mình đã đăng tải trước đó khỏi kho dùng chung. | Sinh viên |
+| 31 | Xem lượt tương tác tài liệu | Xem tổng số lượt tải xuống của các tài liệu học tập mà mình đã chia sẻ. | Sinh viên |
+| **III**| **PHÂN HỆ QUẢN TRỊ VIÊN (ADMIN PORTAL)** | | |
+| 32 | Xem thống kê số liệu Dashboard | Xem số lượng sinh viên, học phần, lớp học phần đang hoạt động trên Dashboard. | Quản trị viên (Admin) |
+| 33 | Theo dõi biểu đồ đóng học phí | Xem biểu đồ tròn thống kê tỷ lệ sinh viên đã nộp đủ học phí hoặc còn nợ. | Quản trị viên (Admin) |
+| 34 | Xem thống kê hoạt động tài liệu | Theo dõi tổng số lượng tài liệu đã chia sẻ và tổng lượt tải xuống trên toàn hệ thống. | Quản trị viên (Admin) |
+| 35 | Xem danh sách thông báo mới | Theo dõi các thông báo hệ thống mới nhất đã phát hành trên Dashboard quản trị. | Quản trị viên (Admin) |
+| 36 | Duyệt danh sách sinh viên | Xem danh sách sinh viên toàn trường kết hợp bộ lọc (lớp, khoa, ngành). | Quản trị viên (Admin) |
+| 37 | Tìm kiếm hồ sơ sinh viên | Tìm nhanh thông tin sinh viên theo họ tên hoặc theo mã sinh viên. | Quản trị viên (Admin) |
+| 38 | Thêm mới tài khoản sinh viên | Nhập hồ sơ và cấp tài khoản đăng nhập thủ công cho một sinh viên mới. | Quản trị viên (Admin) |
+| 39 | Nhập sinh viên từ file Excel/CSV | Tải lên file danh sách để import hàng loạt thông tin và tài khoản sinh viên mới. | Quản trị viên (Admin) |
+| 40 | Chỉnh sửa thông tin sinh viên | Cập nhật thông tin hồ sơ lý lịch, trạng thái học tập của sinh viên. | Quản trị viên (Admin) |
+| 41 | Xóa tài khoản sinh viên | Thực hiện xóa thông tin và tài khoản sinh viên ra khỏi cơ sở dữ liệu. | Quản trị viên (Admin) |
+| 42 | Xem chi tiết tiến độ sinh viên | Nhấp xem chi tiết hồ sơ cá nhân và kết quả học tập của một sinh viên cụ thể. | Quản trị viên (Admin) |
+| 43 | Xem danh mục môn học | Xem danh sách tất cả các học phần trong chương trình đào tạo của hệ thống. | Quản trị viên (Admin) |
+| 44 | Thêm mới môn học (học phần) | Tạo môn học mới trong hệ thống (nhập tên môn, mã môn, số tín chỉ, số tiết). | Quản trị viên (Admin) |
+| 45 | Cấu hình học phần tiên quyết | Chỉ định mã học phần tiên quyết bắt buộc sinh viên phải học đạt trước môn học này. | Quản trị viên (Admin) |
+| 46 | Chỉnh sửa thông tin học phần | Cấu hình lại tên môn học, số tín chỉ, số tiết LT/TH của môn học đã có. | Quản trị viên (Admin) |
+| 47 | Xóa môn học | Xóa môn học ra khỏi hệ thống đào tạo. | Quản trị viên (Admin) |
+| 48 | Mở lớp học phần mới | Tạo lớp học phần mới trong học kỳ phục vụ sinh viên đăng ký học. | Quản trị viên (Admin) |
+| 49 | Phân công giảng viên dạy | Chỉ định giảng viên phụ trách giảng dạy cho lớp học phần cụ thể. | Quản trị viên (Admin) |
+| 50 | Phân bổ phòng học và sĩ số lớp | Thiết lập phòng học tương ứng và giới hạn sĩ số tối đa được đăng ký vào lớp học phần. | Quản trị viên (Admin) |
+| 51 | Thiết lập thời hạn đăng ký học | Cấu hình ngày bắt đầu và kết thúc mở cổng đăng ký trực tuyến cho lớp học phần. | Quản trị viên (Admin) |
+| 52 | Xem danh sách đăng ký lớp học | Xem danh sách sinh viên đã đăng ký tham gia trong một lớp học phần cụ thể. | Quản trị viên (Admin) |
+| 53 | Nhập điểm học phần sinh viên | Tìm kiếm lớp học phần và nhập điểm chuyên cần, giữa kỳ, cuối kỳ cho sinh viên. | Quản trị viên (Admin) |
+| 54 | Chỉnh sửa điểm số sinh viên | Nhập cập nhật lại điểm số cho sinh viên khi có phán quyết phúc khảo hoặc sai sót nhập liệu. | Quản trị viên (Admin) |
+| 55 | Xem danh sách sinh viên chưa xếp lịch | Xem danh sách các sinh viên đã đăng ký học phần được duyệt nhưng chưa xếp lịch học. | Quản trị viên (Admin) |
+| 56 | Kích hoạt xếp lịch tự động | Nhấp nút chạy thuật toán tự động xếp thời khóa biểu cho sinh viên chưa có lịch. | Quản trị viên (Admin) |
+| 57 | Xem lịch sử nhật ký xếp lịch | Theo dõi danh sách chi tiết các sinh viên đã xếp lịch thành công và các cảnh báo trùng lịch. | Quản trị viên (Admin) |
+| 58 | Cập nhật đóng học phí sinh viên | Cập nhật số tiền đóng thực tế của sinh viên và chuyển đổi trạng thái công nợ học phí. | Quản trị viên (Admin) |
+| 59 | Kiểm duyệt và xóa tài liệu chia sẻ | Xóa bỏ tài liệu học tập của sinh viên đăng tải nếu nội dung không phù hợp. | Quản trị viên (Admin) |
+| 60 | Soạn thảo thông báo hệ thống | Viết tiêu đề, nội dung và chọn phân loại thông báo (success, info, warning) để phát hành. | Quản trị viên (Admin) |
+| 61 | Chọn đối tượng nhận thông báo | Thiết lập gửi thông báo cho toàn trường hoặc gửi riêng cho một sinh viên cụ thể. | Quản trị viên (Admin) |
+| 62 | Sao lưu cơ sở dữ liệu (Export) | Nhấp nút xuất và tải file cơ sở dữ liệu định dạng `.sql` về máy tính để sao lưu dự phòng. | Quản trị viên (Admin) |
+| 63 | Phục hồi cơ sở dữ liệu (Import) | Chọn file sao lưu `.sql` từ máy tính tải lên giao diện web để phục hồi dữ liệu hệ thống. | Quản trị viên (Admin) |
