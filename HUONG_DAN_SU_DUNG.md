@@ -78,18 +78,27 @@ Di chuyển thư mục dự án vào thư mục gốc của Web Server của b�
 3.  Chọn tệp tin cấu trúc bảng tại `config/schema.sql`.
 4.  Nhấp nút **Go** (Thực hiện) để tạo các bảng CSDL cần thiết.
 
-#### **Bước 5: Khởi tạo dữ liệu mẫu (Chạy Seeder)**
-Để hệ thống tự động sinh dữ liệu 12 Khoa, 51 Ngành học, các Lớp học phần, tài khoản sinh viên và **bảng điểm chuẩn của sinh viên Đặng Văn Trọng**, bạn hãy chạy công cụ seeder thông qua dòng lệnh:
-1.  Mở Terminal hoặc Command Prompt (cmd) trên máy tính.
-2.  Chạy lệnh sau bằng đường dẫn PHP của bạn:
-    ```bash
-    C:\xampp\php\php.exe database/seeder.php
-    ```
-3.  Đợi cho đến khi màn hình hiển thị thông báo:
-    `DATABASE SEEDER TÍCH HỢP CTDT THỰC TẾ ĐÃ THÀNH CÔNG RỰC RỠ!`
+#### **Bước 5: Khởi tạo dữ liệu học vụ & bảng điểm**
+Bạn có thể lựa chọn 1 trong 2 cách sau để nạp dữ liệu mẫu (bao gồm các ngành học, môn học và **bảng điểm chuẩn của Đặng Văn Trọng**):
+
+*   **Cách 1: Nhập dữ liệu trực tiếp trên giao diện Web (Khuyên dùng - Đơn giản nhất)**
+    1.  Mở trình duyệt, truy cập vào trang đăng nhập: `http://localhost/qnu-student-management/auth/login`
+    2.  Đăng nhập bằng tài khoản Admin mặc định:
+        *   Tên đăng nhập: `admin`
+        *   Mật khẩu: `password`
+    3.  Trên thanh Menu của Admin, tìm và truy cập vào mục **Đồng bộ CSDL** (hoặc **Backup / Restore**).
+    4.  Nhấp chọn nút **Nhập file SQL**, tìm đến tệp tin dữ liệu mẫu tại `config/seed_qnu_data.sql` (hoặc file backup `.sql` bất kỳ mà bạn đã export trước đó) rồi nhấn xác nhận để hệ thống tự động phục hồi dữ liệu.
+
+*   **Cách 2: Chạy script Seeder bằng dòng lệnh (Terminal)**
+    1.  Mở Terminal hoặc Command Prompt (cmd) trên máy tính.
+    2.  Chạy lệnh sau bằng đường dẫn PHP của bạn:
+        ```bash
+        C:\xampp\php\php.exe database/seeder.php
+        ```
+    3.  Đợi cho đến khi màn hình hiển thị thông báo chạy thành công.
 
 #### **Bước 6: Khởi chạy và Trải nghiệm**
-1.  Mở bảng điều khiển XAMPP Control Panel, nhấn **Start** cho cả **Apache** và **MySQL**.
+1.  Khởi động **Apache** và **MySQL** trên bảng điều khiển XAMPP Control Panel.
 2.  Mở trình duyệt web và truy cập đường dẫn:
     `http://localhost/qnu-student-management/`
 3.  Sử dụng các tài khoản mẫu ở phần 1 để bắt đầu kiểm tra và trải nghiệm các tính năng của hệ thống.
