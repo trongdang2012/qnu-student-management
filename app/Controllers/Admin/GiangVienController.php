@@ -49,6 +49,8 @@ class GiangVienController extends Controller {
         $ma_gv = trim($_POST['ma_gv'] ?? '');
         $ho_ten = trim($_POST['ho_ten'] ?? '');
         $khoa_id = isset($_POST['khoa_id']) && $_POST['khoa_id'] !== '' ? (int)$_POST['khoa_id'] : null;
+        $hoc_vi = trim($_POST['hoc_vi'] ?? '');
+        $chuyen_nganh = trim($_POST['chuyen_nganh'] ?? '');
         $email = trim($_POST['email'] ?? '');
         $so_dien_thoai = trim($_POST['so_dien_thoai'] ?? '');
 
@@ -68,6 +70,8 @@ class GiangVienController extends Controller {
             'ma_gv' => $ma_gv,
             'ho_ten' => $ho_ten,
             'khoa_id' => $khoa_id,
+            'hoc_vi' => $hoc_vi,
+            'chuyen_nganh' => $chuyen_nganh,
             'email' => $email,
             'so_dien_thoai' => $so_dien_thoai
         ];

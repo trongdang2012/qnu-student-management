@@ -57,15 +57,15 @@ class GiangVienModel {
     }
 
     public function addGiangVien($data) {
-        $sql = "INSERT INTO giang_vien (ma_gv, ho_ten, khoa_id, email, so_dien_thoai) 
-                VALUES (:ma_gv, :ho_ten, :khoa_id, :email, :so_dien_thoai)";
+        $sql = "INSERT INTO giang_vien (ma_gv, ho_ten, khoa_id, hoc_vi, chuyen_nganh, email, so_dien_thoai) 
+                VALUES (:ma_gv, :ho_ten, :khoa_id, :hoc_vi, :chuyen_nganh, :email, :so_dien_thoai)";
         return $this->db->query($sql, $data);
     }
 
     public function updateGiangVien($id, $data) {
         $data['id'] = $id;
         $sql = "UPDATE giang_vien 
-                SET ma_gv = :ma_gv, ho_ten = :ho_ten, khoa_id = :khoa_id, email = :email, so_dien_thoai = :so_dien_thoai 
+                SET ma_gv = :ma_gv, ho_ten = :ho_ten, khoa_id = :khoa_id, hoc_vi = :hoc_vi, chuyen_nganh = :chuyen_nganh, email = :email, so_dien_thoai = :so_dien_thoai 
                 WHERE id = :id";
         return $this->db->query($sql, $data);
     }

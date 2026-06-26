@@ -18,17 +18,6 @@ class ScheduleController extends Controller {
     }
 
     public function index() {
-        $action = $_GET['action'] ?? 'list';
-        $id = (int)($_GET['id'] ?? 0);
-
-        $hocKy = max(1, min(8, (int)($_GET['hoc_ky'] ?? HOC_KY_HIEN_TAI)));
-        $namHoc = trim($_GET['nam_hoc'] ?? NAM_HOC_HIEN_TAI);
-        $search = trim($_GET['search'] ?? '');
-        
-        $phongFilter = trim($_GET['phong_hoc'] ?? '');
-        $gvFilter = trim($_GET['giang_vien'] ?? '');
-        $lhpFilter = trim($_GET['lop_hoc_phan_id'] ?? '');
-
         // Lấy thông tin tìm kiếm sinh viên nếu có
         $maSv = trim($_GET['ma_sv'] ?? '');
         $student = null;
@@ -65,61 +54,13 @@ class ScheduleController extends Controller {
             }
         }
 
-        // Lấy danh sách lịch học theo bộ lọc cho quản lý chung
-        $list = $this->scheduleModel->getSchedules($hocKy, $namHoc, $search, $phongFilter, $gvFilter, $lhpFilter);
-        
-        // Tạo cấu trúc thời khóa biểu dạng lưới để View hiển thị chuyên nghiệp
-        // Lưới: grid[phong][thu][tiet] = schedule_data
-        $grid = [];
-        $phongs = [];
-        foreach ($list as $s) {
-            $phong = $s['phong_hoc'] ?: 'Chưa xếp phòng';
-            $phongs[$phong] = true;
-            for ($t = $s['tiet_bat_dau']; $t < $s['tiet_bat_dau'] + $s['so_tiet']; $t++) {
-                $grid[$phong][$s['thu']][$t] = $s;
-            }
-        }
-        $phongsList = array_keys($phongs);
-        sort($phongsList);
-
-        // Lấy danh sách các lớp học phần để chọn
-        $allClasses = $this->scheduleModel->getAllClasses($hocKy, $namHoc);
-        $listNamHoc = $this->scheduleModel->getDistinctYears();
-        $scheduleStats = $this->scheduleModel->getScheduleDashboardStats($hocKy, $namHoc);
-        $unscheduledClasses = $this->scheduleModel->getUnscheduledClasses($hocKy, $namHoc);
-        $roomUtilization = $this->scheduleModel->getRoomUtilization($hocKy, $namHoc);
-
-        $item = null;
-        if ($action === 'edit' && $id > 0) {
-            $item = $this->scheduleModel->getScheduleById($id);
-            if (!$item) {
-                setFlash('danger', 'Không tìm thấy lịch học cần sửa.');
-                $this->redirect("/admin/thoi-khoa-bieu?hoc_ky=$hocKy&nam_hoc=" . urlencode($namHoc));
-            }
-        }
-
         $this->view('admin/schedule/index', [
-            'list' => $list,
-            'grid' => $grid,
-            'phongsList' => $phongsList,
-            'hocKy' => $hocKy,
-            'namHoc' => $namHoc,
-            'search' => $search,
-            'phongFilter' => $phongFilter,
-            'gvFilter' => $gvFilter,
-            'lhpFilter' => $lhpFilter,
-            'allClasses' => $allClasses,
-            'listNamHoc' => $listNamHoc,
-            'scheduleStats' => $scheduleStats,
-            'unscheduledClasses' => $unscheduledClasses,
-            'roomUtilization' => $roomUtilization,
-            'action' => $action,
-            'item' => $item,
             'maSv' => $maSv,
             'student' => $student,
             'registeredTerms' => $registeredTerms,
             'selectedTerm' => $selectedTerm,
             'studentGrid' => $studentGrid,
+            'studentSchedule' => $studentSchedule,
             'studentError' => $studentError,
             'page_title' => 'Quản lý Thời khóa biểu',
             'active_menu' => 'thoi_khoa_bieu'

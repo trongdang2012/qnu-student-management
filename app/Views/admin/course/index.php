@@ -77,13 +77,6 @@
           <div class="stat-value"><?= (int)$totalItems ?></div>
         </div>
       </div>
-      <div class="stat-card">
-        <i class="fas fa-award"></i>
-        <div>
-          <h3>Trang hiện tại</h3>
-          <div class="stat-value"><?= (int)$page ?> / <?= (int)$totalPages ?></div>
-        </div>
-      </div>
     </div>
 
     <div class="modal <?= ($action === 'edit' || $action === 'add') ? 'active' : '' ?>" id="formModal">
@@ -239,7 +232,7 @@
           <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Tìm / Lọc</button>
           <a href="<?= BASE_URL ?>/admin/hoc-phan" class="btn btn-secondary"><i class="fas fa-rotate-left"></i> Xóa lọc</a>
           <button type="button" class="btn btn-warning" onclick="showDuplicateModal()"><i class="fas fa-copy"></i> Nhân bản CTĐT</button>
-          <button type="button" class="btn btn-success" onclick="showAddForm()"><i class="fas fa-plus"></i> Thêm học phần</button>
+          <a href="?action=add&khoa_id=<?= $khoa_id ?>&nganh_id=<?= $nganh_id ?>&search=<?= urlencode($search) ?>" class="btn btn-success"><i class="fas fa-plus"></i> Thêm học phần</a>
         </form>
       </div>
     </div>

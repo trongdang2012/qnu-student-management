@@ -125,6 +125,8 @@
               <th style="width: 70px; text-align: center;">STT</th>
               <th style="width: 120px;">Mã GV</th>
               <th>Họ và tên</th>
+              <th>Học vị</th>
+              <th>Chuyên ngành</th>
               <th>Khoa</th>
               <th>Email</th>
               <th>Số điện thoại</th>
@@ -134,7 +136,7 @@
           <tbody>
             <?php if (empty($giang_viens)): ?>
               <tr>
-                <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 30px;">
+                <td colspan="9" style="text-align: center; color: var(--text-muted); padding: 30px;">
                   <i class="fas fa-folder-open" style="font-size: 30px; display: block; margin-bottom: 10px;"></i>
                   Không tìm thấy giảng viên nào.
                 </td>
@@ -148,12 +150,14 @@
                   <td style="text-align: center; font-weight: 500; color: var(--text-muted);"><?= $stt++ ?></td>
                   <td style="font-weight: 600; color: var(--text-dark);"><?= e($gv['ma_gv']) ?></td>
                   <td style="font-weight: 500; color: var(--primary);"><?= e($gv['ho_ten']) ?></td>
+                  <td><?= e($gv['hoc_vi'] ?? 'Chưa xác định') ?></td>
+                  <td><?= e($gv['chuyen_nganh'] ?? 'Chưa xác định') ?></td>
                   <td><?= e($gv['ten_khoa'] ?? 'Chưa xác định') ?></td>
                   <td><?= e($gv['email']) ?></td>
                   <td><?= e($gv['so_dien_thoai']) ?></td>
                   <td style="text-align: center;">
                     <div style="display: inline-flex; gap: 8px;">
-                      <button type="button" class="btn btn-outline btn-sm" onclick="editGiangVien(<?= $gv['id'] ?>, '<?= e($gv['ma_gv']) ?>', '<?= e($gv['ho_ten']) ?>', '<?= $gv['khoa_id'] ?>', '<?= e($gv['email']) ?>', '<?= e($gv['so_dien_thoai']) ?>')">
+                      <button type="button" class="btn btn-outline btn-sm" onclick="editGiangVien(<?= $gv['id'] ?>, '<?= e($gv['ma_gv']) ?>', '<?= e($gv['ho_ten']) ?>', '<?= $gv['khoa_id'] ?>', '<?= e($gv['hoc_vi']) ?>', '<?= e($gv['chuyen_nganh']) ?>', '<?= e($gv['email']) ?>', '<?= e($gv['so_dien_thoai']) ?>')">
                         <i class="fas fa-edit"></i> Sửa
                       </button>
                       <form action="<?= BASE_URL ?>/admin/giang-vien/delete" method="POST" onsubmit="return confirm('Bạn có chắc chắn muốn xóa giảng viên này? Lớp học phần do giảng viên này dạy sẽ được cập nhật trống.');" style="margin: 0;">
@@ -204,7 +208,15 @@
         </div>
         <div class="form-group" style="margin-bottom: 15px;">
           <label for="ho_ten" style="font-weight: 500; display: block; margin-bottom: 8px;">Họ và tên giảng viên <span style="color: red;">*</span></label>
-          <input type="text" name="ho_ten" id="ho_ten" class="form-control" placeholder="VD: TS. Nguyễn Văn A" required style="width: 100%;">
+          <input type="text" name="ho_ten" id="ho_ten" class="form-control" placeholder="VD: Nguyễn Văn A" required style="width: 100%;">
+        </div>
+        <div class="form-group" style="margin-bottom: 15px;">
+          <label for="hoc_vi" style="font-weight: 500; display: block; margin-bottom: 8px;">Học vị</label>
+          <input type="text" name="hoc_vi" id="hoc_vi" class="form-control" placeholder="VD: TS, ThS, PGS.TS" style="width: 100%;">
+        </div>
+        <div class="form-group" style="margin-bottom: 15px;">
+          <label for="chuyen_nganh" style="font-weight: 500; display: block; margin-bottom: 8px;">Chuyên ngành</label>
+          <input type="text" name="chuyen_nganh" id="chuyen_nganh" class="form-control" placeholder="VD: Công nghệ phần mềm" style="width: 100%;">
         </div>
         <div class="form-group" style="margin-bottom: 15px;">
           <label for="khoa_id" style="font-weight: 500; display: block; margin-bottom: 8px;">Khoa phụ trách</label>
@@ -239,6 +251,8 @@ function openModal() {
   document.getElementById('ma_gv').value = '';
   document.getElementById('ma_gv').readOnly = false;
   document.getElementById('ho_ten').value = '';
+  document.getElementById('hoc_vi').value = '';
+  document.getElementById('chuyen_nganh').value = '';
   document.getElementById('khoa_id').value = '';
   document.getElementById('email').value = '';
   document.getElementById('so_dien_thoai').value = '';
@@ -246,12 +260,14 @@ function openModal() {
   setTimeout(() => document.getElementById('ma_gv').focus(), 200);
 }
 
-function editGiangVien(id, ma_gv, ho_ten, khoa_id, email, so_dien_thoai) {
+function editGiangVien(id, ma_gv, ho_ten, khoa_id, hoc_vi, chuyen_nganh, email, so_dien_thoai) {
   document.getElementById('modal-title').innerHTML = '<i class="fas fa-edit"></i> Chỉnh sửa Giảng viên';
   document.getElementById('giangvien-id').value = id;
   document.getElementById('ma_gv').value = ma_gv;
   document.getElementById('ma_gv').readOnly = true;
   document.getElementById('ho_ten').value = ho_ten;
+  document.getElementById('hoc_vi').value = hoc_vi;
+  document.getElementById('chuyen_nganh').value = chuyen_nganh;
   document.getElementById('khoa_id').value = khoa_id;
   document.getElementById('email').value = email;
   document.getElementById('so_dien_thoai').value = so_dien_thoai;

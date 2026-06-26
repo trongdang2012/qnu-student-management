@@ -346,7 +346,7 @@ class ClassController extends Controller {
         $nganh = $this->majorModel->getMajorById($nganhId);
         $nganhTen = $nganh ? $nganh['ten_nganh'] : '';
         
-        $students = $db->fetchAll("SELECT id FROM sinh_vien WHERE nganh_id = :nganh_id", ['nganh_id' => $nganhId]);
+        $students = $db->fetchAll("SELECT s.id FROM sinh_vien s JOIN lop_sinh_hoat lsh ON s.lop_sinh_hoat_id = lsh.id WHERE lsh.nganh_id = :nganh_id", ['nganh_id' => $nganhId]);
         
         if (!empty($students)) {
             $notificationTitle = "Mở đợt đăng ký học phần mới - Ngành " . $nganhTen;
@@ -409,7 +409,7 @@ class ClassController extends Controller {
         ", $classIds);
 
         foreach ($nganhs as $ng) {
-            $students = $db->fetchAll("SELECT id FROM sinh_vien WHERE nganh_id = :nganh_id", ['nganh_id' => $ng['nganh_id']]);
+            $students = $db->fetchAll("SELECT s.id FROM sinh_vien s JOIN lop_sinh_hoat lsh ON s.lop_sinh_hoat_id = lsh.id WHERE lsh.nganh_id = :nganh_id", ['nganh_id' => $ng['nganh_id']]);
             $notificationTitle = "Mở đăng ký lớp học phần đặc biệt";
             $notificationContent = "Thông báo: Admin đã mở đăng ký một số lớp học phần đặc biệt thuộc Ngành " . $ng['ten_nganh'] . ". Hạn đăng ký từ " . date('d/m H:i', strtotime($ngay_bat_dau_dk)) . " đến " . date('d/m H:i', strtotime($ngay_ket_thuc_dk)) . ".";
             

@@ -26,12 +26,24 @@ try {
             ma_gv VARCHAR(20) UNIQUE NOT NULL,
             ho_ten VARCHAR(100) NOT NULL,
             khoa_id INT NULL,
+            hoc_vi VARCHAR(100) NULL,
+            chuyen_nganh VARCHAR(100) NULL,
             email VARCHAR(100) NULL,
             so_dien_thoai VARCHAR(15) NULL,
             FOREIGN KEY (khoa_id) REFERENCES khoa(id) ON DELETE SET NULL
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
     ");
     echo " - Tao/Kiem tra bang giang_vien thanh cong.\n";
+
+    // Kiem tra va them cot neu da ton tai bang cu
+    try {
+        $pdo->exec("ALTER TABLE giang_vien ADD COLUMN hoc_vi VARCHAR(100) NULL AFTER khoa_id;");
+        echo " - Them cot hoc_vi vao bang giang_vien.\n";
+    } catch (PDOException $e) {}
+    try {
+        $pdo->exec("ALTER TABLE giang_vien ADD COLUMN chuyen_nganh VARCHAR(100) NULL AFTER hoc_vi;");
+        echo " - Them cot chuyen_nganh vao bang giang_vien.\n";
+    } catch (PDOException $e) {}
 
     // 2. Tao bang phong_hoc
     $pdo->exec("
@@ -95,33 +107,33 @@ try {
     
     // Them cac giang vien mau
     $giangViens = [
-        ['TS. Nguyen Van Hung', 'Khoa Cong nghe thong tin', 'hungnv@qnu.edu.vn', '0912345678'],
-        ['ThS. Tran Thi Lan', 'Khoa Cong nghe thong tin', 'lantt@qnu.edu.vn', '0912345679'],
-        ['TS. Le Van Minh', 'Khoa Cong nghe thong tin', 'minhlv@qnu.edu.vn', '0912345680'],
-        ['ThS. Hoang Van E', 'Khoa Cong nghe thong tin', 'ehv@qnu.edu.vn', '0912345681'],
-        ['ThS. Pham Thi Hoa', 'Khoa Cong nghe thong tin', 'hoapt@qnu.edu.vn', '0912345682'],
-        ['TS. Hoang Quang Trung', 'Khoa Cong nghe thong tin', 'trunghq@qnu.edu.vn', '0912345683'],
-        ['ThS. Nguyen Thi F', 'Khoa Cong nghe thong tin', 'fnt@qnu.edu.vn', '0912345684'],
-        ['TS. Tran Van G', 'Khoa Cong nghe thong tin', 'gtv@qnu.edu.vn', '0912345685'],
-        ['TS. Le Van H', 'Khoa Cong nghe thong tin', 'hlv@qnu.edu.vn', '0912345686'],
-        ['TS. Ly Van I', 'Khoa Cong nghe thong tin', 'ilv@qnu.edu.vn', '0912345687'],
-        ['ThS. Nguyen Van J', 'Khoa Cong nghe thong tin', 'jnv@qnu.edu.vn', '0912345688'],
-        ['Co Do Thi K', 'Khoa Cong nghe thong tin', 'kdt@qnu.edu.vn', '0912345689'],
-        ['Thay Vu Van L', 'Khoa Cong nghe thong tin', 'lvv@qnu.edu.vn', '0912345690'],
-        ['TS. Pham Minh Tuan', 'Khoa Toan & Thong ke', 'tuanpm@qnu.edu.vn', '0912345691'],
-        ['TS. Dang Thanh Son', 'Khoa Cong nghe thong tin', 'sondt@qnu.edu.vn', '0912345692'],
-        ['ThS. Le Hoang Nam', 'Khoa Cong nghe thong tin', 'namlh@qnu.edu.vn', '0912345693'],
-        ['ThS. Nguyen Thi Mai', 'Khoa Toan & Thong ke', 'maint@qnu.edu.vn', '0912345694'],
-        ['TS. Bui Quoc Bao', 'Khoa Cong nghe thong tin', 'baobq@qnu.edu.vn', '0912345695'],
-        ['ThS. Huynh Tan Dat', 'Khoa Cong nghe thong tin', 'dathx@qnu.edu.vn', '0912345696'],
-        ['TS. Phan Anh Tuan', 'Khoa Cong nghe thong tin', 'tuanpa@qnu.edu.vn', '0912345697'],
-        ['TS. Vu Thi Quynh', 'Khoa Cong nghe thong tin', 'quynhvt@qnu.edu.vn', '0912345698']
+        ['Nguyen Van Hung', 'Khoa Cong nghe thong tin', 'TS', 'Khoa hoc may tinh', 'hungnv@qnu.edu.vn', '0912345678'],
+        ['Tran Thi Lan', 'Khoa Cong nghe thong tin', 'ThS', 'Cong nghe phan mem', 'lantt@qnu.edu.vn', '0912345679'],
+        ['Le Van Minh', 'Khoa Cong nghe thong tin', 'TS', 'He thong thong tin', 'minhlv@qnu.edu.vn', '0912345680'],
+        ['Hoang Van E', 'Khoa Cong nghe thong tin', 'ThS', 'Ky thuat mang', 'ehv@qnu.edu.vn', '0912345681'],
+        ['Pham Thi Hoa', 'Khoa Cong nghe thong tin', 'ThS', 'Khoa hoc du lieu', 'hoapt@qnu.edu.vn', '0912345682'],
+        ['Hoang Quang Trung', 'Khoa Cong nghe thong tin', 'TS', 'An toan thong tin', 'trunghq@qnu.edu.vn', '0912345683'],
+        ['Nguyen Thi F', 'Khoa Cong nghe thong tin', 'ThS', 'Phat trien ung dung Mobile', 'fnt@qnu.edu.vn', '0912345684'],
+        ['Tran Van G', 'Khoa Cong nghe thong tin', 'TS', 'Cong nghe web', 'gtv@qnu.edu.vn', '0912345685'],
+        ['Le Van H', 'Khoa Cong nghe thong tin', 'TS', 'Kien truc he thong', 'hlv@qnu.edu.vn', '0912345686'],
+        ['Ly Van I', 'Khoa Cong nghe thong tin', 'TS', 'Tri tue nhan tao', 'ilv@qnu.edu.vn', '0912345687'],
+        ['Nguyen Van J', 'Khoa Cong nghe thong tin', 'ThS', 'Khoa hoc may tinh', 'jnv@qnu.edu.vn', '0912345688'],
+        ['Do Thi K', 'Khoa Cong nghe thong tin', 'ThS', 'Tieng Anh chuyen nganh', 'kdt@qnu.edu.vn', '0912345689'],
+        ['Vu Van L', 'Khoa Cong nghe thong tin', 'ThS', 'Giao duc the chat', 'lvv@qnu.edu.vn', '0912345690'],
+        ['Pham Minh Tuan', 'Khoa Toan & Thong ke', 'TS', 'Giai tich toan hoc', 'tuanpm@qnu.edu.vn', '0912345691'],
+        ['Dang Thanh Son', 'Khoa Cong nghe thong tin', 'TS', 'Mang va an ninh mang', 'sondt@qnu.edu.vn', '0912345692'],
+        ['Le Hoang Nam', 'Khoa Cong nghe thong tin', 'ThS', 'Cong nghe phan mem', 'namlh@qnu.edu.vn', '0912345693'],
+        ['Nguyen Thi Mai', 'Khoa Toan & Thong ke', 'ThS', 'Toan ung dung', 'maint@qnu.edu.vn', '0912345694'],
+        ['Bui Quoc Bao', 'Khoa Cong nghe thong tin', 'TS', 'Hoc may va khai pha du lieu', 'baobq@qnu.edu.vn', '0912345695'],
+        ['Huynh Tan Dat', 'Khoa Cong nghe thong tin', 'ThS', 'He thong thong tin', 'dathx@qnu.edu.vn', '0912345696'],
+        ['Phan Anh Tuan', 'Khoa Cong nghe thong tin', 'TS', 'Khoa hoc may tinh', 'tuanpa@qnu.edu.vn', '0912345697'],
+        ['Vu Thi Quynh', 'Khoa Cong nghe thong tin', 'TS', 'Cong nghe tri thuc', 'quynhvt@qnu.edu.vn', '0912345698']
     ];
 
     $stmtInsertGv = $pdo->prepare("
-        INSERT INTO giang_vien (ma_gv, ho_ten, khoa_id, email, so_dien_thoai) 
-        VALUES (:ma, :ten, :khoa_id, :email, :sdt)
-        ON DUPLICATE KEY UPDATE ho_ten = VALUES(ho_ten), khoa_id = VALUES(khoa_id), email = VALUES(email), so_dien_thoai = VALUES(so_dien_thoai)
+        INSERT INTO giang_vien (ma_gv, ho_ten, khoa_id, hoc_vi, chuyen_nganh, email, so_dien_thoai) 
+        VALUES (:ma, :ten, :khoa_id, :hoc_vi, :chuyen_nganh, :email, :sdt)
+        ON DUPLICATE KEY UPDATE ho_ten = VALUES(ho_ten), khoa_id = VALUES(khoa_id), hoc_vi = VALUES(hoc_vi), chuyen_nganh = VALUES(chuyen_nganh), email = VALUES(email), so_dien_thoai = VALUES(so_dien_thoai)
     ");
     
     $index = 1001;
@@ -129,8 +141,10 @@ try {
         $maGv = "GV" . $index++;
         $tenGv = $gv[0];
         $tenKhoa = $gv[1];
-        $email = $gv[2];
-        $sdt = $gv[3];
+        $hocVi = $gv[2];
+        $chuyenNganh = $gv[3];
+        $email = $gv[4];
+        $sdt = $gv[5];
         
         $khoaId = $khoaMap[$tenKhoa] ?? null;
         
@@ -138,6 +152,8 @@ try {
             'ma' => $maGv,
             'ten' => $tenGv,
             'khoa_id' => $khoaId,
+            'hoc_vi' => $hocVi,
+            'chuyen_nganh' => $chuyenNganh,
             'email' => $email,
             'sdt' => $sdt
         ]);
@@ -191,14 +207,16 @@ try {
     $stmtUpdateTkb = $pdo->prepare("UPDATE thoi_khoa_bieu SET giang_vien_id = :gv_id, phong_hoc_id = :p_id WHERE id = :id");
 
     // Lay map
-    $dbGvs = $pdo->query("SELECT id, ho_ten FROM giang_vien")->fetchAll();
+    $dbGvs = $pdo->query("SELECT id, ho_ten, hoc_vi FROM giang_vien")->fetchAll();
     $gvMap = [];
     foreach ($dbGvs as $gv) {
-        // Tải map không dấu hoặc map tương đương
-        $gvMap[$gv['ho_ten']] = $gv['id'];
+        $prefix = !empty($gv['hoc_vi']) ? $gv['hoc_vi'] . '. ' : '';
+        $fullName = $prefix . $gv['ho_ten'];
+        
+        $gvMap[$fullName] = $gv['id'];
         
         // Tạo thêm map không có dấu tiếng Việt do seeder có thể dùng tiếng Việt có dấu khác hoặc không dấu
-        $noSignName = iconv('UTF-8', 'ASCII//TRANSLIT', $gv['ho_ten']);
+        $noSignName = iconv('UTF-8', 'ASCII//TRANSLIT', $fullName);
         $gvMap[$noSignName] = $gv['id'];
     }
     
