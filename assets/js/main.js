@@ -91,6 +91,10 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   // ── Upload zone drag & drop ──────────────────────────────────
+  // ĐÃ VÔ HIỆU HÓA: Khối mã này gây xung đột với JS cục bộ trong app/Views/student/documents.php
+  // dẫn đến việc click chọn file bị lặp 2 lần và gây reload trang/tắt modal ở Student.
+  // Toàn bộ logic kéo thả và cập nhật thông tin file hiện được xử lý trực tiếp trong view documents.php.
+  /*
   const uploadZone = document.getElementById('uploadZone');
   const fileInput  = document.getElementById('fileInput');
   if (uploadZone && fileInput) {
@@ -120,6 +124,7 @@ document.addEventListener('DOMContentLoaded', function () {
     info.innerHTML = `<strong>📄 ${escHtml(file.name)}</strong> <span class="text-muted">(${size} KB)</span>`;
     info.style.display = 'block';
   }
+  */
 
   // ── Table search filter ──────────────────────────────────────
   const searchInput = document.getElementById('tableSearch');

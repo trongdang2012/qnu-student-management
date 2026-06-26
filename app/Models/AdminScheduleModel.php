@@ -404,4 +404,92 @@ class AdminScheduleModel {
             ];
         }
     }
+
+    public function getStudentByMa($maSv) {
+        return $this->db->fetch("SELECT s.*, l.ten_lop as lop, n.ten_nganh as ten_nganh, k.ten_khoa as ten_khoa 
+                                 FROM sinh_vien s
+                                 LEFT JOIN lop_sinh_hoat l ON l.id = s.lop_sinh_hoat_id
+                                 LEFT JOIN nganh n ON n.id = l.nganh_id
+                                 LEFT JOIN khoa k ON n.khoa_id = k.id
+                                 WHERE s.ma_sv = :ma_sv", ['ma_sv' => $maSv]);
+    }
+
+    public function getStudentRegisteredTerms($sinhVienId) {
+        $sql = "SELECT DISTINCT l.nam_hoc, l.hoc_ky
+                FROM dang_ky_hp dk
+                JOIN lop_hoc_phan l ON dk.lop_hoc_phan_id = l.id
+                WHERE dk.sinh_vien_id = :sv_id AND dk.trang_thai = 'Đã duyệt'
+                ORDER BY l.nam_hoc DESC, l.hoc_ky DESC";
+        return $this->db->fetchAll($sql, ['sv_id' => $sinhVienId]);
+    }
+
+    public function getStudentScheduleForTerm($sinhVienId, $hocKy, $namHoc) {
+        $sql = "SELECT t.*, l.ma_lop_hp, hp.ma_hp, hp.ten_hp
+                FROM dang_ky_hp dk
+                JOIN lop_hoc_phan l ON dk.lop_hoc_phan_id = l.id
+                JOIN hoc_phan hp ON l.hoc_phan_id = hp.id
+                JOIN thoi_khoa_bieu t ON t.lop_hoc_phan_id = l.id
+                WHERE dk.sinh_vien_id = :sv_id 
+                  AND dk.trang_thai = 'Đã duyệt'
+                  AND l.hoc_ky = :hk 
+                  AND l.nam_hoc = :nh
+                ORDER BY t.thu ASC, t.tiet_bat_dau ASC";
+        return $this->db->fetchAll($sql, [
+            'sv_id' => $sinhVienId,
+            'hk' => $hocKy,
+            'nh' => $namHoc
+        ]);
+    }
+
+    public function checkClassScheduleConflict($excludeScheduleId, $phongHocId, $giangVienId, $thu, $tietBd, $soTiet, $hocKy, $namHoc) {
+        // Kiểm tra trùng phòng học
+        if ($phongHocId > 0) {
+            $conflictRoom = $this->db->fetch("
+                SELECT t.*, l.ma_lop_hp, h.ten_hp
+                FROM thoi_khoa_bieu t
+                JOIN lop_hoc_phan l ON l.id = t.lop_hoc_phan_id
+                JOIN hoc_phan h ON h.id = l.hoc_phan_id
+                WHERE t.id <> :excludeId
+                  AND t.phong_hoc_id = :phong_id
+                  AND t.thu = :thu
+                  AND t.hoc_ky = :hk
+                  AND t.nam_hoc = :nh
+                  AND t.tiet_bat_dau <= :tk
+                  AND (t.tiet_bat_dau + t.so_tiet - 1) >= :tb
+                LIMIT 1
+            ", [
+                'excludeId' => $excludeScheduleId, 'phong_id' => $phongHocId, 'thu' => $thu,
+                'hk' => $hocKy, 'nh' => $namHoc, 'tk' => $tietBd + $soTiet - 1, 'tb' => $tietBd
+            ]);
+            if ($conflictRoom) {
+                return "Trùng phòng học với lớp {$conflictRoom['ma_lop_hp']} ({$conflictRoom['ten_hp']}) tại tiết {$conflictRoom['tiet_bat_dau']}-" . ($conflictRoom['tiet_bat_dau'] + $conflictRoom['so_tiet'] - 1);
+            }
+        }
+        
+        // Kiểm tra trùng giảng viên
+        if ($giangVienId > 0) {
+            $conflictGv = $this->db->fetch("
+                SELECT t.*, l.ma_lop_hp, h.ten_hp
+                FROM thoi_khoa_bieu t
+                JOIN lop_hoc_phan l ON l.id = t.lop_hoc_phan_id
+                JOIN hoc_phan h ON h.id = l.hoc_phan_id
+                WHERE t.id <> :excludeId
+                  AND t.giang_vien_id = :gv_id
+                  AND t.thu = :thu
+                  AND t.hoc_ky = :hk
+                  AND t.nam_hoc = :nh
+                  AND t.tiet_bat_dau <= :tk
+                  AND (t.tiet_bat_dau + t.so_tiet - 1) >= :tb
+                LIMIT 1
+            ", [
+                'excludeId' => $excludeScheduleId, 'gv_id' => $giangVienId, 'thu' => $thu,
+                'hk' => $hocKy, 'nh' => $namHoc, 'tk' => $tietBd + $soTiet - 1, 'tb' => $tietBd
+            ]);
+            if ($conflictGv) {
+                return "Giảng viên bị trùng lịch dạy lớp {$conflictGv['ma_lop_hp']} ({$conflictGv['ten_hp']}) tại tiết {$conflictGv['tiet_bat_dau']}-" . ($conflictGv['tiet_bat_dau'] + $conflictGv['so_tiet'] - 1);
+            }
+        }
+        
+        return false;
+    }
 }

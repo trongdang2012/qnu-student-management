@@ -21,6 +21,83 @@ function dkBadge(string $tt): string {
         default    => '<span class="badge badge-warning"><i class="fas fa-clock"></i> Chờ duyệt</span>',
     };
 }
+
+function renderCourseTable(array $list, string $tableId, string $emptyMsg): void {
+    $db = \App\Core\Database::getInstance();
+    ?>
+    <div style="padding:12px 20px;border-bottom:1px solid var(--border)">
+      <input type="text" data-table="#<?= $tableId ?>"
+             placeholder="🔍 Tìm nhanh lớp học phần, tên học phần..." class="form-control table-search-input"
+             style="max-width:320px;padding:7px 12px;font-size:14px">
+    </div>
+    <div class="table-wrap">
+    <table id="<?= $tableId ?>">
+      <thead><tr>
+        <th>Mã lớp HP</th>
+        <th>Tên học phần</th>
+        <th style="text-align:center">Tín chỉ</th>
+        <th style="text-align:center">Loại môn</th>
+        <th>Lịch học dự kiến</th>
+        <th>Học phần tiên quyết</th>
+        <th style="text-align:center">Sĩ số</th>
+        <th style="text-align:center">Thao tác</th>
+      </tr></thead>
+      <tbody>
+      <?php if (empty($list)): ?>
+        <tr><td colspan="8" style="text-align:center;padding:30px;color:var(--text-muted)">
+          <?= $emptyMsg ?>
+        </td></tr>
+      <?php else: ?>
+      <?php 
+      foreach ($list as $hp): 
+        $con_lai = $hp['si_so_toi_da'] - $hp['si_so_hien_tai'];
+        $is_full = $con_lai <= 0;
+      ?>
+        <tr>
+          <td><code><?= e($hp['ma_lop_hp']) ?></code></td>
+          <td class="fw-500">
+            <strong><?= e($hp['ten_hp']) ?></strong><br>
+            <small style="color:#666">Mã HP: <?= e($hp['ma_hp']) ?></small>
+          </td>
+          <td style="text-align:center;font-weight:700"><?= (int)$hp['so_tin_chi'] ?></td>
+          <td style="text-align:center">
+            <span class="badge badge-<?= $hp['loai']==='Bắt buộc'?'danger':($hp['loai']==='Tự chọn'?'warning':'info') ?>">
+              <?= e($hp['loai']) ?>
+            </span>
+          </td>
+          <td><?= formatLichHoc($hp['thu'], $hp['tiet_bat_dau'], $hp['so_tiet'], $hp['phong_hoc'], $hp['giang_vien']) ?></td>
+          <td><?= formatTienQuyet($hp['ma_hp_tien_quyet'], $db) ?></td>
+          <td style="text-align:center">
+            <?php if ($is_full): ?>
+              <span class="badge badge-danger" style="font-weight:700">Đầy (<?= $hp['si_so_hien_tai'] ?>/<?= $hp['si_so_toi_da'] ?>)</span>
+            <?php else: ?>
+              <span class="badge badge-success" style="font-weight:700">Đã ĐK: <?= $hp['si_so_hien_tai'] ?>/<?= $hp['si_so_toi_da'] ?></span>
+              <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Còn <?= $con_lai ?> chỗ</div>
+            <?php endif; ?>
+          </td>
+          <td style="text-align:center">
+            <form class="ajax-form-dk" method="POST" style="display:inline" data-confirm="Bạn có chắc chắn muốn đăng ký lớp học phần này: <?= e($hp['ma_lop_hp']) ?>?">
+              <input type="hidden" name="action" value="dang_ky">
+              <input type="hidden" name="lop_hoc_phan_id" value="<?= (int)$hp['lop_hoc_phan_id'] ?>">
+              <?php if ($is_full): ?>
+                <button type="button" class="btn btn-secondary btn-sm btn-submit-dk" disabled>
+                  <i class="fas fa-ban"></i> Đã đầy
+                </button>
+              <?php else: ?>
+                <button type="button" class="btn btn-primary btn-sm btn-submit-dk">
+                  <i class="fas fa-plus"></i> Đăng ký lớp
+                </button>
+              <?php endif; ?>
+            </form>
+          </td>
+        </tr>
+      <?php endforeach; ?>
+      <?php endif; ?>
+      </tbody>
+    </table>
+    </div>
+    <?php
+}
 ?>
 <?php require_once ROOT . '/includes/header.php'; ?>
 <?php require_once ROOT . '/includes/navbar_student.php'; ?>
@@ -54,7 +131,7 @@ function dkBadge(string $tt): string {
           <div class="stat-icon green"><i class="fas fa-layer-group"></i></div>
           <div>
             <div style="font-size:28px;font-weight:700;color:var(--success)"><?= $tc_dang_ky ?></div>
-            <div class="stat-label">Số tín chỉ tích lũy đăng ký (Khuyến nghị 15-21 TC)</div>
+            <div class="stat-label">Số tín chỉ tích lũy đăng ký (Khế hoạch yêu cầu phù hợp)</div>
           </div>
         </div>
       </div>
@@ -65,10 +142,18 @@ function dkBadge(string $tt): string {
       <div class="card-body" style="padding:0">
         <div class="dk-tabs" style="padding:0 20px;margin:0">
           <button class="dk-tab active" data-tab="da-dk" id="tab-da-dk">
-            <i class="fas fa-list-check"></i> Lớp HP đã đăng ký (<?= count($da_dk) ?>)
+            <i class="fas fa-list-check"></i> Đã đăng ký (<?= count($da_dk) ?>)
           </button>
-          <button class="dk-tab" data-tab="co-the" id="tab-co-the">
-            <i class="fas fa-plus"></i> Lớp HP đang mở đăng ký (<?= count($co_the_dk) ?>)
+          <?php if ($hk != 3): ?>
+          <button class="dk-tab" data-tab="ke-hoach" id="tab-ke-hoach">
+            <i class="fas fa-calendar-check"></i> Học theo kế hoạch (<?= count($co_the_dk['ke_hoach'] ?? []) ?>)
+          </button>
+          <?php endif; ?>
+          <button class="dk-tab" data-tab="hoc-vuot" id="tab-hoc-vuot">
+            <i class="fas fa-running"></i> Đăng ký học vượt (<?= count($co_the_dk['hoc_vuot'] ?? []) ?>)
+          </button>
+          <button class="dk-tab" data-tab="hoc-lai" id="tab-hoc-lai">
+            <i class="fas fa-redo"></i> Học lại & Cải thiện (<?= count($co_the_dk['hoc_lai'] ?? []) ?>)
           </button>
         </div>
 
@@ -90,7 +175,7 @@ function dkBadge(string $tt): string {
             <tbody>
             <?php if (empty($da_dk)): ?>
               <tr><td colspan="9" style="text-align:center;padding:30px;color:var(--text-muted)">
-                Chưa đăng ký lớp học phần nào. Vui lòng chuyển sang tab bên phải để đăng ký.
+                Chưa đăng ký lớp học phần nào. Vui lòng chọn các tab khác để đăng ký môn học.
               </td></tr>
             <?php else: ?>
             <?php foreach ($da_dk as $dk): ?>
@@ -147,80 +232,27 @@ function dkBadge(string $tt): string {
           </div>
         </div>
 
-        <!-- Panel 2: Có thể đăng ký -->
-        <div class="dk-panel" id="panel-co-the">
-          <div style="padding:12px 20px;border-bottom:1px solid var(--border)">
-            <input type="text" id="tableSearch" data-table="#tblCoDk"
-                   placeholder="🔍 Tìm nhanh lớp học phần, tên học phần..." class="form-control"
-                   style="max-width:320px;padding:7px 12px;font-size:14px">
-          </div>
-          <div class="table-wrap">
-          <table id="tblCoDk">
-            <thead><tr>
-              <th>Mã lớp HP</th>
-              <th>Tên học phần</th>
-              <th style="text-align:center">Tín chỉ</th>
-              <th style="text-align:center">Loại môn</th>
-              <th>Lịch học dự kiến</th>
-              <th>Học phần tiên quyết</th>
-              <th style="text-align:center">Sĩ số</th>
-              <th style="text-align:center">Thao tác</th>
-            </tr></thead>
-            <tbody>
-            <?php if (empty($co_the_dk)): ?>
-              <tr><td colspan="8" style="text-align:center;padding:30px;color:var(--text-muted)">
-                Hiện tại không có lớp học phần nào mở cho ngành học của bạn hoặc bạn đã hoàn thành hết chương trình đào tạo.
-              </td></tr>
-            <?php else: ?>
-            <?php 
-            $db = \App\Core\Database::getInstance();
-            foreach ($co_the_dk as $hp): 
-              $con_lai = $hp['si_so_toi_da'] - $hp['si_so_hien_tai'];
-              $is_full = $con_lai <= 0;
-            ?>
-              <tr>
-                <td><code><?= e($hp['ma_lop_hp']) ?></code></td>
-                <td class="fw-500">
-                  <strong><?= e($hp['ten_hp']) ?></strong><br>
-                  <small style="color:#666">Mã HP: <?= e($hp['ma_hp']) ?></small>
-                </td>
-                <td style="text-align:center;font-weight:700"><?= (int)$hp['so_tin_chi'] ?></td>
-                <td style="text-align:center">
-                  <span class="badge badge-<?= $hp['loai']==='Bắt buộc'?'danger':($hp['loai']==='Tự chọn'?'warning':'info') ?>">
-                    <?= e($hp['loai']) ?>
-                  </span>
-                </td>
-                <td><?= formatLichHoc($hp['thu'], $hp['tiet_bat_dau'], $hp['so_tiet'], $hp['phong_hoc'], $hp['giang_vien']) ?></td>
-                <td><?= formatTienQuyet($hp['ma_hp_tien_quyet'], $db) ?></td>
-                <td style="text-align:center">
-                  <?php if ($is_full): ?>
-                    <span class="badge badge-danger" style="font-weight:700">Đầy (<?= $hp['si_so_hien_tai'] ?>/<?= $hp['si_so_toi_da'] ?>)</span>
-                  <?php else: ?>
-                    <span class="badge badge-success" style="font-weight:700">Đã ĐK: <?= $hp['si_so_hien_tai'] ?>/<?= $hp['si_so_toi_da'] ?></span>
-                    <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Còn <?= $con_lai ?> chỗ</div>
-                  <?php endif; ?>
-                </td>
-                <td style="text-align:center">
-                  <form class="ajax-form-dk" method="POST" style="display:inline" data-confirm="Bạn có chắc chắn muốn đăng ký lớp học phần này: <?= e($hp['ma_lop_hp']) ?>?">
-                    <input type="hidden" name="action" value="dang_ky">
-                    <input type="hidden" name="lop_hoc_phan_id" value="<?= (int)$hp['lop_hoc_phan_id'] ?>">
-                    <?php if ($is_full): ?>
-                      <button type="button" class="btn btn-secondary btn-sm btn-submit-dk" disabled>
-                        <i class="fas fa-ban"></i> Đã đầy
-                      </button>
-                    <?php else: ?>
-                      <button type="button" class="btn btn-primary btn-sm btn-submit-dk">
-                        <i class="fas fa-plus"></i> Đăng ký lớp
-                      </button>
-                    <?php endif; ?>
-                  </form>
-                </td>
-              </tr>
-            <?php endforeach; ?>
-            <?php endif; ?>
-            </tbody>
-          </table>
-          </div>
+        <!-- Panel 2: Học theo kế hoạch (Chỉ hiện khi không phải kỳ hè) -->
+        <?php if ($hk != 3): ?>
+        <div class="dk-panel" id="panel-ke-hoach">
+          <?php renderCourseTable($co_the_dk['ke_hoach'] ?? [], 'tblKeHoach', 'Không có lớp học phần nào thuộc kế hoạch chuẩn học kỳ này đang mở đăng ký.'); ?>
+        </div>
+        <?php endif; ?>
+
+        <!-- Panel 3: Học vượt -->
+        <div class="dk-panel" id="panel-hoc-vuot">
+          <?php 
+            $vuotMsg = $hk == 3 ? 'Không có lớp học phần nào mở cho học kỳ sau hè để đăng ký vượt.' : 'Không có lớp học phần nào thuộc học kỳ sau của các năm sau đang mở đăng ký.';
+            renderCourseTable($co_the_dk['hoc_vuot'] ?? [], 'tblHocVuot', $vuotMsg); 
+          ?>
+        </div>
+
+        <!-- Panel 4: Học lại / Cải thiện -->
+        <div class="dk-panel" id="panel-hoc-lai">
+          <?php 
+            $laiMsg = $hk == 3 ? 'Không có lớp học phần nào bạn từng học trước đây đang mở đăng ký học lại.' : 'Không có lớp học phần nào thuộc học kỳ trước đang mở đăng ký học lại.';
+            renderCourseTable($co_the_dk['hoc_lai'] ?? [], 'tblHocLai', $laiMsg); 
+          ?>
         </div>
 
       </div>
@@ -229,13 +261,13 @@ function dkBadge(string $tt): string {
     <!-- Hướng dẫn đăng ký học phần -->
     <div class="card mt-16 fade-in">
       <div class="card-body">
-        <h4 style="color:var(--primary);margin-bottom:10px"><i class="fas fa-info-circle"></i> Quy chế đăng ký tín chỉ trực tuyến</h4>
+        <h4 style="color:var(--primary);margin-bottom:10px"><i class="fas fa-info-circle"></i> Quy chế đăng ký tín chỉ trực tuyến QNU</h4>
         <ul style="font-size:14px;color:var(--text-muted);line-height:2;padding-left:20px">
-          <li>Mỗi sinh viên đăng ký học tập trực tuyến thông qua việc chọn đăng ký vào các **Lớp học phần** đang mở tương ứng.</li>
-          <li>Hệ thống tự động kiểm tra trùng lịch học cá nhân ngay khi bạn bấm nút Đăng ký lớp học phần. Nếu trùng lịch học, hệ thống sẽ chặn và hiển thị thông báo.</li>
-          <li>Khi đăng ký thành công, hệ thống sẽ tự động phê duyệt ngay lập tức (trạng thái hiển thị là **Đã duyệt**) và sĩ số lớp học phần sẽ tự động tăng lên 1.</li>
-          <li>Bạn có thể tự hủy lớp học phần đã đăng ký (ở trạng thái **Đã duyệt**) bất cứ lúc nào trong thời gian đợt đăng ký tín chỉ còn mở.</li>
-          <li>Trong trường hợp lớp học phần đã đầy sĩ số tối đa, hệ thống sẽ khóa và không cho phép đăng ký thêm nữa.</li>
+          <li>Sinh viên chọn đăng ký vào lớp học phần phù hợp theo học kỳ: <strong>Kế hoạch</strong>, <strong>Học vượt</strong>, hoặc <strong>Học lại & Cải thiện</strong>.</li>
+          <li>Riêng kỳ hè chỉ cho phép đăng ký <strong>Học vượt</strong> (học kỳ sau) và <strong>Học lại</strong> (các môn đã từng học).</li>
+          <li><strong>Ràng buộc tiên quyết:</strong> Sinh viên bắt buộc phải học đạt học phần tiên quyết (điểm hệ 4 ≥ 1.0) của môn học đó trước khi được phép đăng ký.</li>
+          <li><strong>Ràng buộc trùng lịch:</strong> Hệ thống tự động quét và chặn ngay lập tức nếu lớp đăng ký trùng lịch với bất kỳ môn đã đăng ký thành công nào khác.</li>
+          <li><strong>Ràng buộc số lượng tín chỉ:</strong> Sinh viên phải đăng ký tổng số tín chỉ nằm trong khoảng <strong>[2/3, 3/2]</strong> số tín chỉ kế hoạch chuẩn của kỳ này. Khi đợt đăng ký kết thúc, hệ thống sẽ tự động quét và hủy đăng ký lỗi nếu vi phạm, đồng thời hủy các lớp học phần có sĩ số <strong>dưới 15 sinh viên</strong>.</li>
         </ul>
       </div>
     </div>
@@ -245,8 +277,37 @@ function dkBadge(string $tt): string {
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const dkForms = document.querySelectorAll('.ajax-form-dk');
+    // Xử lý chuyển đổi tabs
+    const tabs = document.querySelectorAll('.dk-tab');
+    const panels = document.querySelectorAll('.dk-panel');
     
+    tabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            tabs.forEach(t => t.classList.remove('active'));
+            panels.forEach(p => p.classList.remove('active'));
+            
+            this.classList.add('active');
+            const targetPanel = document.getElementById('panel-' + this.getAttribute('data-tab'));
+            if (targetPanel) {
+                targetPanel.classList.add('active');
+            }
+        });
+    });
+
+    // Lọc tìm kiếm nhanh cho từng bảng
+    document.querySelectorAll('.table-search-input').forEach(input => {
+        input.addEventListener('input', function() {
+            const q = this.value.toLowerCase();
+            const table = document.querySelector(this.getAttribute('data-table'));
+            if (!table) return;
+            table.querySelectorAll('tbody tr').forEach(row => {
+                row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+            });
+        });
+    });
+
+    // Xử lý Ajax đăng ký / hủy môn
+    const dkForms = document.querySelectorAll('.ajax-form-dk');
     dkForms.forEach(form => {
         const btn = form.querySelector('.btn-submit-dk');
         if (!btn) return;
@@ -256,7 +317,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const confirmMsg = form.getAttribute('data-confirm');
             
             Swal.fire({
-                title: 'Xác nhận đăng ký',
+                title: 'Xác nhận hành động',
                 text: confirmMsg,
                 icon: 'question',
                 showCancelButton: true,

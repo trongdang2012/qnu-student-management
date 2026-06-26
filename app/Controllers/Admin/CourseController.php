@@ -16,16 +16,40 @@ class CourseController extends Controller {
 
     public function index() {
         $search = trim($_GET['search'] ?? '');
-        $hoc_ky = (int)($_GET['hoc_ky'] ?? 0);
-        $loai = trim($_GET['loai'] ?? '');
-        $khoa = trim($_GET['khoa'] ?? '');
+        $khoa_id = (int)($_GET['khoa_id'] ?? 0);
+        $nganh_id = (int)($_GET['nganh_id'] ?? 0);
         $action = $_GET['action'] ?? 'list';
         $id = (int)($_GET['id'] ?? 0);
-        
-        // Phân trang
-        $limit = 15;
+
+        $facultyModel = new \App\Models\FacultyModel();
+        $majorModel = new \App\Models\MajorModel();
+
+        $faculties = $facultyModel->getAllFaculties();
+        $majors = [];
+        if ($khoa_id > 0) {
+            $majors = $majorModel->getMajorsByFacultyId($khoa_id);
+        }
+
+        $list = [];
+        $totalItems = 0;
+        $totalPages = 1;
         $page = max(1, (int)($_GET['page'] ?? 1));
+        $limit = 15;
         $offset = ($page - 1) * $limit;
+
+        $is_ctdt_mode = false;
+
+        if ($search !== '') {
+            // Chế độ tìm kiếm học phần toàn trường
+            $list = $this->courseModel->getCourses($search, 0, '', '', $limit, $offset);
+            $totalItems = $this->courseModel->countCourses($search, 0, '', '');
+            $totalPages = (int)ceil($totalItems / $limit);
+        } elseif ($nganh_id > 0) {
+            // Chế độ xem chương trình đào tạo của ngành
+            $list = $this->courseModel->getCoursesByNganh($nganh_id);
+            $totalItems = count($list);
+            $is_ctdt_mode = true;
+        }
 
         $item = null;
         if ($action === 'edit' && $id > 0) {
@@ -35,10 +59,6 @@ class CourseController extends Controller {
                 $this->redirect('/admin/hoc-phan');
             }
         }
-
-        $list = $this->courseModel->getCourses($search, $hoc_ky, $loai, $khoa, $limit, $offset);
-        $totalItems = $this->courseModel->countCourses($search, $hoc_ky, $loai, $khoa);
-        $totalPages = (int)ceil($totalItems / $limit);
 
         // Lấy danh sách các môn học để làm môn tiên quyết gợi ý
         $allCoursesForPrereq = $this->courseModel->getCourses('', 0, '', '', 1000, 0);
@@ -52,10 +72,12 @@ class CourseController extends Controller {
             'nganhList' => $nganhList,
             'courseStats' => $courseStats,
             'coursesWithoutClasses' => $coursesWithoutClasses,
+            'faculties' => $faculties,
+            'majors' => $majors,
+            'khoa_id' => $khoa_id,
+            'nganh_id' => $nganh_id,
+            'is_ctdt_mode' => $is_ctdt_mode,
             'search' => $search,
-            'hocKyFilter' => $hoc_ky,
-            'loaiFilter' => $loai,
-            'khoaFilter' => $khoa,
             'action' => $action,
             'item' => $item,
             'page' => $page,
@@ -151,9 +173,13 @@ class CourseController extends Controller {
             }
         }
 
+        $khoa_id_keep = (int)($_POST['khoa_id_keep'] ?? 0);
+        $nganh_id_keep = (int)($_POST['nganh_id_keep'] ?? 0);
         $url = '/admin/hoc-phan';
         if ($search_keep !== '') {
             $url .= '?search=' . urlencode($search_keep);
+        } elseif ($nganh_id_keep > 0) {
+            $url .= '?khoa_id=' . $khoa_id_keep . '&nganh_id=' . $nganh_id_keep;
         }
         $this->redirect($url);
     }
@@ -176,9 +202,13 @@ class CourseController extends Controller {
             }
         }
 
+        $khoa_id_keep = (int)($_POST['khoa_id_keep'] ?? 0);
+        $nganh_id_keep = (int)($_POST['nganh_id_keep'] ?? 0);
         $url = '/admin/hoc-phan';
         if ($search_keep !== '') {
             $url .= '?search=' . urlencode($search_keep);
+        } elseif ($nganh_id_keep > 0) {
+            $url .= '?khoa_id=' . $khoa_id_keep . '&nganh_id=' . $nganh_id_keep;
         }
         $this->redirect($url);
     }

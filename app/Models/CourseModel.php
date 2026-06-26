@@ -226,11 +226,12 @@ class CourseModel {
             $diff_years = $current_year_start - $start_year;
             $student_hk = ($diff_years * 2) + (int)$hk_hien_tai;
         }
-        $max_allowed_hk = $student_hk + 1; // Cho phép học vượt tối đa 1 học kỳ
 
+        // Lấy tất cả lớp học phần đang mở của ngành đó trong kỳ học vụ hiện tại
         $sql = "
             SELECT l.id AS lop_hoc_phan_id, l.ma_lop_hp, l.giang_vien, l.si_so_toi_da, l.si_so_hien_tai,
                    hp.id AS hoc_phan_id, hp.ma_hp, hp.ten_hp, hp.so_tin_chi, hp.loai, hp.ma_hp_tien_quyet,
+                   c.hoc_ky AS ctdt_hoc_ky,
                    t.thu, t.tiet_bat_dau, t.so_tiet, t.phong_hoc
             FROM lop_hoc_phan l
             JOIN hoc_phan hp ON l.hoc_phan_id = hp.id
@@ -243,24 +244,78 @@ class CourseModel {
             WHERE n.ten_nganh = :nganh
               AND l.hoc_ky = :hk_hien_tai
               AND l.nam_hoc = :nh_hien_tai
-              AND c.hoc_ky <= :max_allowed_hk
               AND l.trang_thai_mo_lop = 'Đang mở'
               AND (l.ngay_bat_dau_dk IS NULL OR NOW() >= l.ngay_bat_dau_dk)
               AND (l.ngay_ket_thuc_dk IS NULL OR NOW() <= l.ngay_ket_thuc_dk)
               AND l.id NOT IN ($id_str)
-              AND NOT EXISTS (
-                  SELECT 1 FROM diem_hoc_tap d
-                  WHERE d.hoc_phan_id = hp.id AND d.sinh_vien_id = :sid AND d.diem_he4 >= 1.0
-              )
             ORDER BY hp.ten_hp, l.ma_lop_hp
         ";
-        return $this->db->fetchAll($sql, [
-            'nganh' => $nganh, 
-            'sid' => $studentId,
+        
+        $all_courses = $this->db->fetchAll($sql, [
+            'nganh' => $nganh,
             'hk_hien_tai' => $hk_hien_tai,
-            'nh_hien_tai' => $nh_hien_tai,
-            'max_allowed_hk' => $max_allowed_hk
+            'nh_hien_tai' => $nh_hien_tai
         ]);
+
+        // Lấy danh sách điểm môn học của sinh viên
+        $grades = $this->db->fetchAll("
+            SELECT hoc_phan_id, diem_he4 
+            FROM diem_hoc_tap 
+            WHERE sinh_vien_id = :sid
+        ", ['sid' => $studentId]);
+
+        $passed_hp_ids = [];
+        $studied_hp_ids = [];
+        foreach ($grades as $g) {
+            $studied_hp_ids[] = (int)$g['hoc_phan_id'];
+            if ($g['diem_he4'] !== null && (float)$g['diem_he4'] >= 1.0) {
+                $passed_hp_ids[] = (int)$g['hoc_phan_id'];
+            }
+        }
+
+        $result = [
+            'ke_hoach' => [],
+            'hoc_vuot' => [],
+            'hoc_lai' => []
+        ];
+
+        foreach ($all_courses as $hp) {
+            $hp_id = (int)$hp['hoc_phan_id'];
+            $ctdt_hk = (int)$hp['ctdt_hoc_ky'];
+
+            if ($hk_hien_tai == 3) {
+                // Kỳ hè:
+                // Học lại: Môn đã từng học
+                // Học vượt: Môn kỳ sau của hè (ctdt_hk = student_hk + 1) và chưa đạt
+                if (in_array($hp_id, $studied_hp_ids)) {
+                    $result['hoc_lai'][] = $hp;
+                } elseif ($ctdt_hk == $student_hk + 1 && !in_array($hp_id, $passed_hp_ids)) {
+                    $result['hoc_vuot'][] = $hp;
+                }
+            } else {
+                // Kỳ chính:
+                // Môn theo kế hoạch: ctdt_hk = student_hk và chưa đạt
+                if ($ctdt_hk == $student_hk) {
+                    if (!in_array($hp_id, $passed_hp_ids)) {
+                        $result['ke_hoach'][] = $hp;
+                    }
+                }
+                // Học lại: ctdt_hk < student_hk và chưa đạt
+                elseif ($ctdt_hk < $student_hk) {
+                    if (!in_array($hp_id, $passed_hp_ids)) {
+                        $result['hoc_lai'][] = $hp;
+                    }
+                }
+                // Học vượt: ctdt_hk > student_hk và chưa đạt
+                elseif ($ctdt_hk > $student_hk) {
+                    if (!in_array($hp_id, $passed_hp_ids)) {
+                        $result['hoc_vuot'][] = $hp;
+                    }
+                }
+            }
+        }
+
+        return $result;
     }
 
     public function registerCourse($studentId, $lhpId, $hk, $nh) {
@@ -303,42 +358,6 @@ class CourseModel {
             $si_so_hien_tai = (int)$class['si_so_hien_tai'];
             $prereq_ma = $class['ma_hp_tien_quyet'];
 
-            // Kiểm tra giới hạn học kỳ cho phép đăng ký học phần trong CTDT (chống học vượt quá xa)
-            $student = $this->db->fetch("
-                SELECT sv.nien_khoa, lsh.nganh_id 
-                FROM sinh_vien sv 
-                JOIN lop_sinh_hoat lsh ON lsh.id = sv.lop_sinh_hoat_id 
-                WHERE sv.id = :sid
-            ", ['sid' => $studentId]);
-            $nien_khoa = $student ? $student['nien_khoa'] : '';
-            $nganh_id  = $student ? (int)$student['nganh_id'] : 0;
-            
-            $student_hk = 1;
-            if ($nien_khoa) {
-                $parts = explode('-', $nien_khoa);
-                $start_year = (int)$parts[0];
-                
-                $parts_nh = explode('-', $nh);
-                $current_year_start = (int)$parts_nh[0];
-                
-                $diff_years = $current_year_start - $start_year;
-                $student_hk = ($diff_years * 2) + (int)$hk;
-            }
-            $max_allowed_hk = $student_hk + 1; // Học vượt tối đa 1 kỳ
-
-            $program_course = $this->db->fetch("
-                SELECT hoc_ky FROM ctdt_chi_tiet 
-                WHERE nganh_id = :nganh_id AND hoc_phan_id = :hpId
-            ", ['nganh_id' => $nganh_id, 'hpId' => $hpId]);
-            
-            if ($program_course) {
-                $course_hk = (int)$program_course['hoc_ky'];
-                if ($course_hk > $max_allowed_hk) {
-                    $pdo->rollBack();
-                    return ['type' => 'danger', 'text' => 'Không thể đăng ký. Học phần thuộc học kỳ ' . $course_hk . ' trong CTĐT, vượt quá giới hạn cho phép học vượt của bạn (Tối đa học kỳ ' . $max_allowed_hk . ').'];
-                }
-            }
-
             // 0. Kiểm tra môn đã đạt điểm hệ 4 >= 1.0 (D trở lên)
             $passed = $this->db->fetch("SELECT id FROM diem_hoc_tap WHERE sinh_vien_id = :sid AND hoc_phan_id = :hpId AND diem_he4 >= 1.0", 
                 ['sid' => $studentId, 'hpId' => $hpId]);
@@ -370,13 +389,13 @@ class CourseModel {
 
             // 3. Kiểm tra môn tiên quyết
             if (!empty($prereq_ma)) {
-                $prereq = $this->db->fetch("SELECT id FROM hoc_phan WHERE ma_hp = :ma", ['ma' => $prereq_ma]);
+                $prereq = $this->db->fetch("SELECT id, ten_hp FROM hoc_phan WHERE ma_hp = :ma", ['ma' => $prereq_ma]);
                 if ($prereq) {
                     $passedPrereq = $this->db->fetch("SELECT id FROM diem_hoc_tap WHERE sinh_vien_id = :sid AND hoc_phan_id = :pid AND diem_he4 >= 1.0", 
                         ['sid' => $studentId, 'pid' => $prereq['id']]);
                     if (!$passedPrereq) {
                         $pdo->rollBack();
-                        return ['type' => 'danger', 'text' => 'Không đủ điều kiện đăng ký. Bạn chưa học đạt học phần tiên quyết: ' . $prereq_ma];
+                        return ['type' => 'danger', 'text' => 'Không đủ điều kiện đăng ký. Bạn chưa học đạt học phần tiên quyết: ' . $prereq['ten_hp'] . ' (' . $prereq_ma . ')'];
                     }
                 }
             }

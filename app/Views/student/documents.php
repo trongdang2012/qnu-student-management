@@ -362,6 +362,84 @@ function formatSize(int $bytes): string {
       </div>
     </div>
 
+    <!-- Modal Sửa tài liệu -->
+    <div class="custom-modal" id="editDocModal">
+      <div class="custom-modal-overlay"></div>
+      <div class="custom-modal-content" style="max-width: 600px;">
+        <div class="custom-modal-header">
+          <h3><i class="fas fa-edit" style="color:var(--primary)"></i> Chỉnh sửa tài liệu</h3>
+          <button type="button" class="btn-close-modal" id="btnCloseEditModal">&times;</button>
+        </div>
+        <div class="custom-modal-body" style="padding:16px; background:#fff;">
+          <form action="" method="POST" enctype="multipart/form-data" id="editForm" data-validate-form novalidate>
+            <input type="hidden" name="action" value="edit">
+            <input type="hidden" name="tl_id" id="edit_tl_id" value="">
+
+            <!-- Upload zone kéo thả file mới (Không bắt buộc) -->
+            <div class="upload-zone" id="editUploadZone" style="padding: 20px 10px; border-radius: 8px;">
+              <div class="upload-icon" style="font-size:28px; margin-bottom:8px;"><i class="fas fa-cloud-upload-alt"></i></div>
+              <p style="font-size:13px;"><strong>Kéo & thả</strong> file mới hoặc <strong>click</strong> để thay thế (Không bắt buộc)</p>
+              <p style="font-size:11px; margin-top:4px; color:var(--text-muted)">Hỗ trợ tài liệu tối đa 10MB</p>
+              <input type="file" id="editFileInput" name="file_upload" style="display:none"
+                     accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.rar,.png,.jpg,.jpeg">
+            </div>
+            <div id="editFileInfo" style="display:none;margin:10px 0;padding:8px 10px;background:#f0f4ff;border-radius:6px;font-size:12.5px;color:var(--primary)"></div>
+
+            <!-- Tiêu đề -->
+            <div class="form-group mt-12">
+              <label for="edit_tieu_de" style="font-size:13px; font-weight:500;">Tiêu đề <span class="required">*</span></label>
+              <input type="text" id="edit_tieu_de" name="tieu_de" class="form-control"
+                     placeholder="VD: Đề cương ôn tập Toán cao cấp A1"
+                     data-validate="required" maxlength="200" required>
+              <span class="form-error"></span>
+            </div>
+
+            <!-- Học phần liên quan -->
+            <div class="form-group">
+              <label for="edit_hoc_phan_id" style="font-size:13px; font-weight:500;">Học phần liên quan</label>
+              <select id="edit_hoc_phan_id" name="hoc_phan_id" class="form-control" style="font-size:13px; padding:6px">
+                <option value="">— Không chọn —</option>
+                <?php foreach ($hp_list as $hp): ?>
+                  <option value="<?= (int)$hp['id'] ?>"><?= e($hp['ten_hp']) ?> (<?= e($hp['ma_hp']) ?>)</option>
+                <?php endforeach; ?>
+              </select>
+            </div>
+
+            <!-- Quyền chia sẻ -->
+            <div class="form-group">
+              <label style="font-size:13px; font-weight:500; display:block; margin-bottom:8px;">Chế độ chia sẻ</label>
+              <label style="display:inline-flex; align-items:center; gap:8px; margin-right:18px; font-size:13px;">
+                <input type="radio" name="cong_khai" id="edit_cong_khai_1" value="1">
+                Công khai (mọi người có thể xem)
+              </label>
+              <label style="display:inline-flex; align-items:center; gap:8px; font-size:13px;">
+                <input type="radio" name="cong_khai" id="edit_cong_khai_0" value="0">
+                Riêng tư (chỉ bạn thấy trong tài liệu của tôi)
+              </label>
+            </div>
+
+            <!-- Mô tả -->
+            <div class="form-group">
+              <label for="edit_mo_ta" style="font-size:13px; font-weight:500;">Mô tả ngắn</label>
+              <textarea id="edit_mo_ta" name="mo_ta" class="form-control" rows="3"
+                        placeholder="Mô tả tóm tắt nội dung tài liệu..."
+                        style="resize:vertical; font-size:13px; padding:8px;"></textarea>
+            </div>
+
+            <!-- Nút thao tác -->
+            <div style="display:flex;gap:10px;margin-top:16px;">
+              <button type="button" id="btnCancelEdit" class="btn btn-secondary" style="flex:1;justify-content:center; padding:8px; font-size:13.5px">
+                Hủy
+              </button>
+              <button type="submit" class="btn btn-primary" style="flex:2;justify-content:center; padding:8px; font-size:13.5px">
+                <i class="fas fa-save"></i> Lưu thay đổi
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
     <!-- Bộ lọc và Ô tìm kiếm tài liệu (Rộng 100%) -->
     <div class="card mb-16 shadow-sm fade-in" style="border-radius:12px; border:1px solid #eef2f5;">
       <div class="card-body" style="padding:14px 16px">
@@ -417,7 +495,8 @@ function formatSize(int $bytes): string {
       <div class="tl-grid">
       <?php foreach ($tl_list as $tl): ?>
         <div class="tl-card shadow-sm fade-in btn-view-detail" 
-             style="border-radius:12px; border:1px solid #eef2f5; display:flex; flex-direction:column; justify-content:space-between; height: 100%; cursor:pointer;"
+             style="border-radius:12px; border:1px solid #eef2f5; cursor:pointer;"
+             data-id="<?= (int)$tl['id'] ?>"
              data-tieu-de="<?= e($tl['tieu_de']) ?>"
              data-nguoi-dang="<?= e($tl['ho_ten'] ?: 'Admin') ?>"
              data-dung-luong="<?= formatSize((int)$tl['kich_thuoc']) ?>"
@@ -425,31 +504,44 @@ function formatSize(int $bytes): string {
              data-ngay-dang="<?= date('d/m/Y H:i', strtotime($tl['ngay_dang'])) ?>"
              data-hoc-phan="<?= e($tl['ten_hp'] ?: 'Không có') ?>"
              data-mo-ta="<?= e($tl['mo_ta'] ?: 'Không có mô tả') ?>"
+             data-loai-file="<?= e(strtolower($tl['loai_file'] ?? '')) ?>"
+             data-preview-url="<?= !empty($tl['duong_dan']) && file_exists(UPLOAD_DIR . $tl['duong_dan']) ? BASE_URL . '/uploads/' . e($tl['duong_dan']) : '' ?>"
              data-download-url="<?= !empty($tl['duong_dan']) && file_exists(UPLOAD_DIR . $tl['duong_dan']) ? BASE_URL . '/student/download?id=' . (int)$tl['id'] : '' ?>">
-          <div>
-            <div style="display:flex;gap:12px;align-items:flex-start">
-              <?= fileIcon($tl['loai_file'] ?? '') ?>
-              <div style="flex:1;min-width:0">
-                <div class="tl-title" title="<?= e($tl['tieu_de']) ?>" style="font-size:14.5px; font-weight:600; line-height:1.4;">
-                  <?= e(mb_strimwidth($tl['tieu_de'], 0, 52, '...')) ?>
-                </div>
+          
+          <!-- Thông tin tài liệu bên trái -->
+          <div style="display:flex; gap:14px; align-items:center; flex:1; min-width:0;">
+            <?= fileIcon($tl['loai_file'] ?? '') ?>
+            <div style="flex:1; min-width:0;">
+              <div class="tl-title" title="<?= e($tl['tieu_de']) ?>" style="font-size:15px; font-weight:600; color:var(--text-dark); line-height:1.4; margin-bottom:4px;">
+                <?= e($tl['tieu_de']) ?>
+              </div>
+              <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; font-size:12px; color:var(--text-muted);">
                 <?php if (!empty($tl['ten_hp'])): ?>
-                  <div style="font-size:12px;color:var(--primary);margin-top:4px; font-weight:500;">
+                  <span style="color:var(--primary); font-weight:500; display:inline-flex; align-items:center; gap:4px;">
                     <i class="fas fa-book"></i> <?= e($tl['ten_hp']) ?>
-                  </div>
+                  </span>
+                  <span>•</span>
                 <?php endif; ?>
+                <span style="display:inline-flex; align-items:center; gap:4px;"><i class="fas fa-user"></i> <?= e($tl['ho_ten'] ?: 'Admin') ?></span>
+                <span>•</span>
+                <span style="display:inline-flex; align-items:center; gap:4px;"><i class="fas fa-clock"></i> <?= date('d/m/Y', strtotime($tl['ngay_dang'])) ?></span>
+                <span>•</span>
+                <span style="display:inline-flex; align-items:center; gap:4px;"><i class="fas fa-hdd"></i> <?= formatSize((int)$tl['kich_thuoc']) ?></span>
+                <span>•</span>
+                <span style="display:inline-flex; align-items:center; gap:4px;"><i class="fas fa-download"></i> <?= (int)$tl['luot_tai'] ?> lượt tải</span>
               </div>
             </div>
           </div>
 
-          <div class="tl-actions" style="margin-top:16px; gap:8px;">
+          <!-- Các nút hành động bên phải -->
+          <div class="tl-actions" style="margin-top:0; gap:8px; flex-shrink:0; display:flex; align-items:center;">
             <?php if (!empty($tl['duong_dan']) && file_exists(UPLOAD_DIR . $tl['duong_dan'])): ?>
               <a href="<?= BASE_URL ?>/student/download?id=<?= (int)$tl['id'] ?>"
-                 class="btn btn-primary btn-sm btn-download-file" style="flex:1;justify-content:center; border-radius:6px; padding:7px;" onclick="event.stopPropagation();">
+                 class="btn btn-primary btn-sm btn-download-file" style="justify-content:center; border-radius:6px; padding:7px 16px; font-weight:500; font-size:13px;" onclick="event.stopPropagation();">
                 <i class="fas fa-download"></i> Tải xuống
               </a>
             <?php else: ?>
-              <span class="btn btn-secondary btn-sm" style="flex:1;opacity:.5;cursor:not-allowed;justify-content:center; border-radius:6px; padding:7px;" onclick="event.stopPropagation();">
+              <span class="btn btn-secondary btn-sm" style="opacity:.5;cursor:not-allowed;justify-content:center; border-radius:6px; padding:7px 16px; font-weight:500; font-size:13px;" onclick="event.stopPropagation();">
                 <i class="fas fa-exclamation-triangle"></i> File không tồn tại
               </span>
             <?php endif; ?>
@@ -458,7 +550,7 @@ function formatSize(int $bytes): string {
               <form method="POST" action="<?= BASE_URL ?>/student/tai-lieu" style="display:inline" class="delete-doc-form" onclick="event.stopPropagation();">
                 <input type="hidden" name="action" value="xoa">
                 <input type="hidden" name="tl_id" value="<?= (int)$tl['id'] ?>">
-                <button type="button" class="btn btn-danger btn-sm btn-delete-submit" style="border-radius:6px; padding:7px;" data-title="<?= e($tl['tieu_de']) ?>">
+                <button type="button" class="btn btn-danger btn-sm btn-delete-submit" style="border-radius:6px; padding:7px 12px;" data-title="<?= e($tl['tieu_de']) ?>">
                   <i class="fas fa-trash"></i>
                 </button>
               </form>
@@ -488,7 +580,18 @@ function formatSize(int $bytes): string {
             <div class="my-docs-list">
               <?php foreach ($my_list as $tl): ?>
                 <div class="my-doc-item" style="background:#fff; margin-bottom:10px; border:1px solid #eef2f5; border-radius:8px; padding:12px;">
-                  <div class="my-doc-info">
+                  <div class="my-doc-info btn-view-detail" style="cursor:pointer;"
+                       data-id="<?= (int)$tl['id'] ?>"
+                       data-tieu-de="<?= e($tl['tieu_de']) ?>"
+                       data-nguoi-dang="<?= e($sv['ho_ten'] ?: 'Tôi') ?>"
+                       data-dung-luong="<?= formatSize((int)$tl['kich_thuoc']) ?>"
+                       data-luot-tai="<?= (int)$tl['luot_tai'] ?>"
+                       data-ngay-dang="<?= date('d/m/Y H:i', strtotime($tl['ngay_dang'])) ?>"
+                       data-hoc-phan="<?= e($tl['ten_hp'] ?? 'Không có') ?>"
+                       data-mo-ta="<?= e($tl['mo_ta'] ?: 'Không có mô tả') ?>"
+                       data-loai-file="<?= e(strtolower($tl['loai_file'] ?? '')) ?>"
+                       data-preview-url="<?= !empty($tl['duong_dan']) && file_exists(UPLOAD_DIR . $tl['duong_dan']) ? BASE_URL . '/uploads/' . e($tl['duong_dan']) : '' ?>"
+                       data-download-url="<?= !empty($tl['duong_dan']) && file_exists(UPLOAD_DIR . $tl['duong_dan']) ? BASE_URL . '/student/download?id=' . (int)$tl['id'] : '' ?>">
                     <?= fileIcon($tl['loai_file'] ?? '') ?>
                     <div style="min-width: 0; flex: 1;">
                       <div class="my-doc-title" title="<?= e($tl['tieu_de']) ?>" style="font-weight:600; font-size:14px;">
@@ -511,6 +614,16 @@ function formatSize(int $bytes): string {
                       </a>
                     <?php endif; ?>
                     
+                    <button type="button" class="btn-icon btn-icon-edit btn-edit-doc-trigger" title="Sửa tài liệu"
+                            data-id="<?= (int)$tl['id'] ?>"
+                            data-tieu-de="<?= e($tl['tieu_de']) ?>"
+                            data-mo-ta="<?= e($tl['mo_ta'] ?? '') ?>"
+                            data-hoc-phan-id="<?= (int)($tl['hoc_phan_id'] ?? 0) ?>"
+                            data-is-public="<?= (int)$tl['is_public'] ?>"
+                            style="background-color:#e8f4fd; color:#1d9bf0;">
+                      <i class="fas fa-edit"></i>
+                    </button>
+
                     <form method="POST" action="<?= BASE_URL ?>/student/tai-lieu" style="display:inline" class="delete-doc-form">
                       <input type="hidden" name="action" value="xoa">
                       <input type="hidden" name="tl_id" value="<?= (int)$tl['id'] ?>">
@@ -530,6 +643,7 @@ function formatSize(int $bytes): string {
   </div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     
@@ -616,7 +730,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const fileInfo = document.getElementById('fileInfo');
 
     if (uploadZone && fileInput) {
-        uploadZone.addEventListener('click', () => fileInput.click());
+        uploadZone.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            fileInput.click();
+        });
+        fileInput.addEventListener('click', (e) => e.stopPropagation());
         
         uploadZone.addEventListener('dragover', (e) => {
             e.preventDefault();
@@ -687,6 +806,153 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
+    // Chống double submit an toàn cho Form Upload (Dùng pointer-events để tránh làm trình duyệt hủy luồng submit)
+    let isUploading = false;
+    const uploadForm = document.getElementById('uploadForm');
+    if (uploadForm) {
+        uploadForm.addEventListener('submit', function(e) {
+            if (isUploading) {
+                e.preventDefault();
+                return false;
+            }
+            setTimeout(() => {
+                if (!e.defaultPrevented) {
+                    isUploading = true;
+                    const submitBtn = uploadForm.querySelector('button[type="submit"]');
+                    if (submitBtn) {
+                        submitBtn.style.pointerEvents = 'none';
+                        submitBtn.style.opacity = '0.7';
+                        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang đăng tải...';
+                    }
+                }
+            }, 0);
+        });
+    }
+
+    // Chống double submit an toàn cho Form Edit
+    let isEditing = false;
+    const editFormEl = document.getElementById('editForm');
+    if (editFormEl) {
+        editFormEl.addEventListener('submit', function(e) {
+            if (isEditing) {
+                e.preventDefault();
+                return false;
+            }
+            setTimeout(() => {
+                if (!e.defaultPrevented) {
+                    isEditing = true;
+                    const submitBtn = editFormEl.querySelector('button[type="submit"]');
+                    if (submitBtn) {
+                        submitBtn.style.pointerEvents = 'none';
+                        submitBtn.style.opacity = '0.7';
+                        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang lưu...';
+                    }
+                }
+            }, 0);
+        });
+    }
+
+    // JS mở Modal Sửa và nạp dữ liệu
+    const editDocModal = document.getElementById('editDocModal');
+    const btnCloseEditModal = document.getElementById('btnCloseEditModal');
+    const btnCancelEdit = document.getElementById('btnCancelEdit');
+    
+    document.querySelectorAll('.btn-edit-doc-trigger').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            
+            // Lấy thông tin tài liệu từ thuộc tính
+            const id = this.getAttribute('data-id');
+            const tieuDe = this.getAttribute('data-tieu-de');
+            const moTa = this.getAttribute('data-mo-ta');
+            const hpId = this.getAttribute('data-hoc-phan-id');
+            const isPublic = this.getAttribute('data-is-public');
+            
+            // Điền vào form sửa
+            document.getElementById('edit_tl_id').value = id;
+            document.getElementById('edit_tieu_de').value = tieuDe;
+            document.getElementById('edit_mo_ta').value = moTa;
+            document.getElementById('edit_hoc_phan_id').value = hpId || '';
+            
+            if (isPublic === '1') {
+                document.getElementById('edit_cong_khai_1').checked = true;
+            } else {
+                document.getElementById('edit_cong_khai_0').checked = true;
+            }
+            
+            // Xóa file đã chọn trước đó (nếu có)
+            document.getElementById('editFileInput').value = '';
+            const editFileInfo = document.getElementById('editFileInfo');
+            if (editFileInfo) {
+                editFileInfo.innerHTML = '';
+                editFileInfo.style.display = 'none';
+            }
+            
+            // Đóng modal danh sách của tôi trước
+            const myDocsModal = document.getElementById('myDocsModal');
+            if (myDocsModal) myDocsModal.classList.remove('active');
+            
+            // Mở modal sửa
+            if (editDocModal) {
+                editDocModal.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            }
+        });
+    });
+
+    function closeEditModal() {
+        if (editDocModal) {
+            editDocModal.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+    }
+
+    if (btnCloseEditModal) btnCloseEditModal.addEventListener('click', closeEditModal);
+    if (btnCancelEdit) btnCancelEdit.addEventListener('click', closeEditModal);
+
+    // JS cho vùng kéo thả file modal sửa
+    const editUploadZone = document.getElementById('editUploadZone');
+    const editFileInput = document.getElementById('editFileInput');
+    const editFileInfo = document.getElementById('editFileInfo');
+
+    if (editUploadZone && editFileInput) {
+        editUploadZone.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            editFileInput.click();
+        });
+        editFileInput.addEventListener('click', (e) => e.stopPropagation());
+        editUploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            editUploadZone.style.borderColor = 'var(--primary)';
+            editUploadZone.style.background = '#f4f7ff';
+        });
+        editUploadZone.addEventListener('dragleave', () => {
+            editUploadZone.style.borderColor = '#ccc';
+            editUploadZone.style.background = '#fff';
+        });
+        editUploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            editUploadZone.style.borderColor = '#ccc';
+            editUploadZone.style.background = '#fff';
+            if (e.dataTransfer.files.length) {
+                editFileInput.files = e.dataTransfer.files;
+                if (editFileInfo) {
+                    editFileInfo.innerHTML = `<i class="fas fa-file-alt"></i> <strong>File mới:</strong> ${e.dataTransfer.files[0].name} (${formatBytes(e.dataTransfer.files[0].size)})`;
+                    editFileInfo.style.display = 'block';
+                }
+            }
+        });
+        editFileInput.addEventListener('change', () => {
+            if (editFileInput.files.length) {
+                if (editFileInfo) {
+                    editFileInfo.innerHTML = `<i class="fas fa-file-alt"></i> <strong>File mới:</strong> ${editFileInput.files[0].name} (${formatBytes(editFileInput.files[0].size)})`;
+                    editFileInfo.style.display = 'block';
+                }
+            }
+        });
+    }
+
     // JS hiển thị popup chi tiết tài liệu bằng SweetAlert2
     const detailCards = document.querySelectorAll('.btn-view-detail');
     detailCards.forEach(card => {
@@ -699,12 +965,26 @@ document.addEventListener('DOMContentLoaded', function() {
             const hocPhan = this.getAttribute('data-hoc-phan');
             const moTa = this.getAttribute('data-mo-ta');
             const downloadUrl = this.getAttribute('data-download-url');
+            const loaiFile = this.getAttribute('data-loai-file') || '';
+            const docId = this.getAttribute('data-id');
+            const previewUrl = this.getAttribute('data-preview-url');
             
             let footerBtn = '';
             if (downloadUrl) {
                 footerBtn = `<a href="${downloadUrl}" class="swal2-confirm swal2-styled" style="background-color:var(--primary); color:#fff !important; text-decoration:none; display:inline-flex; align-items:center; gap:8px; margin: 0 5px; padding: 10px 24px; border-radius: 6px;"><i class="fas fa-download"></i> Tải xuống tài liệu</a>`;
             } else {
                 footerBtn = `<button class="swal2-confirm swal2-styled" style="background-color:#6c757d; color:#fff !important; cursor:not-allowed; margin: 0 5px; padding: 10px 24px; border-radius: 6px;" disabled><i class="fas fa-exclamation-triangle"></i> File không tồn tại</button>`;
+            }
+
+            let pdfPreviewHtml = '';
+            if (loaiFile.toLowerCase() === 'pdf' && downloadUrl) {
+                pdfPreviewHtml = `
+                    <div id="pdf-preview-container" style="max-height: 250px; overflow-y: auto; margin-top: 15px; border: 1px solid #eef2f5; padding: 10px; background: #f8f9fa; border-radius: 8px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); width: 100%;">
+                        <h5 style="margin-top:0; margin-bottom:10px; font-size:13px; color:var(--text-dark); text-align:left; font-weight:600; display:flex; align-items:center; gap:6px;"><i class="fas fa-eye" style="color:var(--primary);"></i> Bản xem trước (Tối đa 3 trang):</h5>
+                        <div id="pdf-pages" style="display: flex; flex-direction: column; gap: 10px; align-items: center; width: 100%;"></div>
+                        <div id="pdf-loading" style="text-align:center; padding: 20px 0; color:var(--text-muted); font-size:13px;"><i class="fas fa-spinner fa-spin"></i> Đang tải bản xem trước...</div>
+                    </div>
+                `;
             }
 
             Swal.fire({
@@ -733,6 +1013,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 ${moTa}
                             </div>
                         </div>
+                        ${pdfPreviewHtml}
                     </div>
                 `,
                 showCancelButton: true,
@@ -740,7 +1021,90 @@ document.addEventListener('DOMContentLoaded', function() {
                 cancelButtonText: 'Đóng',
                 cancelButtonColor: '#6c757d',
                 footer: footerBtn,
-                width: '550px'
+                width: '550px',
+                didOpen: () => {
+                    if (loaiFile.toLowerCase() === 'pdf' && previewUrl) {
+                        const pagesDiv = document.getElementById('pdf-pages');
+                        const loadingDiv = document.getElementById('pdf-loading');
+                        
+                        const pdfjsLib = window.pdfjsLib || window['pdfjs-dist/build/pdf'];
+                        if (pdfjsLib) {
+                            try {
+                                // Khởi tạo Worker vượt qua CORS Web Worker Policy bằng Blob URL
+                                const workerCode = `importScripts('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js');`;
+                                const blob = new Blob([workerCode], { type: 'application/javascript' });
+                                pdfjsLib.GlobalWorkerOptions.workerSrc = URL.createObjectURL(blob);
+                                
+                                pdfjsLib.getDocument(previewUrl).promise.then(pdf => {
+                                    if (loadingDiv) loadingDiv.style.display = 'none';
+                                    
+                                    const numPages = Math.min(pdf.numPages, 3);
+                                    for (let i = 1; i <= numPages; i++) {
+                                        pdf.getPage(i).then(page => {
+                                            const scale = 1.0;
+                                            const viewport = page.getViewport({ scale: scale });
+                                            
+                                            const canvas = document.createElement('canvas');
+                                            canvas.style.width = '100%';
+                                            canvas.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)';
+                                            canvas.style.borderRadius = '4px';
+                                            canvas.style.marginBottom = '8px';
+                                            
+                                            const context = canvas.getContext('2d');
+                                            canvas.height = viewport.height;
+                                            canvas.width = viewport.width;
+                                            
+                                            pagesDiv.appendChild(canvas);
+                                            
+                                            const renderContext = {
+                                                canvasContext: context,
+                                                viewport: viewport
+                                            };
+                                            page.render(renderContext);
+                                        });
+                                    }
+                                }).catch(err => {
+                                    console.error("Lỗi xem trước PDF:", err);
+                                    if (loadingDiv) {
+                                        loadingDiv.innerHTML = '<span style="color:#dc3545; font-size:12.5px;"><i class="fas fa-exclamation-triangle"></i> Không thể tải bản xem trước file này.</span>';
+                                    }
+                                });
+                            } catch (workerErr) {
+                                console.warn("Lỗi khởi tạo Worker, dùng chế độ Fake Worker:", workerErr);
+                                pdfjsLib.getDocument(previewUrl).promise.then(pdf => {
+                                    if (loadingDiv) loadingDiv.style.display = 'none';
+                                    const numPages = Math.min(pdf.numPages, 3);
+                                    for (let i = 1; i <= numPages; i++) {
+                                        pdf.getPage(i).then(page => {
+                                            const scale = 1.0;
+                                            const viewport = page.getViewport({ scale: scale });
+                                            const canvas = document.createElement('canvas');
+                                            canvas.style.width = '100%';
+                                            canvas.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)';
+                                            canvas.style.borderRadius = '4px';
+                                            canvas.style.marginBottom = '8px';
+                                            const context = canvas.getContext('2d');
+                                            canvas.height = viewport.height;
+                                            canvas.width = viewport.width;
+                                            pagesDiv.appendChild(canvas);
+                                            const renderContext = { canvasContext: context, viewport: viewport };
+                                            page.render(renderContext);
+                                        });
+                                    }
+                                }).catch(err => {
+                                    console.error("Lỗi xem trước PDF (Fake Worker mode):", err);
+                                    if (loadingDiv) {
+                                        loadingDiv.innerHTML = '<span style="color:#dc3545; font-size:12.5px;"><i class="fas fa-exclamation-triangle"></i> Không thể tải bản xem trước file này.</span>';
+                                    }
+                                });
+                            }
+                        } else {
+                            if (loadingDiv) {
+                                loadingDiv.innerHTML = '<span style="color:#dc3545; font-size:12.5px;"><i class="fas fa-exclamation-triangle"></i> Thư viện xem trước chưa được tải.</span>';
+                            }
+                        }
+                    }
+                }
             });
         });
     });

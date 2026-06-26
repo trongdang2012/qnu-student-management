@@ -95,6 +95,8 @@
         <form method="POST" action="<?= BASE_URL ?>/admin/hoc-phan/save">
           <input type="hidden" name="id" value="<?= (int)($item['id'] ?? 0) ?>">
           <input type="hidden" name="search_keep" value="<?= e($search) ?>">
+          <input type="hidden" name="khoa_id_keep" value="<?= (int)$khoa_id ?>">
+          <input type="hidden" name="nganh_id_keep" value="<?= (int)$nganh_id ?>">
 
           <div class="form-row">
             <div class="form-group">
@@ -208,38 +210,33 @@
     <div class="card fade-in">
       <div class="card-body" style="padding:16px">
         <form method="GET" action="<?= BASE_URL ?>/admin/hoc-phan" class="action-bar" style="align-items:flex-end;margin-bottom:0;flex-wrap:wrap;gap:10px">
+          
+          <div class="form-group" style="margin:0;min-width:200px">
+            <label style="font-size:12px;font-weight:600">Chọn Khoa</label>
+            <select name="khoa_id" class="form-control" onchange="this.form.search.value=''; this.form.submit()">
+              <option value="0">-- Chọn Khoa --</option>
+              <?php foreach ($faculties as $f): ?>
+                <option value="<?= $f['id'] ?>" <?= $khoa_id === (int)$f['id'] ? 'selected' : '' ?>><?= e($f['ten_khoa']) ?></option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+
+          <div class="form-group" style="margin:0;min-width:200px">
+            <label style="font-size:12px;font-weight:600">Chọn Ngành</label>
+            <select name="nganh_id" class="form-control" onchange="this.form.search.value=''; this.form.submit()">
+              <option value="0">-- Chọn Ngành --</option>
+              <?php foreach ($majors as $m): ?>
+                <option value="<?= $m['id'] ?>" <?= $nganh_id === (int)$m['id'] ? 'selected' : '' ?>><?= e($m['ten_nganh']) ?></option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+
           <div class="form-group search-box" style="margin:0;flex:1;min-width:200px">
-            <label style="font-size:12px">Tìm kiếm</label>
-            <input type="text" name="search" class="form-control" placeholder="Mã học phần hoặc tên học phần..." value="<?= e($search) ?>">
+            <label style="font-size:12px;font-weight:600">Tìm kiếm toàn trường</label>
+            <input type="text" name="search" class="form-control" placeholder="Mã hoặc tên học phần..." value="<?= e($search) ?>">
           </div>
-          <div class="form-group" style="margin:0;min-width:110px">
-            <label style="font-size:12px">Học kỳ đề xuất</label>
-            <select name="hoc_ky" class="form-control">
-              <option value="0">Tất cả</option>
-              <?php for ($hk = 1; $hk <= 8; $hk++): ?>
-                <option value="<?= $hk ?>" <?= $hocKyFilter === $hk ? 'selected' : '' ?>>HK<?= $hk ?></option>
-              <?php endfor; ?>
-            </select>
-          </div>
-          <div class="form-group" style="margin:0;min-width:120px">
-            <label style="font-size:12px">Loại môn</label>
-            <select name="loai" class="form-control">
-              <option value="">Tất cả</option>
-              <?php foreach (['Bắt buộc', 'Tự chọn', 'Đại cương'] as $l): ?>
-                <option value="<?= e($l) ?>" <?= $loaiFilter === $l ? 'selected' : '' ?>><?= e($l) ?></option>
-              <?php endforeach; ?>
-            </select>
-          </div>
-          <div class="form-group" style="margin:0;min-width:150px">
-            <label style="font-size:12px">Khoa phụ trách</label>
-            <select name="khoa" class="form-control">
-              <option value="">Tất cả các Khoa</option>
-              <?php foreach (['Kỹ thuật - Công nghệ', 'Kinh tế - Luật', 'Ngoại ngữ', 'Khoa học Tự nhiên', 'Khoa học Xã hội và Nhân văn'] as $kh): ?>
-                <option value="<?= e($kh) ?>" <?= $khoaFilter === $kh ? 'selected' : '' ?>><?= e($kh) ?></option>
-              <?php endforeach; ?>
-            </select>
-          </div>
-          <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Lọc</button>
+
+          <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Tìm / Lọc</button>
           <a href="<?= BASE_URL ?>/admin/hoc-phan" class="btn btn-secondary"><i class="fas fa-rotate-left"></i> Xóa lọc</a>
           <button type="button" class="btn btn-warning" onclick="showDuplicateModal()"><i class="fas fa-copy"></i> Nhân bản CTĐT</button>
           <button type="button" class="btn btn-success" onclick="showAddForm()"><i class="fas fa-plus"></i> Thêm học phần</button>
@@ -247,14 +244,100 @@
       </div>
     </div>
 
-    <div class="card fade-in">
-      <div class="card-body" style="padding:0">
-        <?php if (!$list): ?>
-          <div style="padding:40px;text-align:center;color:#777">
-            <i class="fas fa-inbox" style="font-size:42px;margin-bottom:12px;display:block"></i>
-            Không tìm thấy học phần nào phù hợp.
+    <!-- PHẦN HIỂN THỊ DANH SÁCH -->
+    <?php if ($is_ctdt_mode): ?>
+      <!-- CHẾ ĐỘ XEM CHƯƠNG TRÌNH ĐÀO TẠO CỦA NGÀNH -->
+      <?php
+      $grouped = [];
+      for ($hk = 1; $hk <= 8; $hk++) {
+          $grouped[$hk] = [];
+      }
+      foreach ($list as $row) {
+          $hk = (int)($row['hoc_ky_ctdt'] ?? 1);
+          if ($hk >= 1 && $hk <= 8) {
+              $grouped[$hk][] = $row;
+          }
+      }
+      ?>
+      <div class="ctdt-container fade-in">
+        <div style="background:#eef2ff; color:#3730a3; padding:12px 20px; border-radius:8px; margin-bottom:15px; font-weight:500; font-size:14px; border:1px solid #c7d2fe;">
+          <i class="fas fa-info-circle"></i> Đang hiển thị Chương trình đào tạo của Ngành. Bấm vào học phần để xem chi tiết, sửa hoặc xóa.
+        </div>
+        <?php for ($hk = 1; $hk <= 8; $hk++): ?>
+          <div class="card" style="margin-bottom:20px; border: 1px solid var(--border); border-radius:8px; overflow:hidden;">
+            <div class="card-header" style="background:#f8fafc; border-bottom:1px solid #e2e8f0; padding:12px 20px;">
+              <h3 style="margin:0; font-size:15px; color:var(--primary); font-weight:600;">
+                <i class="fas fa-layer-group"></i> Học kỳ <?= $hk ?>
+              </h3>
+            </div>
+            <div class="card-body" style="padding:0;">
+              <?php if (empty($grouped[$hk])): ?>
+                <div style="padding:20px; text-align:center; color:#94a3b8; font-size:13px;">Chưa có học phần nào trong học kỳ này.</div>
+              <?php else: ?>
+                <div class="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th style="width:120px;">Mã HP</th>
+                        <th>Tên học phần</th>
+                        <th style="text-align:center; width:60px;">TC</th>
+                        <th style="text-align:center; width:100px;">Lý thuyết</th>
+                        <th style="text-align:center; width:100px;">Thực hành</th>
+                        <th>Khoa phụ trách</th>
+                        <th>Môn tiên quyết</th>
+                        <th style="text-align:center; width:100px;">Trạng thái</th>
+                        <th style="text-align:center; width:180px;">Hành động</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <?php foreach ($grouped[$hk] as $row): ?>
+                        <tr class="hover-row">
+                          <td><code><?= e($row['ma_hp']) ?></code></td>
+                          <td><strong style="color:var(--text-dark);"><?= e($row['ten_hp']) ?></strong></td>
+                          <td style="text-align:center;font-weight:bold;color:var(--primary);"><?= (int)$row['so_tin_chi'] ?></td>
+                          <td style="text-align:center"><?= (int)$row['so_tiet_ly_thuyet'] ?> tiết</td>
+                          <td style="text-align:center"><?= (int)$row['so_tiet_thuc_hanh'] ?> tiết</td>
+                          <td><?= e($row['khoa_phu_trach']) ?></td>
+                          <td><?= $row['ma_hp_tien_quyet'] ? '<span class="badge" style="background:#e9ecef;color:#495057;border:1px solid #ced4da;">' . e($row['ma_hp_tien_quyet']) . '</span>' : '<span style="color:#999;font-size:12px">Không</span>' ?></td>
+                          <td style="text-align:center">
+                            <?php if (($row['trang_thai_hoat_dong'] ?? 1) == 1): ?>
+                              <span class="badge" style="background:#d4edda;color:#155724;border: 1px solid #c3e6cb;">Hoạt động</span>
+                            <?php else: ?>
+                              <span class="badge" style="background:#f8d7da;color:#721c24;border: 1px solid #f5c6cb;">Tạm khóa</span>
+                            <?php endif; ?>
+                          </td>
+                          <td style="text-align:center">
+                            <div class="table-actions" style="display:flex;justify-content:center;gap:5px">
+                              <a class="btn btn-sm btn-info" href="?action=edit&id=<?= (int)$row['id'] ?>&khoa_id=<?= $khoa_id ?>&nganh_id=<?= $nganh_id ?>">
+                                <i class="fas fa-edit"></i> Sửa
+                              </a>
+                              <form method="POST" action="<?= BASE_URL ?>/admin/hoc-phan/delete" style="display:inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa học phần này không?')">
+                                <input type="hidden" name="id" value="<?= (int)$row['id'] ?>">
+                                <input type="hidden" name="khoa_id_keep" value="<?= (int)$khoa_id ?>">
+                                <input type="hidden" name="nganh_id_keep" value="<?= (int)$nganh_id ?>">
+                                <button type="submit" class="btn btn-sm btn-danger"><i class="fas fa-trash"></i> Xóa</button>
+                              </form>
+                            </div>
+                          </td>
+                        </tr>
+                      <?php endforeach; ?>
+                    </tbody>
+                  </table>
+                </div>
+              <?php endif; ?>
+            </div>
           </div>
-        <?php else: ?>
+        <?php endfor; ?>
+      </div>
+
+    <?php elseif ($search !== ''): ?>
+      <!-- CHẾ ĐỘ TÌM KIẾM TOÀN TRƯỜNG -->
+      <div class="card fade-in">
+        <div class="card-header" style="background:#fafafa; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
+          <h3 style="margin:0;color:var(--primary);"><i class="fas fa-search"></i> Kết quả tìm kiếm</h3>
+          <span class="badge-count"><?= $totalItems ?> kết quả</span>
+        </div>
+        <div class="card-body" style="padding:0">
           <div class="table-wrap">
             <table>
               <thead>
@@ -264,7 +347,6 @@
                   <th style="text-align:center">TC</th>
                   <th style="text-align:center">Lý thuyết</th>
                   <th style="text-align:center">Thực hành</th>
-                  <th>Học kỳ đề xuất</th>
                   <th>Khoa/Bộ môn phụ trách</th>
                   <th>Môn tiên quyết</th>
                   <th style="text-align:center">Trạng thái</th>
@@ -273,13 +355,12 @@
               </thead>
               <tbody>
                 <?php foreach ($list as $row): ?>
-                  <tr>
+                  <tr class="hover-row">
                     <td><code><?= e($row['ma_hp']) ?></code></td>
-                    <td><strong><?= e($row['ten_hp']) ?></strong></td>
-                    <td style="text-align:center;font-weight:bold"><?= (int)$row['so_tin_chi'] ?></td>
+                    <td><strong style="color:var(--text-dark);"><?= e($row['ten_hp']) ?></strong></td>
+                    <td style="text-align:center;font-weight:bold;color:var(--primary);"><?= (int)$row['so_tin_chi'] ?></td>
                     <td style="text-align:center"><?= (int)$row['so_tiet_ly_thuyet'] ?> tiết</td>
                     <td style="text-align:center"><?= (int)$row['so_tiet_thuc_hanh'] ?> tiết</td>
-                    <td style="text-align:center">Học kỳ <?= (int)$row['hoc_ky'] ?></td>
                     <td><?= e($row['khoa_phu_trach']) ?></td>
                     <td><?= $row['ma_hp_tien_quyet'] ? '<span class="badge" style="background:#e9ecef;color:#495057;border:1px solid #ced4da;">' . e($row['ma_hp_tien_quyet']) . '</span>' : '<span style="color:#999;font-size:12px">Không</span>' ?></td>
                     <td style="text-align:center">
@@ -291,7 +372,7 @@
                     </td>
                     <td style="text-align:center">
                       <div class="table-actions" style="display:flex;justify-content:center;gap:5px">
-                        <a class="btn btn-sm btn-info" href="?action=edit&id=<?= (int)$row['id'] ?>&search=<?= urlencode($search) ?>&hoc_ky=<?= $hocKyFilter ?>&loai=<?= urlencode($loaiFilter) ?>&khoa=<?= urlencode($khoaFilter) ?>&page=<?= $page ?>">
+                        <a class="btn btn-sm btn-info" href="?action=edit&id=<?= (int)$row['id'] ?>&search=<?= urlencode($search) ?>">
                           <i class="fas fa-edit"></i> Sửa
                         </a>
                         <form method="POST" action="<?= BASE_URL ?>/admin/hoc-phan/delete" style="display:inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa học phần này không?')">
@@ -311,8 +392,8 @@
           <?php if ($totalPages > 1): ?>
             <div style="display:flex;justify-content:center;align-items:center;padding:15px;gap:5px;border-top:1px solid #eee">
               <?php if ($page > 1): ?>
-                <a class="btn btn-sm btn-secondary" href="?page=1&search=<?= urlencode($search) ?>&hoc_ky=<?= $hocKyFilter ?>&loai=<?= urlencode($loaiFilter) ?>&khoa=<?= urlencode($khoaFilter) ?>"><i class="fas fa-angles-left"></i> Đầu</a>
-                <a class="btn btn-sm btn-secondary" href="?page=<?= $page - 1 ?>&search=<?= urlencode($search) ?>&hoc_ky=<?= $hocKyFilter ?>&loai=<?= urlencode($loaiFilter) ?>&khoa=<?= urlencode($khoaFilter) ?>"><i class="fas fa-angle-left"></i> Trước</a>
+                <a class="btn btn-sm btn-secondary" href="?page=1&search=<?= urlencode($search) ?>"><i class="fas fa-angles-left"></i> Đầu</a>
+                <a class="btn btn-sm btn-secondary" href="?page=<?= $page - 1 ?>&search=<?= urlencode($search) ?>"><i class="fas fa-angle-left"></i> Trước</a>
               <?php endif; ?>
 
               <?php 
@@ -320,19 +401,26 @@
                 $endPage = min($totalPages, $page + 2);
                 for ($p = $startPage; $p <= $endPage; $p++): 
               ?>
-                <a class="btn btn-sm <?= $p === $page ? 'btn-primary' : 'btn-secondary' ?>" href="?page=<?= $p ?>&search=<?= urlencode($search) ?>&hoc_ky=<?= $hocKyFilter ?>&loai=<?= urlencode($loaiFilter) ?>&khoa=<?= urlencode($khoaFilter) ?>"><?= $p ?></a>
+                <a class="btn btn-sm <?= $p === $page ? 'btn-primary' : 'btn-secondary' ?>" href="?page=<?= $p ?>&search=<?= urlencode($search) ?>"><?= $p ?></a>
               <?php endfor; ?>
 
               <?php if ($page < $totalPages): ?>
-                <a class="btn btn-sm btn-secondary" href="?page=<?= $page + 1 ?>&search=<?= urlencode($search) ?>&hoc_ky=<?= $hocKyFilter ?>&loai=<?= urlencode($loaiFilter) ?>&khoa=<?= urlencode($khoaFilter) ?>">Sau <i class="fas fa-angle-right"></i></a>
-                <a class="btn btn-sm btn-secondary" href="?page=<?= $totalPages ?>&search=<?= urlencode($search) ?>&hoc_ky=<?= $hocKyFilter ?>&loai=<?= urlencode($loaiFilter) ?>&khoa=<?= urlencode($khoaFilter) ?>">Cuối <i class="fas fa-angles-right"></i></a>
+                <a class="btn btn-sm btn-secondary" href="?page=<?= $page + 1 ?>&search=<?= urlencode($search) ?>">Sau <i class="fas fa-angle-right"></i></a>
+                <a class="btn btn-sm btn-secondary" href="?page=<?= $totalPages ?>&search=<?= urlencode($search) ?>">Cuối <i class="fas fa-angles-right"></i></a>
               <?php endif; ?>
             </div>
           <?php endif; ?>
-
-        <?php endif; ?>
+        </div>
       </div>
-    </div>
+
+    <?php else: ?>
+      <!-- CHƯA CHỌN GÌ -->
+      <div class="card fade-in" style="padding:40px; text-align:center; color:#64748b; border: 1px dashed #cbd5e1; border-radius:8px;">
+        <i class="fas fa-folder-open" style="font-size:48px; margin-bottom:15px; color:#94a3b8; display:block;"></i>
+        <h3 style="margin:0 0 10px; color:#334155;">Xem Chương trình đào tạo hoặc Tìm kiếm học phần</h3>
+        <p style="margin:0; font-size:14px; max-width:500px; margin:0 auto; line-height:1.5;">Vui lòng <strong>Chọn Khoa và Ngành</strong> ở trên để xem đầy đủ Chương trình đào tạo (CTĐT) chi tiết, hoặc <strong>Nhập từ khóa vào ô tìm kiếm</strong> để tra cứu toàn trường.</p>
+      </div>
+    <?php endif; ?>
   </div>
 </div>
 

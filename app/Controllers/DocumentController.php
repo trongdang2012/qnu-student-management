@@ -38,6 +38,23 @@ class DocumentController extends Controller {
                         $this->redirect('/student/tai-lieu');
                     }
                 }
+            } elseif ($action === 'edit') {
+                $tl_id    = (int)($_POST['tl_id'] ?? 0);
+                $tieu_de  = trim($_POST['tieu_de'] ?? '');
+                $mo_ta    = trim($_POST['mo_ta']   ?? '');
+                $hp_id    = (int)($_POST['hoc_phan_id'] ?? 0) ?: null;
+                $is_public = isset($_POST['cong_khai']) && $_POST['cong_khai'] === '1' ? 1 : 0;
+                $file = !empty($_FILES['file_upload']['name']) ? $_FILES['file_upload'] : null;
+
+                if (empty($tieu_de)) {
+                    $msg = ['type'=>'danger','text'=>'Vui lòng nhập tiêu đề tài liệu'];
+                } else {
+                    $msg = $documentModel->updateDocument($sv['id'], $tl_id, $hp_id, $tieu_de, $mo_ta, $file, $is_public);
+                    if ($msg['type'] === 'success') {
+                        setFlash('success', 'Cập nhật tài liệu thành công');
+                        $this->redirect('/student/tai-lieu');
+                    }
+                }
             } elseif ($action === 'xoa') {
                 $tl_id = (int)($_POST['tl_id'] ?? 0);
                 if ($documentModel->deleteDocument($sv['id'], $tl_id)) {
@@ -90,6 +107,35 @@ class DocumentController extends Controller {
         header('Content-Length: ' . filesize($file_path));
         header('Pragma: no-cache');
         header('Expires: 0');
+        readfile($file_path);
+        exit;
+    }
+
+    public function preview() {
+        $this->requireStudent();
+        $id = (int)($_GET['id'] ?? 0);
+        if (!$id) { exit; }
+
+        $documentModel = new DocumentModel();
+        $tl = $documentModel->getDocumentById($id);
+        if (!$tl) { die('Tài liệu không tồn tại.'); }
+
+        $file_path = UPLOAD_DIR . $tl['duong_dan'];
+        if (!file_exists($file_path)) { die('File không tồn tại trên máy chủ.'); }
+
+        $ext = strtolower(pathinfo($tl['ten_file'], PATHINFO_EXTENSION));
+        $mime = 'application/octet-stream';
+        if ($ext === 'pdf') {
+            $mime = 'application/pdf';
+        } elseif ($ext === 'png') {
+            $mime = 'image/png';
+        } elseif (in_array($ext, ['jpg', 'jpeg'])) {
+            $mime = 'image/jpeg';
+        }
+
+        header('Content-Type: ' . $mime);
+        header('Content-Disposition: inline; filename="' . addslashes($tl['ten_file']) . '"');
+        header('Content-Length: ' . filesize($file_path));
         readfile($file_path);
         exit;
     }

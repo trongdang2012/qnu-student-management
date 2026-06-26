@@ -49,6 +49,12 @@ $active_menu = $active_menu ?? 'dashboard';
           <li><a href="<?= BASE_URL ?>/admin/khoa">
             <span class="menu-icon"><i class="fas fa-landmark"></i></span> Quản lý Khoa
           </a></li>
+          <li><a href="<?= BASE_URL ?>/admin/giang-vien">
+            <span class="menu-icon"><i class="fas fa-chalkboard-teacher"></i></span> Quản lý Giảng viên
+          </a></li>
+          <li><a href="<?= BASE_URL ?>/admin/phong-hoc">
+            <span class="menu-icon"><i class="fas fa-school"></i></span> Quản lý Phòng học
+          </a></li>
           <li><a href="<?= BASE_URL ?>/admin/nganh">
             <span class="menu-icon"><i class="fas fa-graduation-cap"></i></span> Quản lý Ngành
           </a></li>

@@ -122,8 +122,9 @@ class DocumentModel {
 
         if (!empty($search)) {
             // Để tìm kiếm tiếng Việt hoạt động hoàn hảo (không phân biệt dấu/hoa thường), ta dùng COLLATE utf8mb4_general_ci ép kiểu so sánh an toàn
-            $where .= " AND (tl.tieu_de COLLATE utf8mb4_general_ci LIKE :search OR tl.mo_ta COLLATE utf8mb4_general_ci LIKE :search)";
-            $params['search'] = '%' . $search . '%';
+            $where .= " AND (tl.tieu_de COLLATE utf8mb4_general_ci LIKE :search1 OR tl.mo_ta COLLATE utf8mb4_general_ci LIKE :search2)";
+            $params['search1'] = '%' . $search . '%';
+            $params['search2'] = '%' . $search . '%';
         }
 
         $sql = "
@@ -169,5 +170,64 @@ class DocumentModel {
             ORDER BY hp.ten_hp
         ";
         return $this->db->fetchAll($sql, ['nganh' => $nganh]);
+    }
+
+    public function updateDocument($studentId, $id, $hpId, $title, $description, $file = null, $isPublic = 1) {
+        $tl = $this->getDocumentById($id);
+        if (!$tl || $tl['sinh_vien_id'] != $studentId) {
+            return ['type'=>'danger','text'=>'Tài liệu không tồn tại hoặc bạn không có quyền sửa'];
+        }
+
+        $new_name = $tl['duong_dan'];
+        $orig_name = $tl['ten_file'];
+        $size = $tl['kich_thuoc'];
+        $loai = $tl['loai_file'];
+
+        if ($file && !empty($file['name'])) {
+            $orig_name= basename($file['name']);
+            $ext      = strtolower(pathinfo($orig_name, PATHINFO_EXTENSION));
+            $size     = $file['size'];
+            $tmp      = $file['tmp_name'];
+
+            if (!in_array($ext, ALLOWED_FILE_TYPES)) {
+                return ['type'=>'danger','text'=>'Định dạng file không hợp lệ'];
+            } elseif ($size > MAX_UPLOAD_SIZE) {
+                return ['type'=>'danger','text'=>'File vượt quá dung lượng cho phép'];
+            } elseif ($file['error'] !== UPLOAD_ERR_OK) {
+                return ['type'=>'danger','text'=>$this->getUploadErrorMessage($file['error'])];
+            }
+
+            $new_name = time() . '_' . $studentId . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '_', $orig_name);
+            $dest     = rtrim(UPLOAD_DIR, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $new_name;
+
+            if (move_uploaded_file($tmp, $dest)) {
+                // Xóa file cũ
+                $old_file = rtrim(UPLOAD_DIR, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $tl['duong_dan'];
+                if (file_exists($old_file)) {
+                    @unlink($old_file);
+                }
+                $loai = strtoupper($ext);
+            } else {
+                return ['type'=>'danger','text'=>'Tải lên file mới thất bại'];
+            }
+        }
+
+        try {
+            $this->db->query("UPDATE tai_lieu SET hoc_phan_id = :hpId, tieu_de = :tieuDe, mo_ta = :moTa, ten_file = :tenFile, duong_dan = :duongDan, kich_thuoc = :kichThuoc, loai_file = :loai, is_public = :isPublic WHERE id = :id AND sinh_vien_id = :sid", [
+                'id' => $id,
+                'sid' => $studentId,
+                'hpId' => $hpId,
+                'tieuDe' => $title,
+                'moTa' => $description,
+                'tenFile' => $orig_name,
+                'duongDan' => $new_name,
+                'kichThuoc' => $size,
+                'loai' => $loai,
+                'isPublic' => $isPublic ? 1 : 0
+            ]);
+            return ['type'=>'success','text'=>'Cập nhật tài liệu thành công'];
+        } catch (\Exception $e) {
+            return ['type'=>'danger','text'=>'Cập nhật thất bại, vui lòng thử lại'];
+        }
     }
 }

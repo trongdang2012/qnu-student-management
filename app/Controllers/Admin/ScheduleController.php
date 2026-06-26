@@ -29,7 +29,43 @@ class ScheduleController extends Controller {
         $gvFilter = trim($_GET['giang_vien'] ?? '');
         $lhpFilter = trim($_GET['lop_hoc_phan_id'] ?? '');
 
-        // Lấy danh sách lịch học theo bộ lọc
+        // Lấy thông tin tìm kiếm sinh viên nếu có
+        $maSv = trim($_GET['ma_sv'] ?? '');
+        $student = null;
+        $registeredTerms = [];
+        $selectedTerm = '';
+        $studentSchedule = [];
+        $studentGrid = [];
+        $studentError = '';
+
+        if ($maSv !== '') {
+            $student = $this->scheduleModel->getStudentByMa($maSv);
+            if ($student) {
+                $registeredTerms = $this->scheduleModel->getStudentRegisteredTerms($student['id']);
+                if (!empty($registeredTerms)) {
+                    $selectedTerm = trim($_GET['term'] ?? '');
+                    if ($selectedTerm === '') {
+                        $firstTerm = $registeredTerms[0];
+                        $selectedTerm = $firstTerm['hoc_ky'] . '-' . $firstTerm['nam_hoc'];
+                    }
+                    
+                    $parts = explode('-', $selectedTerm, 2);
+                    $svHocKy = (int)($parts[0] ?? 1);
+                    $svNamHoc = trim($parts[1] ?? '');
+                    
+                    $studentSchedule = $this->scheduleModel->getStudentScheduleForTerm($student['id'], $svHocKy, $svNamHoc);
+                    foreach ($studentSchedule as $s) {
+                        for ($t = $s['tiet_bat_dau']; $t < $s['tiet_bat_dau'] + $s['so_tiet']; $t++) {
+                            $studentGrid[$s['thu']][$t] = $s;
+                        }
+                    }
+                }
+            } else {
+                $studentError = 'Không tìm thấy sinh viên có mã số: ' . $maSv;
+            }
+        }
+
+        // Lấy danh sách lịch học theo bộ lọc cho quản lý chung
         $list = $this->scheduleModel->getSchedules($hocKy, $namHoc, $search, $phongFilter, $gvFilter, $lhpFilter);
         
         // Tạo cấu trúc thời khóa biểu dạng lưới để View hiển thị chuyên nghiệp
@@ -79,6 +115,12 @@ class ScheduleController extends Controller {
             'roomUtilization' => $roomUtilization,
             'action' => $action,
             'item' => $item,
+            'maSv' => $maSv,
+            'student' => $student,
+            'registeredTerms' => $registeredTerms,
+            'selectedTerm' => $selectedTerm,
+            'studentGrid' => $studentGrid,
+            'studentError' => $studentError,
             'page_title' => 'Quản lý Thời khóa biểu',
             'active_menu' => 'thoi_khoa_bieu'
         ]);

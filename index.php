@@ -39,8 +39,8 @@ spl_autoload_register(function ($class) {
 // Khởi tạo Router
 $router = new \App\Core\Router();
 
-// Định nghĩa các route cơ bản (để test tạm)
-$router->get('/', function() {
+// Định nghĩa các route cơ bản
+$router->get('/', function () {
     if (isLoggedIn()) {
         header('Location: ' . BASE_URL . '/student/dashboard');
     } else {
@@ -49,7 +49,7 @@ $router->get('/', function() {
     exit;
 });
 
-// Route của Auth (Ví dụ)
+// Route của Auth
 $router->get('/auth/login', 'AuthController@index');
 $router->post('/auth/login', 'AuthController@processLogin');
 $router->get('/auth/otp', 'AuthController@otp');
@@ -85,6 +85,7 @@ $router->post('/student/dang-ky-hoc-phan', 'CourseController@processRegister');
 $router->get('/student/tai-lieu', 'DocumentController@index');
 $router->post('/student/tai-lieu', 'DocumentController@index');
 $router->get('/student/download', 'DocumentController@download');
+$router->get('/student/preview-tai-lieu', 'DocumentController@preview');
 
 $router->get('/student/diem-ren-luyen', 'StudentController@trainingPoints');
 $router->get('/student/hoc-phi', 'StudentController@tuitionFees');
@@ -107,12 +108,22 @@ $router->post('/admin/hoc-phan/duplicate-ctdt', 'Admin\CourseController@duplicat
 $router->get('/admin/lop-hoc-phan', 'Admin\ClassController@index');
 $router->post('/admin/lop-hoc-phan/save', 'Admin\ClassController@save');
 $router->post('/admin/lop-hoc-phan/delete', 'Admin\ClassController@delete');
-$router->get('/admin/lop-hoc-phan/optimize', 'Admin\ClassController@optimize');
+$router->post('/admin/lop-hoc-phan/auto-generate', 'Admin\ClassController@autoGenerate');
 $router->post('/admin/lop-hoc-phan/batch-open', 'Admin\ClassController@batchOpen');
+$router->post('/admin/lop-hoc-phan/batch-open-selected', 'Admin\ClassController@batchOpenSelected');
+$router->post('/admin/lop-hoc-phan/scan-and-cancel', 'Admin\ClassController@scanAndCancel');
 
 $router->get('/admin/khoa', 'Admin\FacultyController@index');
 $router->post('/admin/khoa/save', 'Admin\FacultyController@save');
 $router->post('/admin/khoa/delete', 'Admin\FacultyController@delete');
+
+$router->get('/admin/giang-vien', 'Admin\GiangVienController@index');
+$router->post('/admin/giang-vien/save', 'Admin\GiangVienController@save');
+$router->post('/admin/giang-vien/delete', 'Admin\GiangVienController@delete');
+
+$router->get('/admin/phong-hoc', 'Admin\PhongHocController@index');
+$router->post('/admin/phong-hoc/save', 'Admin\PhongHocController@save');
+$router->post('/admin/phong-hoc/delete', 'Admin\PhongHocController@delete');
 
 $router->get('/admin/nganh', 'Admin\MajorController@index');
 $router->post('/admin/nganh/save', 'Admin\MajorController@save');
