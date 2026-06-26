@@ -286,7 +286,15 @@ class ClassController extends Controller {
     }
 
     public function autoGenerate() {
+        $isAjax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') 
+                  || (int)($_POST['ajax'] ?? 0) === 1;
+
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            if ($isAjax) {
+                header('Content-Type: application/json; charset=utf-8');
+                echo json_encode(['success' => false, 'status' => 'danger', 'message' => 'Yêu cầu không hợp lệ.']);
+                exit;
+            }
             $this->redirect('/admin/lop-hoc-phan');
         }
 
@@ -296,13 +304,28 @@ class ClassController extends Controller {
         $namHoc = trim($_POST['nam_hoc'] ?? NAM_HOC_HIEN_TAI);
 
         if ($khoaId <= 0 || $nganhId <= 0) {
+            if ($isAjax) {
+                header('Content-Type: application/json; charset=utf-8');
+                echo json_encode(['success' => false, 'status' => 'danger', 'message' => 'Vui lòng chọn đầy đủ Khoa và Ngành để sinh lớp.']);
+                exit;
+            }
             setFlash('danger', 'Vui lòng chọn đầy đủ Khoa và Ngành để sinh lớp.');
             $this->redirect('/admin/lop-hoc-phan');
         }
 
         $res = $this->courseModel->autoGenerateAndSchedule($khoaId, $nganhId, $hocKyHocVu, $namHoc);
-        setFlash($res['status'], $res['message']);
+        
+        if ($isAjax) {
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode([
+                'success' => $res['status'] !== 'danger',
+                'status' => $res['status'],
+                'message' => $res['message']
+            ]);
+            exit;
+        }
 
+        setFlash($res['status'], $res['message']);
         $this->redirect('/admin/lop-hoc-phan');
     }
 

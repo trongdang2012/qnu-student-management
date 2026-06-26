@@ -138,16 +138,51 @@
         <p style="margin:8px 0 0;color:var(--text-muted);font-size:12px"><?= $enrolledTotal ?> / <?= $capacityTotal ?> chỗ đã được sinh viên đăng ký.</p>
       </div>
       <div class="ops-card">
-        <h3><i class="fas fa-clipboard-check"></i> Cảnh báo hệ thống</h3>
+        <h3><i class="fas fa-triangle-exclamation" style="color: #ea580c;"></i> Cảnh báo hệ thống</h3>
         <?php if (empty($classAlerts)): ?>
           <p style="margin:0;color:#16a34a;font-size:13px"><i class="fas fa-circle-check"></i> Tất cả các lớp vận hành đầy đủ giảng viên, phòng học và thời gian học.</p>
         <?php else: ?>
-          <ul class="ops-list" style="max-height:110px; overflow-y:auto;">
+          <ul class="ops-list" style="max-height:140px; overflow-y:auto;">
             <?php foreach ($classAlerts as $c): ?>
-              <li>
-                <strong><?= e($c['ma_lop_hp']) ?></strong> - <?= e($c['ten_hp']) ?><br>
-                <?php if (empty($c['giang_vien'])): ?><span class="ops-tag">Thiếu giảng viên/phòng</span><?php endif; ?>
-                <?php if ((int)$c['si_so_hien_tai'] >= (int)$c['si_so_toi_da']): ?><span class="ops-tag" style="background:#fee2e2;color:#991b1b;">Đã đầy chỗ</span><?php endif; ?>
+              <?php
+                // Xác định các lỗi cảnh báo
+                $errors = [];
+                if (empty($c['giang_vien'])) $errors[] = 'Thiếu giảng viên/phòng';
+                if ((int)$c['si_so_hien_tai'] >= (int)$c['si_so_toi_da']) $errors[] = 'Đã đầy chỗ';
+                if (empty($c['ngay_bat_dau_dk']) || empty($c['ngay_ket_thuc_dk'])) $errors[] = 'Chưa cấu hình đợt đăng ký';
+                
+                $alertData = [
+                  'id' => (int)$c['id'],
+                  'ma_lop_hp' => $c['ma_lop_hp'],
+                  'ten_hp' => $c['ten_hp'],
+                  'errors' => $errors,
+                  'giang_vien' => $c['giang_vien'],
+                  'si_so_hien_tai' => (int)$c['si_so_hien_tai'],
+                  'si_so_toi_da' => (int)$c['si_so_toi_da'],
+                  'ngay_bat_dau_dk' => $c['ngay_bat_dau_dk'],
+                  'ngay_ket_thuc_dk' => $c['ngay_ket_thuc_dk']
+                ];
+              ?>
+              <li style="cursor: pointer; padding: 8px; border-radius: 4px; transition: background 0.2s;" 
+                  onmouseover="this.style.background='#f1f5f9'" 
+                  onmouseout="this.style.background='transparent'"
+                  onclick="showOperationalAlertDetail(<?= htmlspecialchars(json_encode($alertData), ENT_QUOTES, 'UTF-8') ?>)">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                  <strong style="color: var(--primary);"><?= e($c['ma_lop_hp']) ?></strong>
+                  <span style="font-size: 11px; color: var(--text-muted);"><i class="fas fa-magnifying-glass-chart"></i> Click để sửa</span>
+                </div>
+                <div style="font-size:12px; margin-top:2px; color: var(--text-dark);"><?= e($c['ten_hp']) ?></div>
+                <div style="margin-top: 4px; display:flex; flex-wrap:wrap; gap: 4px;">
+                  <?php if (empty($c['giang_vien'])): ?>
+                    <span class="ops-tag" style="background:#fff7ed; color:#c2410c;"><i class="fas fa-user-slash"></i> Thiếu GV/Phòng</span>
+                  <?php endif; ?>
+                  <?php if ((int)$c['si_so_hien_tai'] >= (int)$c['si_so_toi_da']): ?>
+                    <span class="ops-tag" style="background:#fee2e2; color:#b91c1c;"><i class="fas fa-users-slash"></i> Đầy chỗ</span>
+                  <?php endif; ?>
+                  <?php if (empty($c['ngay_bat_dau_dk']) || empty($c['ngay_ket_thuc_dk'])): ?>
+                    <span class="ops-tag" style="background:#fef9c3; color:#a16207;"><i class="fas fa-clock"></i> Chưa hẹn giờ</span>
+                  <?php endif; ?>
+                </div>
               </li>
             <?php endforeach; ?>
           </ul>
@@ -520,7 +555,7 @@
       <h2><i class="fas fa-wand-magic-sparkles"></i> Sinh lớp & Xếp lịch tự động</h2>
       <button class="modal-close" type="button" onclick="closeAutoGenerateModal()">&times;</button>
     </div>
-    <form method="POST" action="<?= BASE_URL ?>/admin/lop-hoc-phan/auto-generate">
+    <form id="autoGenerateForm" method="POST" action="<?= BASE_URL ?>/admin/lop-hoc-phan/auto-generate">
       <div class="alert alert-info" style="margin-bottom:15px; font-size:12px; line-height:1.5;">
         <strong>🎯 Thuật toán Greedy tối ưu:</strong><br>
         1. Tự động quét học phần trong CTĐT của Ngành cho mọi khóa học.<br>
@@ -764,6 +799,133 @@ function confirmScanAndCancel() {
         }
       });
       document.getElementById('scanCancelForm').submit();
+    }
+  });
+}
+
+// Xử lý submit AJAX cho form xếp lịch tự động & hiển thị progress popup
+document.getElementById('autoGenerateForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  
+  const form = this;
+  const formData = new FormData(form);
+  formData.append('ajax', '1');
+  
+  closeAutoGenerateModal();
+  
+  let progress = 0;
+  const steps = [
+    "Đang quét học phần trong CTĐT của Ngành...",
+    "Đang phân tích dữ liệu giảng viên & phòng học...",
+    "Đang tính toán phân bổ thời khóa biểu không trùng lịch...",
+    "Đang lưu thông tin các lớp học phần mới vào cơ sở dữ liệu...",
+    "Đang hoàn tất quá trình xếp lịch..."
+  ];
+  
+  Swal.fire({
+    title: 'Đang xếp lịch tự động',
+    html: `
+      <div style="margin-bottom: 15px; font-weight: 500;" id="swal-step-text">${steps[0]}</div>
+      <div class="progress-bar-container" style="width: 100%; background: #e2e8f0; height: 10px; border-radius: 999px; overflow: hidden;">
+        <div id="swal-progress-bar" style="width: 5%; height: 100%; background: #0056B3; transition: width 0.2s ease;"></div>
+      </div>
+      <div style="margin-top: 8px; font-size: 12px; color: #718096;" id="swal-percent-text">5%</div>
+    `,
+    allowOutsideClick: false,
+    allowEscapeKey: false,
+    showConfirmButton: false,
+    didOpen: () => {
+      Swal.showLoading();
+      
+      // Gửi AJAX request
+      fetch(form.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        // Mô phỏng thanh tiến trình chạy mượt lên 100%
+        let interval = setInterval(() => {
+          progress += 10;
+          if (progress >= 100) {
+            clearInterval(interval);
+            
+            Swal.fire({
+              title: data.success ? (data.status === 'warning' ? 'Cảnh báo xếp lịch' : 'Thành công!') : 'Có lỗi xảy ra',
+              html: data.message,
+              icon: data.success ? (data.status === 'warning' ? 'warning' : 'success') : 'error',
+              confirmButtonText: 'Đóng'
+            }).then(() => {
+              if (data.success) {
+                window.location.reload();
+              }
+            });
+          } else {
+            const stepIndex = Math.min(Math.floor(progress / 20), steps.length - 1);
+            document.getElementById('swal-step-text').textContent = steps[stepIndex];
+            document.getElementById('swal-progress-bar').style.width = progress + '%';
+            document.getElementById('swal-percent-text').textContent = progress + '%';
+          }
+        }, 150);
+      })
+      .catch(err => {
+        Swal.fire({
+          title: 'Lỗi hệ thống',
+          text: 'Không thể kết nối đến máy chủ để tự động xếp lịch. Chi tiết: ' + err.message,
+          icon: 'error',
+          confirmButtonText: 'Đóng'
+        });
+      });
+    }
+  });
+});
+
+// Hiển thị gợi ý sửa lỗi cảnh báo vận hành
+function showOperationalAlertDetail(data) {
+  let errorHtml = '<div style="text-align: left; font-size: 14px; line-height: 1.6; margin-top: 10px;">';
+  errorHtml += `<p><strong>Lớp học phần:</strong> <code style="background:#f1f5f9; padding:2px 6px; border-radius:4px; font-weight:bold; color:#b91c1c;">${data.ma_lop_hp}</code></p>`;
+  errorHtml += `<p><strong>Môn học:</strong> <span>${data.ten_hp}</span></p>`;
+  errorHtml += '<hr style="margin: 12px 0; border: 0; border-top: 1px solid #e2e8f0;">';
+  errorHtml += '<h4 style="margin: 0 0 8px; color: #b91c1c;"><i class="fas fa-circle-exclamation"></i> Lỗi cảnh báo chi tiết:</h4>';
+  
+  let solutionsHtml = '<h4 style="margin: 15px 0 8px; color: #15803d;"><i class="fas fa-lightbulb"></i> Gợi ý cách khắc phục:</h4><ul style="padding-left: 20px; margin: 0;">';
+  
+  data.errors.forEach(err => {
+    errorHtml += `<div style="display:flex; align-items:center; gap:8px; margin-bottom:6px; color:#374151;">
+      <span style="color:#ef4444; font-size:8px;">●</span>
+      <span>${err}</span>
+    </div>`;
+    
+    if (err === 'Thiếu giảng viên/phòng') {
+      solutionsHtml += `<li style="margin-bottom:6px;">Lớp học phần đang trống Giảng viên, Phòng học hoặc chưa xếp lịch TKB học. Bạn hãy click <strong>"Sửa lớp ngay"</strong>, phân công giảng viên rảnh, phòng học thích hợp còn trống và cấu hình lịch học (Thứ, Tiết bắt đầu, Số tiết).</li>`;
+    } else if (err === 'Đã đầy chỗ') {
+      solutionsHtml += `<li style="margin-bottom:6px;">Lớp đã đạt sĩ số tối đa (${data.si_so_hien_tai}/${data.si_so_toi_da} SV). Bạn hãy click <strong>"Sửa lớp ngay"</strong> để nâng sĩ số tối đa của lớp học phần này lên (VD: 100 hoặc 120 SV), hoặc mở thêm lớp học phần mới cho môn này.</li>`;
+    } else if (err === 'Chưa cấu hình đợt đăng ký') {
+      solutionsHtml += `<li style="margin-bottom:6px;">Lớp học chưa cấu hình ngày bắt đầu và kết thúc đăng ký. Hãy click <strong>"Sửa lớp ngay"</strong> để nhập cụ thể <strong>Thời gian bắt đầu</strong> và <strong>Thời gian kết thúc</strong> mở cổng đăng ký học phần.</li>`;
+    }
+  });
+  
+  solutionsHtml += '</ul>';
+  errorHtml += solutionsHtml + '</div>';
+  
+  Swal.fire({
+    title: 'Cảnh báo vận hành lớp',
+    html: errorHtml,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#0056B3',
+    cancelButtonColor: '#6c757d',
+    confirmButtonText: '<i class="fas fa-edit"></i> Sửa lớp ngay',
+    cancelButtonText: 'Đóng'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      const currentUrl = new URL(window.location.href);
+      currentUrl.searchParams.set('action', 'edit');
+      currentUrl.searchParams.set('id', data.id);
+      window.location.href = currentUrl.toString();
     }
   });
 }

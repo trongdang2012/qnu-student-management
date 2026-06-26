@@ -227,9 +227,10 @@ class CourseModel {
             $student_hk = ($diff_years * 2) + (int)$hk_hien_tai;
         }
 
-        // Lấy tất cả lớp học phần đang mở của ngành đó trong kỳ học vụ hiện tại
+        // Lấy tất cả lớp học phần đang mở của ngành đó (không giới hạn học kỳ học vụ để bao gồm lớp học lại từ kỳ khác)
         $sql = "
             SELECT l.id AS lop_hoc_phan_id, l.ma_lop_hp, l.giang_vien, l.si_so_toi_da, l.si_so_hien_tai,
+                   l.hoc_ky AS lop_hoc_ky,
                    hp.id AS hoc_phan_id, hp.ma_hp, hp.ten_hp, hp.so_tin_chi, hp.loai, hp.ma_hp_tien_quyet,
                    c.hoc_ky AS ctdt_hoc_ky,
                    t.thu, t.tiet_bat_dau, t.so_tiet, t.phong_hoc
@@ -238,11 +239,14 @@ class CourseModel {
             JOIN ctdt_chi_tiet c ON hp.id = c.hoc_phan_id
             JOIN nganh n ON n.id = c.nganh_id
             LEFT JOIN (
-                SELECT DISTINCT lop_hoc_phan_id, thu, tiet_bat_dau, so_tiet, phong_hoc 
+                SELECT lop_hoc_phan_id,
+                       MIN(thu) AS thu, MIN(tiet_bat_dau) AS tiet_bat_dau,
+                       MIN(so_tiet) AS so_tiet, MIN(phong_hoc) AS phong_hoc
                 FROM thoi_khoa_bieu
+                WHERE sinh_vien_id IS NOT NULL
+                GROUP BY lop_hoc_phan_id
             ) t ON t.lop_hoc_phan_id = l.id
             WHERE n.ten_nganh = :nganh
-              AND l.hoc_ky = :hk_hien_tai
               AND l.nam_hoc = :nh_hien_tai
               AND l.trang_thai_mo_lop = 'Đang mở'
               AND (l.ngay_bat_dau_dk IS NULL OR NOW() >= l.ngay_bat_dau_dk)
@@ -253,7 +257,6 @@ class CourseModel {
         
         $all_courses = $this->db->fetchAll($sql, [
             'nganh' => $nganh,
-            'hk_hien_tai' => $hk_hien_tai,
             'nh_hien_tai' => $nh_hien_tai
         ]);
 
@@ -401,15 +404,25 @@ class CourseModel {
             }
 
             // 4. Kiểm tra trùng lịch học cá nhân của sinh viên
-            // Lấy lịch học của lớp chuẩn bị đăng ký
-            $targetSchedules = $this->db->fetchAll("SELECT thu, tiet_bat_dau, so_tiet FROM thoi_khoa_bieu WHERE lop_hoc_phan_id = :lhpId", ['lhpId' => $lhpId]);
+            // Lấy lịch học của lớp chuẩn bị đăng ký (ưu tiên bản ghi per-student, fallback sang template nếu không có)
+            $targetSchedules = $this->db->fetchAll("
+                SELECT DISTINCT thu, tiet_bat_dau, so_tiet FROM thoi_khoa_bieu 
+                WHERE lop_hoc_phan_id = :lhpId AND sinh_vien_id IS NOT NULL
+            ", ['lhpId' => $lhpId]);
+            if (empty($targetSchedules)) {
+                // Fallback: dùng bản ghi template (sinh_vien_id = NULL) nếu chưa có per-student
+                $targetSchedules = $this->db->fetchAll("
+                    SELECT DISTINCT thu, tiet_bat_dau, so_tiet FROM thoi_khoa_bieu 
+                    WHERE lop_hoc_phan_id = :lhpId
+                ", ['lhpId' => $lhpId]);
+            }
             
-            // Lấy lịch học của các lớp đã đăng ký
+            // Lấy lịch học của các lớp đã đăng ký (chỉ lịch cá nhân của sinh viên này)
             $activeSchedules = $this->db->fetchAll("
-                SELECT hp.ten_hp, t.thu, t.tiet_bat_dau, t.so_tiet
+                SELECT DISTINCT hp.ten_hp, t.thu, t.tiet_bat_dau, t.so_tiet
                 FROM dang_ky_hp dk
                 JOIN lop_hoc_phan l ON l.id = dk.lop_hoc_phan_id
-                JOIN thoi_khoa_bieu t ON t.lop_hoc_phan_id = l.id
+                JOIN thoi_khoa_bieu t ON t.lop_hoc_phan_id = l.id AND t.sinh_vien_id = dk.sinh_vien_id
                 JOIN hoc_phan hp ON hp.id = l.hoc_phan_id
                 WHERE dk.sinh_vien_id = :sid AND dk.hoc_ky = :hk AND dk.nam_hoc = :nh AND dk.trang_thai IN ('Chờ duyệt', 'Đã duyệt')
             ", ['sid' => $studentId, 'hk' => (string)$hk, 'nh' => $nh]);

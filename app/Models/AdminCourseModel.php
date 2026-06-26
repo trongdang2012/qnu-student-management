@@ -284,7 +284,8 @@ class AdminCourseModel {
     public function getClassOperationalAlerts($hoc_ky = 0, $nam_hoc = '', $limit = 8) {
         $sql = "
             SELECT l.id, l.ma_lop_hp, l.giang_vien, l.si_so_toi_da, l.si_so_hien_tai,
-                   l.trang_thai_mo_lop, l.hoc_ky, l.nam_hoc, h.ma_hp, h.ten_hp
+                   l.trang_thai_mo_lop, l.hoc_ky, l.nam_hoc, h.ma_hp, h.ten_hp,
+                   l.ngay_bat_dau_dk, l.ngay_ket_thuc_dk
             FROM lop_hoc_phan l
             JOIN hoc_phan h ON l.hoc_phan_id = h.id
             WHERE (
@@ -672,6 +673,62 @@ class AdminCourseModel {
         $failedCount = 0;
         $failedDetails = [];
         
+        // Nạp toàn bộ lịch học của học kỳ học vụ và năm học này vào bộ nhớ để xếp lịch trên RAM
+        $allSchedules = $this->db->fetchAll("
+            SELECT tkb.giang_vien_id, tkb.phong_hoc_id, tkb.thu, tkb.tiet_bat_dau, tkb.so_tiet, 
+                   l.hoc_phan_id, ctdt.hoc_ky AS hoc_ky_ctdt, ctdt.nganh_id
+            FROM thoi_khoa_bieu tkb
+            JOIN lop_hoc_phan l ON tkb.lop_hoc_phan_id = l.id
+            LEFT JOIN ctdt_chi_tiet ctdt ON l.hoc_phan_id = ctdt.hoc_phan_id
+            WHERE tkb.hoc_ky = :hk AND tkb.nam_hoc = :nh
+        ", ['hk' => $hocKyHocVu, 'nh' => $namHoc]);
+
+        $gvSchedules = [];
+        $roomSchedules = [];
+        $cohortSchedules = [];
+
+        foreach ($allSchedules as $sched) {
+            $thuVal = (int)$sched['thu'];
+            $tietBdVal = (int)$sched['tiet_bat_dau'];
+            $soTietVal = (int)$sched['so_tiet'];
+            $tietKtVal = $tietBdVal + $soTietVal - 1;
+
+            if ($sched['giang_vien_id']) {
+                $gvSchedules[$sched['giang_vien_id']][] = [
+                    'thu' => $thuVal,
+                    'tiet_bd' => $tietBdVal,
+                    'tiet_kt' => $tietKtVal
+                ];
+            }
+            if ($sched['phong_hoc_id']) {
+                $roomSchedules[$sched['phong_hoc_id']][] = [
+                    'thu' => $thuVal,
+                    'tiet_bd' => $tietBdVal,
+                    'tiet_kt' => $tietKtVal
+                ];
+            }
+            if ($sched['nganh_id'] && $sched['hoc_ky_ctdt']) {
+                $cohortSchedules[$sched['nganh_id']][$sched['hoc_ky_ctdt']][] = [
+                    'thu' => $thuVal,
+                    'tiet_bd' => $tietBdVal,
+                    'tiet_kt' => $tietKtVal
+                ];
+            }
+        }
+
+        $isConflict = function($thu, $tietBd, $soTiet, $schedules) {
+            if (empty($schedules)) return false;
+            $tietKt = $tietBd + $soTiet - 1;
+            foreach ($schedules as $s) {
+                if ($s['thu'] == $thu) {
+                    if ($s['tiet_bd'] <= $tietKt && $s['tiet_kt'] >= $tietBd) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        };
+        
         // Duyệt từng học phần để tạo lớp và xếp lịch
         foreach ($courses as $c) {
             $hpId = $c['id'];
@@ -723,74 +780,36 @@ class AdminCourseModel {
                     $gvName = $gv['ho_ten'];
                     
                     // Kiểm tra giảng viên rảnh giờ này chưa
-                    $gvConflict = $this->db->fetch("
-                        SELECT id FROM thoi_khoa_bieu 
-                        WHERE giang_vien_id = :gv_id 
-                          AND thu = :thu 
-                          AND hoc_ky = :hk 
-                          AND nam_hoc = :nh
-                          AND tiet_bat_dau <= :tiet_kt
-                          AND (tiet_bat_dau + so_tiet - 1) >= :tiet_bd
-                        LIMIT 1
-                    ", [
-                        'gv_id' => $gvId, 'thu' => $thu, 'hk' => $hocKyHocVu, 'nh' => $namHoc,
-                        'tiet_kt' => $tietBd + $soTiet - 1, 'tiet_bd' => $tietBd
-                    ]);
-                    
-                    if ($gvConflict) continue;
+                    $gvSchedulesForGv = $gvSchedules[$gvId] ?? [];
+                    if ($isConflict($thu, $tietBd, $soTiet, $gvSchedulesForGv)) {
+                        continue;
+                    }
                     
                     // Kiểm tra xem khóa sinh viên của ngành này đã bị trùng lịch môn khác chưa
-                    $cohortConflict = $this->db->fetch("
-                        SELECT t.id 
-                        FROM thoi_khoa_bieu t
-                        JOIN lop_hoc_phan l ON t.lop_hoc_phan_id = l.id
-                        JOIN ctdt_chi_tiet ctdt_sub ON l.hoc_phan_id = ctdt_sub.hoc_phan_id
-                        WHERE ctdt_sub.nganh_id = :nganh_id
-                          AND ctdt_sub.hoc_ky = :hk_ctdt
-                          AND t.thu = :thu
-                          AND t.hoc_ky = :hk
-                          AND t.nam_hoc = :nh
-                          AND t.tiet_bat_dau <= :tiet_kt
-                          AND (t.tiet_bat_dau + t.so_tiet - 1) >= :tiet_bd
-                        LIMIT 1
-                    ", [
-                        'nganh_id' => $nganhId, 'hk_ctdt' => $hkCtdt, 'thu' => $thu, 
-                        'hk' => $hocKyHocVu, 'nh' => $namHoc,
-                        'tiet_kt' => $tietBd + $soTiet - 1, 'tiet_bd' => $tietBd
-                    ]);
-                    
-                    if ($cohortConflict) continue;
+                    $cohortSchedulesForCohort = $cohortSchedules[$nganhId][$hkCtdt] ?? [];
+                    if ($isConflict($thu, $tietBd, $soTiet, $cohortSchedulesForCohort)) {
+                        continue;
+                    }
                     
                     // Tìm phòng học trống
                     foreach ($suitableRooms as $room) {
                         $roomId = $room['id'];
                         $roomName = $room['ten_phong'];
                         
-                        $roomConflict = $this->db->fetch("
-                            SELECT id FROM thoi_khoa_bieu 
-                            WHERE phong_hoc_id = :room_id 
-                              AND thu = :thu 
-                              AND hoc_ky = :hk 
-                              AND nam_hoc = :nh
-                              AND tiet_bat_dau <= :tiet_kt
-                              AND (tiet_bat_dau + so_tiet - 1) >= :tiet_bd
-                            LIMIT 1
-                        ", [
-                            'room_id' => $roomId, 'thu' => $thu, 'hk' => $hocKyHocVu, 'nh' => $namHoc,
-                            'tiet_kt' => $tietBd + $soTiet - 1, 'tiet_bd' => $tietBd
-                        ]);
-                        
-                        if (!$roomConflict) {
-                            // Cả giảng viên, phòng học và khóa sinh viên đều rảnh! Chọn slot này
-                            $placed = true;
-                            $placedGvId = $gvId;
-                            $placedRoomId = $roomId;
-                            $placedGvName = $gvName;
-                            $placedRoomName = $roomName;
-                            $placedThu = $thu;
-                            $placedTietBd = $tietBd;
-                            break 3; // Thoát cả 3 vòng lặp
+                        $roomSchedulesForRoom = $roomSchedules[$roomId] ?? [];
+                        if ($isConflict($thu, $tietBd, $soTiet, $roomSchedulesForRoom)) {
+                            continue;
                         }
+                        
+                        // Cả giảng viên, phòng học và khóa sinh viên đều rảnh! Chọn slot này
+                        $placed = true;
+                        $placedGvId = $gvId;
+                        $placedRoomId = $roomId;
+                        $placedGvName = $gvName;
+                        $placedRoomName = $roomName;
+                        $placedThu = $thu;
+                        $placedTietBd = $tietBd;
+                        break 3; // Thoát cả 3 vòng lặp
                     }
                 }
             }
@@ -818,6 +837,17 @@ class AdminCourseModel {
                     'gv_name' => $placedGvName, 'gv_id' => $placedGvId, 'hk' => $hocKyHocVu,
                     'nh' => $namHoc, 'bd' => $ngay_bat_dau, 'kt' => $ngay_ket_thuc
                 ]);
+                
+                // Cập nhật các mảng RAM ngay lập tức
+                $tietKtVal = $placedTietBd + $soTiet - 1;
+                $newSched = [
+                    'thu' => $placedThu,
+                    'tiet_bd' => $placedTietBd,
+                    'tiet_kt' => $tietKtVal
+                ];
+                $gvSchedules[$placedGvId][] = $newSched;
+                $roomSchedules[$placedRoomId][] = $newSched;
+                $cohortSchedules[$nganhId][$hkCtdt][] = $newSched;
                 
                 $successCount++;
             } else {
