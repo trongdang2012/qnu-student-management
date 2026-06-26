@@ -285,7 +285,8 @@ class AdminCourseModel {
         $sql = "
             SELECT l.id, l.ma_lop_hp, l.giang_vien, l.si_so_toi_da, l.si_so_hien_tai,
                    l.trang_thai_mo_lop, l.hoc_ky, l.nam_hoc, h.ma_hp, h.ten_hp,
-                   l.ngay_bat_dau_dk, l.ngay_ket_thuc_dk
+                   l.ngay_bat_dau_dk, l.ngay_ket_thuc_dk,
+                   EXISTS(SELECT 1 FROM thoi_khoa_bieu tkb WHERE tkb.lop_hoc_phan_id = l.id) AS has_schedule
             FROM lop_hoc_phan l
             JOIN hoc_phan h ON l.hoc_phan_id = h.id
             WHERE (
@@ -293,6 +294,7 @@ class AdminCourseModel {
                 OR l.si_so_hien_tai >= l.si_so_toi_da
                 OR l.ngay_bat_dau_dk IS NULL
                 OR l.ngay_ket_thuc_dk IS NULL
+                OR NOT EXISTS(SELECT 1 FROM thoi_khoa_bieu tkb WHERE tkb.lop_hoc_phan_id = l.id)
             )
         ";
         $params = [];
@@ -651,6 +653,43 @@ class AdminCourseModel {
         if (empty($roomThucHanh)) {
             $roomThucHanh = $roomLyThuyet;
         }
+
+        $calculateProgressTerm = function($nienKhoa) use ($hocKyHocVu, $namHoc) {
+            $startYear = (int)(explode('-', (string)$nienKhoa)[0] ?? 0);
+            $currentYearStart = (int)(explode('-', $namHoc)[0] ?? date('Y'));
+            if ($startYear <= 0) {
+                return (int)$hocKyHocVu;
+            }
+            return (max(0, $currentYearStart - $startYear) * 2) + (int)$hocKyHocVu;
+        };
+
+        $cohortStudentCounts = [];
+        $students = $this->db->fetchAll("
+            SELECT s.nien_khoa
+            FROM sinh_vien s
+            JOIN lop_sinh_hoat lsh ON lsh.id = s.lop_sinh_hoat_id
+            WHERE lsh.nganh_id = :nganh_id
+        ", ['nganh_id' => $nganhId]);
+        foreach ($students as $student) {
+            $term = $calculateProgressTerm($student['nien_khoa'] ?? '');
+            $cohortStudentCounts[$term] = ($cohortStudentCounts[$term] ?? 0) + 1;
+        }
+
+        $suggestCapacity = function($course, $rooms) {
+            $isPractice = (int)($course['so_tiet_thuc_hanh'] ?? 0) > 0;
+            $baseCapacity = $isPractice ? 40 : 80;
+            $loai = (string)($course['loai'] ?? '');
+            if (!$isPractice && (str_contains($loai, 'Đại') || str_contains($loai, 'Äáº¡i'))) {
+                $baseCapacity = 120;
+            }
+
+            $maxRoomCapacity = 0;
+            foreach ($rooms as $room) {
+                $maxRoomCapacity = max($maxRoomCapacity, (int)($room['suc_chua'] ?? 0));
+            }
+
+            return $maxRoomCapacity > 0 ? max(10, min($baseCapacity, $maxRoomCapacity)) : $baseCapacity;
+        };
         
         // Tính toán ngày học dựa trên năm học & học kỳ học vụ
         $years = explode('-', $namHoc);
@@ -737,16 +776,20 @@ class AdminCourseModel {
             $soTiet = max(2, min($soTinChi, 5)); // số tiết từ 2 đến 5
             $isThucHanh = (int)$c['so_tiet_thuc_hanh'] > 0;
             $hkCtdt = (int)$c['hoc_ky_ctdt']; // khóa học
-            
-            // Tạo mã lớp tự động
-            $nextClassNumber = $this->getNextClassNumber($maHp);
-            $maLopHp = $maHp . '-L' . str_pad($nextClassNumber, 2, '0', STR_PAD_LEFT);
+            $estimatedStudents = max(1, (int)($cohortStudentCounts[$hkCtdt] ?? 0));
             
             // Danh sách phòng học phù hợp loại môn
             $suitableRooms = $isThucHanh ? $roomThucHanh : $roomLyThuyet;
             if (empty($suitableRooms)) {
                 $suitableRooms = $allRooms;
             }
+            $classCapacity = $suggestCapacity($c, $suitableRooms);
+            $classesNeeded = max(1, (int)ceil($estimatedStudents / max(1, $classCapacity)));
+
+            for ($classIndex = 1; $classIndex <= $classesNeeded; $classIndex++) {
+                // Tạo mã lớp tự động
+                $nextClassNumber = $this->getNextClassNumber($maHp);
+                $maLopHp = $maHp . '-L' . str_pad($nextClassNumber, 2, '0', STR_PAD_LEFT);
             
             $placed = false;
             $placedGvId = null;
@@ -758,15 +801,18 @@ class AdminCourseModel {
             
             // Quét tìm khung giờ chung (Thứ 2 đến Thứ 7, ca Sáng: tiết 1-5, ca Chiều: tiết 6-10)
             $timeSlots = [];
+            $maxMorningStart = max(1, 6 - $soTiet);
+            $maxAfternoonStart = max(6, 11 - $soTiet);
+
             for ($thu = 2; $thu <= 7; $thu++) {
-                // Ca sáng: bắt đầu từ tiết 1 hoặc tiết 2
-                $timeSlots[] = ['thu' => $thu, 'tiet_bd' => 1, 'ca' => 'sáng'];
-                $timeSlots[] = ['thu' => $thu, 'tiet_bd' => 2, 'ca' => 'sáng'];
-                // Ca chiều: bắt đầu từ tiết 6 hoặc tiết 7
-                $timeSlots[] = ['thu' => $thu, 'tiet_bd' => 6, 'ca' => 'chiều'];
-                $timeSlots[] = ['thu' => $thu, 'tiet_bd' => 7, 'ca' => 'chiều'];
+                for ($start = 1; $start <= $maxMorningStart; $start++) {
+                    $timeSlots[] = ['thu' => $thu, 'tiet_bd' => $start, 'ca' => 'sáng'];
+                }
+                for ($start = 6; $start <= $maxAfternoonStart; $start++) {
+                    $timeSlots[] = ['thu' => $thu, 'tiet_bd' => $start, 'ca' => 'chiều'];
+                }
             }
-            
+
             // Tráo ngẫu nhiên để phân bố đều lịch
             shuffle($timeSlots);
             
@@ -863,19 +909,27 @@ class AdminCourseModel {
                 $failedCount++;
                 $failedDetails[] = "$maLopHp";
             }
+            }
         }
         
+        if ($successCount === 0 && $failedCount > 0) {
+            return [
+                'status' => 'warning',
+                'message' => "⚠️ Không xếp được lớp nào. Có <strong>$failedCount lớp</strong> bị bận tài nguyên, vui lòng chỉnh sửa bằng tay:<br><em>" . implode(', ', $failedDetails) . "</em>"
+            ];
+        }
+
         if ($failedCount === 0) {
             return [
                 'status' => 'success',
                 'message' => "✓ Xếp lớp tự động thành công! Đã tạo và xếp lịch cho <strong>$successCount lớp học phần</strong> không bị trùng lịch."
             ];
-        } else {
-            return [
-                'status' => 'warning',
-                'message' => "⚠️ Đã tự động xếp thành công <strong>$successCount lớp</strong>. Có <strong>$failedCount lớp bận tài nguyên không xếp được lịch</strong>, vui lòng chỉnh sửa bằng tay:<br><em>" . implode(', ', $failedDetails) . "</em>"
-            ];
         }
+
+        return [
+            'status' => 'warning',
+            'message' => "⚠️ Đã tự động xếp thành công <strong>$successCount lớp</strong>. Có <strong>$failedCount lớp bận tài nguyên không xếp được lịch</strong>, vui lòng chỉnh sửa bằng tay:<br><em>" . implode(', ', $failedDetails) . "</em>"
+        ];
     }
 
     public function scanAndCancelRegistration($adminId = 1) {

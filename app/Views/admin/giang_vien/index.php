@@ -153,11 +153,11 @@
                   <td><?= e($gv['hoc_vi'] ?? 'Chưa xác định') ?></td>
                   <td><?= e($gv['chuyen_nganh'] ?? 'Chưa xác định') ?></td>
                   <td><?= e($gv['ten_khoa'] ?? 'Chưa xác định') ?></td>
-                  <td><?= e($gv['email']) ?></td>
-                  <td><?= e($gv['so_dien_thoai']) ?></td>
+                  <td><?= e($gv['email'] ?? '') ?></td>
+                  <td><?= e($gv['so_dien_thoai'] ?? '') ?></td>
                   <td style="text-align: center;">
                     <div style="display: inline-flex; gap: 8px;">
-                      <button type="button" class="btn btn-outline btn-sm" onclick="editGiangVien(<?= $gv['id'] ?>, '<?= e($gv['ma_gv']) ?>', '<?= e($gv['ho_ten']) ?>', '<?= $gv['khoa_id'] ?>', '<?= e($gv['hoc_vi']) ?>', '<?= e($gv['chuyen_nganh']) ?>', '<?= e($gv['email']) ?>', '<?= e($gv['so_dien_thoai']) ?>')">
+                      <button type="button" class="btn btn-outline btn-sm" onclick="editGiangVien(<?= $gv['id'] ?>, '<?= e($gv['ma_gv']) ?>', '<?= e($gv['ho_ten']) ?>', '<?= $gv['khoa_id'] ?? '' ?>', '<?= e($gv['hoc_vi'] ?? '') ?>', '<?= e($gv['chuyen_nganh'] ?? '') ?>', '<?= e($gv['email'] ?? '') ?>', '<?= e($gv['so_dien_thoai'] ?? '') ?>')">
                         <i class="fas fa-edit"></i> Sửa
                       </button>
                       <form action="<?= BASE_URL ?>/admin/giang-vien/delete" method="POST" onsubmit="return confirm('Bạn có chắc chắn muốn xóa giảng viên này? Lớp học phần do giảng viên này dạy sẽ được cập nhật trống.');" style="margin: 0;">

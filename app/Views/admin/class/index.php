@@ -557,11 +557,7 @@
     </div>
     <form id="autoGenerateForm" method="POST" action="<?= BASE_URL ?>/admin/lop-hoc-phan/auto-generate">
       <div class="alert alert-info" style="margin-bottom:15px; font-size:12px; line-height:1.5;">
-        <strong>🎯 Thuật toán Greedy tối ưu:</strong><br>
-        1. Tự động quét học phần trong CTĐT của Ngành cho mọi khóa học.<br>
-        2. Tự động tìm giảng viên của Khoa rảnh và phòng lý thuyết/thực hành thích hợp còn trống.<br>
-        3. Phân bổ ca Sáng (tiết 1-5) hoặc Chiều (tiết 6-10), đảm bảo <strong>không trùng lịch</strong> của giảng viên, phòng học, và sinh viên cùng khóa học.<br>
-        4. Các lớp không xếp được lịch do thiếu phòng/giờ sẽ được tạo và đánh dấu lỗi để Admin sửa tay.
+        <strong>🎯 Thuật toán Greedy tối ưu:</strong> Tự động quét học phần trong CTĐT của ngành cho mọi khóa học, tìm giảng viên của khoa và phòng lý thuyết/thực hành còn trống, sau đó phân bổ ca Sáng (tiết 1-5) hoặc Chiều (tiết 6-10) sao cho không trùng lịch với giảng viên, phòng học và sinh viên cùng khóa. Các lớp không xếp được lịch do thiếu phòng/giờ sẽ được tạo và đánh dấu lỗi để Admin chỉnh sửa tay.
       </div>
 
       <div class="form-group" style="margin-bottom: 12px;">

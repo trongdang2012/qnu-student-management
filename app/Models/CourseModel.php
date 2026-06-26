@@ -25,6 +25,82 @@ class CourseModel {
         }
     }
 
+    private function getStudentProgressTerm($studentId, $hk, $nh) {
+        $student = $this->db->fetch("SELECT nien_khoa FROM sinh_vien WHERE id = :sid", ['sid' => $studentId]);
+        $nienKhoa = $student ? (string)$student['nien_khoa'] : '';
+        if ($nienKhoa === '') {
+            return (int)$hk;
+        }
+
+        $startYear = (int)(explode('-', $nienKhoa)[0] ?? 0);
+        $currentYearStart = (int)(explode('-', $nh)[0] ?? date('Y'));
+        if ($startYear <= 0) {
+            return (int)$hk;
+        }
+
+        return (max(0, $currentYearStart - $startYear) * 2) + (int)$hk;
+    }
+
+    private function getStudentCourseStatus($studentId) {
+        $grades = $this->db->fetchAll("
+            SELECT hoc_phan_id, diem_he4
+            FROM diem_hoc_tap
+            WHERE sinh_vien_id = :sid
+        ", ['sid' => $studentId]);
+
+        $studied = [];
+        $passed = [];
+        foreach ($grades as $g) {
+            $hpId = (int)$g['hoc_phan_id'];
+            $studied[$hpId] = true;
+            if ($g['diem_he4'] !== null && (float)$g['diem_he4'] >= 1.0) {
+                $passed[$hpId] = true;
+            }
+        }
+
+        return [$studied, $passed];
+    }
+
+    private function getRegistrationCategoryForCourse($studentId, $nganh, $hocPhanId, $hk, $nh) {
+        $ctdt = $this->db->fetch("
+            SELECT c.hoc_ky
+            FROM ctdt_chi_tiet c
+            JOIN nganh n ON n.id = c.nganh_id
+            WHERE c.hoc_phan_id = :hp_id AND n.ten_nganh = :nganh
+            LIMIT 1
+        ", ['hp_id' => $hocPhanId, 'nganh' => $nganh]);
+        if (!$ctdt) {
+            return null;
+        }
+
+        $studentHk = $this->getStudentProgressTerm($studentId, $hk, $nh);
+        $ctdtHk = (int)$ctdt['hoc_ky'];
+        [$studied, $passed] = $this->getStudentCourseStatus($studentId);
+
+        if (isset($passed[$hocPhanId])) {
+            return null;
+        }
+
+        if ((int)$hk === 3) {
+            if (isset($studied[$hocPhanId])) {
+                return 'hoc_lai';
+            }
+            return $ctdtHk === $studentHk + 2 ? 'hoc_vuot' : null;
+        }
+
+        if ($ctdtHk === $studentHk + 1) {
+            return 'ke_hoach';
+        }
+        if ($ctdtHk < $studentHk) {
+            return 'hoc_lai';
+        }
+        if ($ctdtHk === $studentHk + 2) {
+            return 'hoc_vuot';
+        }
+
+        return null;
+    }
+
     public function getProgramDetails($studentId, $nganh) {
         $rows = $this->db->fetchAll("
             SELECT c.hoc_ky, hp.ma_hp, hp.ten_hp, hp.so_tin_chi, hp.loai,
@@ -163,12 +239,13 @@ class CourseModel {
             SELECT t.*, hp.ten_hp, hp.ma_hp, hp.so_tin_chi, l.ma_lop_hp
             FROM dang_ky_hp dk
             JOIN lop_hoc_phan l ON l.id = dk.lop_hoc_phan_id
-            JOIN thoi_khoa_bieu t ON t.lop_hoc_phan_id = l.id AND t.sinh_vien_id = dk.sinh_vien_id
+            JOIN thoi_khoa_bieu t ON t.lop_hoc_phan_id = l.id
             JOIN hoc_phan hp ON hp.id = l.hoc_phan_id
             WHERE dk.sinh_vien_id = :sid
               AND dk.hoc_ky = :hk
               AND dk.nam_hoc = :nh
               AND dk.trang_thai = 'Đã duyệt'
+              AND (t.sinh_vien_id = dk.sinh_vien_id OR t.sinh_vien_id IS NULL)
             ORDER BY t.thu, t.tiet_bat_dau
         ", ['sid' => $studentId, 'hk' => $hk_filter, 'nh' => $nh_filter]);
 
@@ -197,10 +274,19 @@ class CourseModel {
             FROM dang_ky_hp dk
             JOIN lop_hoc_phan l ON l.id = dk.lop_hoc_phan_id
             JOIN hoc_phan hp ON hp.id = l.hoc_phan_id
-            LEFT JOIN thoi_khoa_bieu t ON t.lop_hoc_phan_id = l.id AND t.sinh_vien_id = dk.sinh_vien_id
+            LEFT JOIN (
+                SELECT lop_hoc_phan_id,
+                       MIN(thu) AS thu,
+                       MIN(tiet_bat_dau) AS tiet_bat_dau,
+                       MIN(so_tiet) AS so_tiet,
+                       MIN(phong_hoc) AS phong_hoc
+                FROM thoi_khoa_bieu
+                WHERE sinh_vien_id = :sid_for_schedule OR sinh_vien_id IS NULL
+                GROUP BY lop_hoc_phan_id
+            ) t ON t.lop_hoc_phan_id = l.id
             WHERE dk.sinh_vien_id = :sid AND dk.hoc_ky = :hk AND dk.nam_hoc = :nh
             ORDER BY dk.ngay_dang_ky DESC
-        ", ['sid' => $studentId, 'hk' => $hk, 'nh' => $nh]);
+        ", ['sid' => $studentId, 'sid_for_schedule' => $studentId, 'hk' => $hk, 'nh' => $nh]);
     }
 
     public function getAvailableCourses($studentId, $nganh, $registeredLhpIds) {
@@ -212,24 +298,11 @@ class CourseModel {
         $nh_hien_tai = defined('NAM_HOC_HIEN_TAI') ? NAM_HOC_HIEN_TAI : '2025-2026';
 
         // Lấy niên khóa sinh viên
-        $student = $this->db->fetch("SELECT nien_khoa FROM sinh_vien WHERE id = :sid", ['sid' => $studentId]);
-        $nien_khoa = $student ? $student['nien_khoa'] : '';
-        
-        $student_hk = 1;
-        if ($nien_khoa) {
-            $parts = explode('-', $nien_khoa);
-            $start_year = (int)$parts[0];
-            
-            $parts_nh = explode('-', $nh_hien_tai);
-            $current_year_start = (int)$parts_nh[0];
-            
-            $diff_years = $current_year_start - $start_year;
-            $student_hk = ($diff_years * 2) + (int)$hk_hien_tai;
-        }
+        $student_hk = $this->getStudentProgressTerm($studentId, $hk_hien_tai, $nh_hien_tai);
 
         // Lấy tất cả lớp học phần đang mở của ngành đó (không giới hạn học kỳ học vụ để bao gồm lớp học lại từ kỳ khác)
         $sql = "
-            SELECT l.id AS lop_hoc_phan_id, l.ma_lop_hp, l.giang_vien, l.si_so_toi_da, l.si_so_hien_tai,
+            SELECT DISTINCT l.id AS lop_hoc_phan_id, l.ma_lop_hp, l.giang_vien, l.si_so_toi_da, l.si_so_hien_tai,
                    l.hoc_ky AS lop_hoc_ky,
                    hp.id AS hoc_phan_id, hp.ma_hp, hp.ten_hp, hp.so_tin_chi, hp.loai, hp.ma_hp_tien_quyet,
                    c.hoc_ky AS ctdt_hoc_ky,
@@ -240,14 +313,14 @@ class CourseModel {
             JOIN nganh n ON n.id = c.nganh_id
             LEFT JOIN (
                 SELECT lop_hoc_phan_id,
-                       MIN(thu) AS thu, MIN(tiet_bat_dau) AS tiet_bat_dau,
-                       MIN(so_tiet) AS so_tiet, MIN(phong_hoc) AS phong_hoc
+                       MIN(thu) AS thu,
+                       MIN(tiet_bat_dau) AS tiet_bat_dau,
+                       MIN(so_tiet) AS so_tiet,
+                       MIN(phong_hoc) AS phong_hoc
                 FROM thoi_khoa_bieu
-                WHERE sinh_vien_id IS NOT NULL
                 GROUP BY lop_hoc_phan_id
             ) t ON t.lop_hoc_phan_id = l.id
             WHERE n.ten_nganh = :nganh
-              AND l.nam_hoc = :nh_hien_tai
               AND l.trang_thai_mo_lop = 'Đang mở'
               AND (l.ngay_bat_dau_dk IS NULL OR NOW() >= l.ngay_bat_dau_dk)
               AND (l.ngay_ket_thuc_dk IS NULL OR NOW() <= l.ngay_ket_thuc_dk)
@@ -256,25 +329,11 @@ class CourseModel {
         ";
         
         $all_courses = $this->db->fetchAll($sql, [
-            'nganh' => $nganh,
-            'nh_hien_tai' => $nh_hien_tai
+            'nganh' => $nganh
         ]);
 
         // Lấy danh sách điểm môn học của sinh viên
-        $grades = $this->db->fetchAll("
-            SELECT hoc_phan_id, diem_he4 
-            FROM diem_hoc_tap 
-            WHERE sinh_vien_id = :sid
-        ", ['sid' => $studentId]);
-
-        $passed_hp_ids = [];
-        $studied_hp_ids = [];
-        foreach ($grades as $g) {
-            $studied_hp_ids[] = (int)$g['hoc_phan_id'];
-            if ($g['diem_he4'] !== null && (float)$g['diem_he4'] >= 1.0) {
-                $passed_hp_ids[] = (int)$g['hoc_phan_id'];
-            }
-        }
+        [$studied_hp_ids, $passed_hp_ids] = $this->getStudentCourseStatus($studentId);
 
         $result = [
             'ke_hoach' => [],
@@ -282,38 +341,35 @@ class CourseModel {
             'hoc_lai' => []
         ];
 
+        $nextPlannedHk = $student_hk + 1;
+        $nextYearVuotHk = $student_hk + 2;
+
         foreach ($all_courses as $hp) {
             $hp_id = (int)$hp['hoc_phan_id'];
             $ctdt_hk = (int)$hp['ctdt_hoc_ky'];
 
             if ($hk_hien_tai == 3) {
                 // Kỳ hè:
-                // Học lại: Môn đã từng học
-                // Học vượt: Môn kỳ sau của hè (ctdt_hk = student_hk + 1) và chưa đạt
-                if (in_array($hp_id, $studied_hp_ids)) {
+                // Học lại: Môn đã từng học trong các kỳ trước và chưa đạt
+                // Học vượt: Môn kỳ sau của hè (ctdt_hk = student_hk + 2) và chưa đạt
+                if (isset($studied_hp_ids[$hp_id]) && !isset($passed_hp_ids[$hp_id])) {
                     $result['hoc_lai'][] = $hp;
-                } elseif ($ctdt_hk == $student_hk + 1 && !in_array($hp_id, $passed_hp_ids)) {
+                } elseif ($ctdt_hk === $student_hk + 2 && !isset($passed_hp_ids[$hp_id])) {
                     $result['hoc_vuot'][] = $hp;
                 }
             } else {
                 // Kỳ chính:
-                // Môn theo kế hoạch: ctdt_hk = student_hk và chưa đạt
-                if ($ctdt_hk == $student_hk) {
-                    if (!in_array($hp_id, $passed_hp_ids)) {
-                        $result['ke_hoach'][] = $hp;
-                    }
+                // Môn theo kế hoạch: các môn cho kỳ tiếp theo của sinh viên
+                if ($ctdt_hk === $nextPlannedHk && !isset($passed_hp_ids[$hp_id])) {
+                    $result['ke_hoach'][] = $hp;
                 }
-                // Học lại: ctdt_hk < student_hk và chưa đạt
-                elseif ($ctdt_hk < $student_hk) {
-                    if (!in_array($hp_id, $passed_hp_ids)) {
-                        $result['hoc_lai'][] = $hp;
-                    }
+                // Học lại: các môn kỳ cũ trước tiến độ hiện tại và chưa đạt
+                elseif ($ctdt_hk < $student_hk && !isset($passed_hp_ids[$hp_id])) {
+                    $result['hoc_lai'][] = $hp;
                 }
-                // Học vượt: ctdt_hk > student_hk và chưa đạt
-                elseif ($ctdt_hk > $student_hk) {
-                    if (!in_array($hp_id, $passed_hp_ids)) {
-                        $result['hoc_vuot'][] = $hp;
-                    }
+                // Học vượt: các môn kỳ sau của năm sau (đi trước 2 kỳ so với tiến độ hiện tại)
+                elseif ($ctdt_hk === $nextYearVuotHk && !isset($passed_hp_ids[$hp_id])) {
+                    $result['hoc_vuot'][] = $hp;
                 }
             }
         }
@@ -360,6 +416,20 @@ class CourseModel {
             $si_so_toi_da = (int)$class['si_so_toi_da'];
             $si_so_hien_tai = (int)$class['si_so_hien_tai'];
             $prereq_ma = $class['ma_hp_tien_quyet'];
+
+            $student = $this->db->fetch("
+                SELECT n.ten_nganh AS nganh
+                FROM sinh_vien s
+                LEFT JOIN lop_sinh_hoat l ON l.id = s.lop_sinh_hoat_id
+                LEFT JOIN nganh n ON n.id = l.nganh_id
+                WHERE s.id = :sid
+            ", ['sid' => $studentId]);
+            $studentNganh = $student['nganh'] ?? '';
+            $category = $studentNganh !== '' ? $this->getRegistrationCategoryForCourse($studentId, $studentNganh, (int)$hpId, $hk, $nh) : null;
+            if ($category === null) {
+                $pdo->rollBack();
+                return ['type' => 'danger', 'text' => 'Há»c pháº§n nÃ y khÃ´ng thuá»™c nhÃ³m Ä‘Æ°á»£c phÃ©p Ä‘Äƒng kÃ½ hiá»‡n táº¡i (káº¿ hoáº¡ch, há»c vÆ°á»£t hoáº·c há»c láº¡i).'];
+            }
 
             // 0. Kiểm tra môn đã đạt điểm hệ 4 >= 1.0 (D trở lên)
             $passed = $this->db->fetch("SELECT id FROM diem_hoc_tap WHERE sinh_vien_id = :sid AND hoc_phan_id = :hpId AND diem_he4 >= 1.0", 
@@ -422,9 +492,10 @@ class CourseModel {
                 SELECT DISTINCT hp.ten_hp, t.thu, t.tiet_bat_dau, t.so_tiet
                 FROM dang_ky_hp dk
                 JOIN lop_hoc_phan l ON l.id = dk.lop_hoc_phan_id
-                JOIN thoi_khoa_bieu t ON t.lop_hoc_phan_id = l.id AND t.sinh_vien_id = dk.sinh_vien_id
+                JOIN thoi_khoa_bieu t ON t.lop_hoc_phan_id = l.id
                 JOIN hoc_phan hp ON hp.id = l.hoc_phan_id
                 WHERE dk.sinh_vien_id = :sid AND dk.hoc_ky = :hk AND dk.nam_hoc = :nh AND dk.trang_thai IN ('Chờ duyệt', 'Đã duyệt')
+                  AND (t.sinh_vien_id = dk.sinh_vien_id OR t.sinh_vien_id IS NULL)
             ", ['sid' => $studentId, 'hk' => (string)$hk, 'nh' => $nh]);
 
             foreach ($targetSchedules as $tar) {

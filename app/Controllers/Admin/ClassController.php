@@ -32,6 +32,28 @@ class ClassController extends Controller {
         $this->notificationModel = new NotificationModel();
     }
 
+    private function attachNotificationToStudents(int $notificationId, array $studentIds): void {
+        if (empty($studentIds)) {
+            return;
+        }
+
+        $db = \App\Core\Database::getInstance();
+        $studentIds = array_unique(array_map('intval', $studentIds));
+        $chunks = array_chunk($studentIds, 500);
+
+        foreach ($chunks as $chunk) {
+            $values = [];
+            $params = [];
+            foreach ($chunk as $studentId) {
+                $values[] = '(?, ?)';
+                $params[] = $notificationId;
+                $params[] = $studentId;
+            }
+            $sql = 'INSERT INTO thong_bao_sinh_vien (thong_bao_id, sinh_vien_id) VALUES ' . implode(', ', $values);
+            $db->query($sql, $params);
+        }
+    }
+
     public function index() {
         $search = trim($_GET['search'] ?? '');
         $hoc_ky = (int)($_GET['hoc_ky'] ?? 0);
@@ -379,6 +401,10 @@ class ClassController extends Controller {
             'content'  => $notificationContent,
             'admin_id' => $adminId
         ]);
+        $notificationId = $db->lastInsertId();
+
+        $studentIds = array_column($students, 'id');
+        $this->attachNotificationToStudents($notificationId, $studentIds);
 
         setFlash('success', '✓ Đã mở đợt đăng ký học phần hàng loạt cho ngành ' . $nganhTen . ' và gửi thông báo đến các sinh viên thành công.');
         $this->redirect('/admin/lop-hoc-phan');
@@ -434,6 +460,21 @@ class ClassController extends Controller {
             'content'  => $notificationContent,
             'admin_id' => $adminId
         ]);
+        $notificationId = $db->lastInsertId();
+
+        $studentIds = [];
+        if (!empty($nganhs)) {
+            $nganhIds = array_unique(array_map(static fn($row) => (int)$row['nganh_id'], $nganhs));
+            $placeholdersStudents = implode(',', array_fill(0, count($nganhIds), '?'));
+            $studentRows = $db->fetchAll(
+                "SELECT s.id FROM sinh_vien s JOIN lop_sinh_hoat lsh ON s.lop_sinh_hoat_id = lsh.id WHERE lsh.nganh_id IN ($placeholdersStudents)",
+                $nganhIds
+            );
+            $studentIds = array_column($studentRows, 'id');
+        }
+
+        $this->attachNotificationToStudents($notificationId, $studentIds);
+
         setFlash('success', '✓ Đã mở đợt đăng ký và hẹn giờ thành công cho ' . count($classIds) . ' lớp học phần được chọn.');
         $this->redirect('/admin/lop-hoc-phan');
     }
