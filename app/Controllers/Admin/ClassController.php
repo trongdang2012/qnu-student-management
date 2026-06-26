@@ -348,20 +348,14 @@ class ClassController extends Controller {
         
         $students = $db->fetchAll("SELECT s.id FROM sinh_vien s JOIN lop_sinh_hoat lsh ON s.lop_sinh_hoat_id = lsh.id WHERE lsh.nganh_id = :nganh_id", ['nganh_id' => $nganhId]);
         
-        if (!empty($students)) {
-            $notificationTitle = "Mở đợt đăng ký học phần mới - Ngành " . $nganhTen;
-            $notificationContent = "Thông báo: Hệ thống đã mở cổng đăng ký học phần cho Ngành " . $nganhTen . ". Thời gian đăng ký từ " . date('d/m/Y H:i', strtotime($ngay_bat_dau_dk)) . " đến " . date('d/m/Y H:i', strtotime($ngay_ket_thuc_dk)) . ". Vui lòng vào cổng Đăng ký học phần để đăng ký môn học.";
-            
-            foreach ($students as $s) {
-                // Tạo thông báo cho từng sinh viên
-                $db->query("INSERT INTO thong_bao (tieu_de, noi_dung, target_type, target_id, is_read, created_at)
-                            VALUES (:title, :content, 'student', :sv_id, 0, NOW())", [
-                    'title' => $notificationTitle,
-                    'content' => $notificationContent,
-                    'sv_id' => $s['id']
-                ]);
-            }
-        }
+        $notificationTitle = "Mở đợt đăng ký học phần - Ngành " . $nganhTen;
+        $notificationContent = "Hệ thống đã mở cổng đăng ký học phần cho Ngành " . $nganhTen . ". Thời gian đăng ký từ " . date('d/m/Y H:i', strtotime($ngay_bat_dau_dk)) . " đến " . date('d/m/Y H:i', strtotime($ngay_ket_thuc_dk)) . ". Vui lòng vào cổng Đăng ký học phần để đăng ký môn học.";
+        $adminId = $_SESSION['user_id'] ?? null;
+        $db->query("INSERT INTO thong_bao (tieu_de, noi_dung, loai, nguoi_gui_id) VALUES (:title, :content, 'success', :admin_id)", [
+            'title'    => $notificationTitle,
+            'content'  => $notificationContent,
+            'admin_id' => $adminId
+        ]);
 
         setFlash('success', '✓ Đã mở đợt đăng ký học phần hàng loạt cho ngành ' . $nganhTen . ' và gửi thông báo đến các sinh viên thành công.');
         $this->redirect('/admin/lop-hoc-phan');
@@ -408,20 +402,15 @@ class ClassController extends Controller {
             WHERE l.id IN ($placeholders)
         ", $classIds);
 
-        foreach ($nganhs as $ng) {
-            $students = $db->fetchAll("SELECT s.id FROM sinh_vien s JOIN lop_sinh_hoat lsh ON s.lop_sinh_hoat_id = lsh.id WHERE lsh.nganh_id = :nganh_id", ['nganh_id' => $ng['nganh_id']]);
-            $notificationTitle = "Mở đăng ký lớp học phần đặc biệt";
-            $notificationContent = "Thông báo: Admin đã mở đăng ký một số lớp học phần đặc biệt thuộc Ngành " . $ng['ten_nganh'] . ". Hạn đăng ký từ " . date('d/m H:i', strtotime($ngay_bat_dau_dk)) . " đến " . date('d/m H:i', strtotime($ngay_ket_thuc_dk)) . ".";
-            
-            foreach ($students as $s) {
-                $db->query("INSERT INTO thong_bao (tieu_de, noi_dung, target_type, target_id, is_read, created_at)
-                            VALUES (:title, :content, 'student', :sv_id, 0, NOW())", [
-                    'title' => $notificationTitle,
-                    'content' => $notificationContent,
-                    'sv_id' => $s['id']
-                ]);
-            }
-        }
+        $adminId = $_SESSION['user_id'] ?? null;
+        $nganhTenList = implode(', ', array_column($nganhs, 'ten_nganh'));
+        $notificationTitle = "Mở đăng ký lớp học phần được chọn";
+        $notificationContent = "Admin đã mở đăng ký " . count($classIds) . " lớp học phần" . (!empty($nganhTenList) ? " thuộc ngành: " . $nganhTenList : '') . ". Hạn đăng ký từ " . date('d/m/Y H:i', strtotime($ngay_bat_dau_dk)) . " đến " . date('d/m/Y H:i', strtotime($ngay_ket_thuc_dk)) . ".";
+        $db->query("INSERT INTO thong_bao (tieu_de, noi_dung, loai, nguoi_gui_id) VALUES (:title, :content, 'success', :admin_id)", [
+            'title'    => $notificationTitle,
+            'content'  => $notificationContent,
+            'admin_id' => $adminId
+        ]);
         setFlash('success', '✓ Đã mở đợt đăng ký và hẹn giờ thành công cho ' . count($classIds) . ' lớp học phần được chọn.');
         $this->redirect('/admin/lop-hoc-phan');
     }
