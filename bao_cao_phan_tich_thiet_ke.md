@@ -314,98 +314,52 @@ classDiagram
 
 #### A. Phân hệ Xác thực (Authentication)
 
-| STT | Tên trang | Đường dẫn | Mô tả |
+| STT | Tên trang | Mục đích | Thành phần chính |
 |:---:|:---|:---|:---|
-| 1 | Đăng nhập | `/auth/login` | Form đăng nhập với username/password |
-| 2 | Xác thực OTP | `/auth/otp` | Nhập mã OTP gửi qua email |
-| 3 | Quên mật khẩu | `/auth/forgot-password` | Nhập email để nhận mã passcode |
-| 4 | Xác minh Passcode | `/auth/verify-passcode` | Nhập mã xác minh từ email |
-| 5 | Đặt lại mật khẩu | `/auth/reset-password` | Form nhập mật khẩu mới |
+| 1 | Đăng nhập | Xác thực người dùng vào hệ thống | Form nhập username/password, nút đăng nhập, link "Quên mật khẩu", logo QNU |
+| 2 | Xác thực OTP | Xác thực 2 lớp bảo mật qua email | Form nhập mã OTP 6 số, nút xác nhận, đồng hồ đếm ngược hết hạn, nút gửi lại mã |
+| 3 | Quên mật khẩu | Khôi phục tài khoản khi quên mật khẩu | Form nhập email liên kết, nút gửi mã xác minh, link quay về đăng nhập |
+| 4 | Xác minh Passcode | Xác nhận danh tính qua mã gửi email | Form nhập mã passcode 6 số, nút xác minh, nút gửi lại mã |
+| 5 | Đặt lại mật khẩu | Thiết lập mật khẩu mới sau xác minh | Form nhập mật khẩu mới + xác nhận mật khẩu, hiển thị yêu cầu độ mạnh, nút lưu |
 
 #### B. Phân hệ Sinh viên (Student Portal)
 
-| STT | Tên trang | Đường dẫn | Mô tả |
+| STT | Tên trang | Mục đích | Thành phần chính |
 |:---:|:---|:---|:---|
-| 1 | Bảng điều khiển | `/student/dashboard` | Tổng quan thông tin SV: TKB hôm nay, thống kê nhanh |
-| 2 | Hồ sơ cá nhân | `/student/ho-so` | Xem thông tin cá nhân chi tiết |
-| 3 | Cập nhật hồ sơ | `/student/cap-nhat` | Sửa thông tin liên lạc, đổi mật khẩu, upload ảnh |
-| 4 | Chương trình đào tạo | `/student/chuong-trinh` | Xem CTĐT theo ngành, tiến độ hoàn thành |
-| 5 | Đăng ký học phần | `/student/dang-ky-hoc-phan` | Đăng ký/hủy lớp HP, xem lớp HP đang mở |
-| 6 | Thời khóa biểu | `/student/thoi-khoa-bieu` | Lịch học trực quan theo tuần/bảng |
-| 7 | Điểm học tập | `/student/diem-hoc-tap` | Bảng điểm chi tiết, GPA tích lũy |
-| 8 | Điểm rèn luyện | `/student/diem-ren-luyen` | Điểm RL và xếp loại theo kỳ |
-| 9 | Tiến độ học tập | `/student/tien-do` | Biểu đồ tiến độ tín chỉ, GPA, mục tiêu |
-| 10 | Học phí | `/student/hoc-phi` | Tra cứu công nợ, thanh toán online |
-| 11 | Tài liệu học tập | `/student/tai-lieu` | Kho tài liệu chia sẻ, đăng tải, tìm kiếm |
-| 12 | Thông báo | `/student/thong-bao` | Nhận và đọc thông báo từ nhà trường |
+| 1 | Bảng điều khiển | Tổng quan nhanh thông tin SV | Widget TKB hôm nay, card thống kê (GPA, tín chỉ, học phí), thông báo mới nhất, biểu đồ GPA |
+| 2 | Hồ sơ cá nhân | Xem thông tin hồ sơ chi tiết | Ảnh đại diện, bảng thông tin (MSSV, họ tên, ngày sinh, giới tính, lớp, ngành, khoa, email, SĐT, niên khóa, trạng thái) |
+| 3 | Cập nhật hồ sơ | Chỉnh sửa thông tin cá nhân | Form cập nhật SĐT/email/địa chỉ, upload ảnh đại diện, form đổi mật khẩu (mật khẩu cũ + mới) |
+| 4 | Chương trình đào tạo | Xem lộ trình học tập theo ngành | Bảng CTĐT phân theo học kỳ (1–9), cột: mã HP, tên HP, số tín chỉ, loại, trạng thái hoàn thành, thanh tiến độ tổng thể |
+| 5 | Đăng ký học phần | Đăng ký/hủy lớp HP trong kỳ | 3 tab (Học vượt/Học lại/Đã đăng ký), bảng lớp HP đang mở (mã lớp, GV, lịch, sĩ số, nút đăng ký/hủy), bộ lọc tìm kiếm |
+| 6 | Thời khóa biểu | Xem lịch học trực quan | Bảng grid lịch theo tuần (Thứ 2–7, tiết 1–10), bộ chọn học kỳ/năm học, hiển thị tên môn + phòng + GV trong mỗi ô |
+| 7 | Điểm học tập | Xem bảng điểm chi tiết | Bảng điểm theo kỳ (CC, GK, CK, tổng, chữ, hệ 4), bộ chọn HK/năm học, GPA tích lũy, biểu đồ GPA qua các kỳ |
+| 8 | Điểm rèn luyện | Xem điểm rèn luyện theo kỳ | Bảng điểm RL (kỳ, điểm, xếp loại, ghi chú), tổng hợp xếp loại, bộ chọn HK/năm học |
+| 9 | Tiến độ học tập | Theo dõi tiến độ tích lũy tín chỉ | Biểu đồ tròn tiến độ TC, biểu đồ cột GPA qua các kỳ, form đặt mục tiêu GPA, progress bar tổng thể, bảng thống kê số liệu |
+| 10 | Học phí | Tra cứu công nợ và thanh toán | Bảng học phí theo kỳ (số tiền, đã nộp, còn nợ, hạn nộp, trạng thái), nút thanh toán mô phỏng, tổng hợp công nợ |
+| 11 | Tài liệu học tập | Chia sẻ và tải tài liệu | Danh sách tài liệu (tiêu đề, mô tả, môn, lượt tải), bộ lọc theo HP, ô tìm kiếm, nút tải xuống, form đăng tài liệu mới |
+| 12 | Thông báo | Nhận thông báo từ nhà trường | Danh sách thông báo (tiêu đề, nội dung, ngày, trạng thái đọc), badge số thông báo chưa đọc, nút đánh dấu đã đọc |
 
 #### C. Phân hệ Quản trị viên (Admin Panel)
 
-| STT | Tên trang | Đường dẫn | Mô tả |
+| STT | Tên trang | Mục đích | Thành phần chính |
 |:---:|:---|:---|:---|
-| 1 | Dashboard | `/admin/dashboard` | Thống kê tổng quan hệ thống |
-| 2 | Quản lý Sinh viên | `/admin/sinh-vien` | CRUD sinh viên, import Excel |
-| 3 | Quản lý Học phần | `/admin/hoc-phan` | CRUD học phần, sao chép CTĐT |
-| 4 | Quản lý Lớp HP | `/admin/lop-hoc-phan` | Mở/đóng lớp HP, tối ưu hàng loạt |
-| 5 | Quản lý Khoa | `/admin/khoa` | CRUD danh mục Khoa |
-| 6 | Quản lý Ngành | `/admin/nganh` | CRUD danh mục Ngành |
-| 7 | Quản lý Lớp SH | `/admin/lop-sinh-hoat` | CRUD lớp sinh hoạt |
-| 8 | Điểm Học tập | `/admin/diem/hoc-tap` | Nhập/sửa điểm, import Excel |
-| 9 | Điểm Rèn luyện | `/admin/diem/ren-luyen` | Nhập/sửa điểm RL, import Excel |
-| 10 | Thời khóa biểu | `/admin/thoi-khoa-bieu` | CRUD TKB, tối ưu tự động |
-| 11 | Quản lý Users | `/admin/users` | CRUD tài khoản người dùng |
-| 12 | Tài liệu | `/admin/tai-lieu` | Quản lý tài liệu học tập |
-| 13 | Học phí | `/admin/hoc-phi` | Quản lý, xác nhận, tính tự động |
-| 14 | Sao lưu dữ liệu | `/admin/data-sync` | Export/Import toàn bộ CSDL |
-| 15 | Thông báo | `/admin/thong-bao` | Soạn/gửi thông báo đến SV |
-| 16 | Quản lý Giảng viên | `/admin/giang-vien` | CRUD giảng viên, phân khoa |
-| 17 | Quản lý Phòng học | `/admin/phong-hoc` | CRUD phòng học, phân loại phòng |
-
-### 4.2. Gợi ý ảnh giao diện minh họa cần chụp
-
-> [!TIP]
-> Dưới đây là danh sách **25 ảnh giao diện minh họa** được gợi ý chụp theo thứ tự ưu tiên để đưa vào báo cáo. Nên chụp ở **trình duyệt Chrome**, chế độ **Desktop (1920x1080)**, có dữ liệu thực tế.
-
-#### Nhóm 1: Xác thực & Bảo mật (4 ảnh)
-| # | Ảnh | Tên file gợi ý | Mô tả nội dung cần chụp |
-|:---:|:---|:---|:---|
-| 1 | Trang Đăng nhập | `gd_dangnhap.png` | Form đăng nhập hoàn chỉnh với logo QNU |
-| 2 | Trang OTP | `gd_otp.png` | Màn hình nhập mã OTP sau đăng nhập |
-| 3 | Quên mật khẩu | `gd_quenmatkhau.png` | Form nhập email khôi phục |
-| 4 | Đặt lại mật khẩu | `gd_datlaimatkhau.png` | Form nhập mật khẩu mới |
-
-#### Nhóm 2: Sinh viên - Trang chính (8 ảnh)
-| # | Ảnh | Tên file gợi ý | Mô tả nội dung cần chụp |
-|:---:|:---|:---|:---|
-| 5 | Dashboard SV | `gd_sv_dashboard.png` | Bảng điều khiển SV với TKB hôm nay, thống kê |
-| 6 | Hồ sơ SV | `gd_sv_hoso.png` | Thông tin cá nhân chi tiết, ảnh đại diện |
-| 7 | CTĐT | `gd_sv_ctdt.png` | Bảng chương trình đào tạo theo học kỳ |
-| 8 | Đăng ký HP | `gd_sv_dangky.png` | Tab lớp HP đang mở đăng ký + nút đăng ký |
-| 9 | TKB | `gd_sv_tkb.png` | Bảng thời khóa biểu theo tuần (grid) |
-| 10 | Điểm học tập | `gd_sv_diemhoctap.png` | Bảng điểm chi tiết + GPA tích lũy |
-| 11 | Tiến độ | `gd_sv_tiendo.png` | Biểu đồ tiến độ tín chỉ + GPA qua các kỳ |
-| 12 | Học phí | `gd_sv_hocphi.png` | Bảng công nợ học phí + trạng thái |
-
-#### Nhóm 3: Sinh viên - Chức năng phụ (4 ảnh)
-| # | Ảnh | Tên file gợi ý | Mô tả nội dung cần chụp |
-|:---:|:---|:---|:---|
-| 13 | Điểm RL | `gd_sv_diemrl.png` | Bảng điểm rèn luyện theo kỳ |
-| 14 | Tài liệu | `gd_sv_tailieu.png` | Kho tài liệu chia sẻ + nút đăng/tải |
-| 15 | Thông báo | `gd_sv_thongbao.png` | Danh sách thông báo nhà trường |
-| 16 | Cập nhật HS | `gd_sv_capnhat.png` | Form sửa thông tin, đổi mật khẩu |
-
-#### Nhóm 4: Admin Panel (9 ảnh)
-| # | Ảnh | Tên file gợi ý | Mô tả nội dung cần chụp |
-|:---:|:---|:---|:---|
-| 17 | Dashboard Admin | `gd_admin_dashboard.png` | Thống kê tổng quan, biểu đồ |
-| 18 | QL Sinh viên | `gd_admin_sinhvien.png` | Danh sách SV + tìm kiếm, lọc |
-| 19 | QL Học phần | `gd_admin_hocphan.png` | Bảng CRUD học phần + modal thêm |
-| 20 | QL Lớp HP | `gd_admin_lophocphan.png` | Danh sách lớp HP mở, nút tối ưu |
-| 21 | Nhập Điểm | `gd_admin_nhapdiem.png` | Form nhập điểm theo lớp, bảng điểm |
-| 22 | TKB Optimize | `gd_admin_tkb_optimize.png` | Trang tối ưu TKB tự động |
-| 23 | QL Học phí | `gd_admin_hocphi.png` | Bảng quản lý học phí, xác nhận nộp |
-| 24 | Gửi Thông báo | `gd_admin_thongbao.png` | Form soạn + gửi thông báo |
-| 25 | Sao lưu DL | `gd_admin_saoluu.png` | Trang Data Sync (Export/Import) |
+| 1 | Dashboard | Thống kê tổng quan hệ thống | Các widget thống kê (số lượng SV, lớp, HP, tỷ lệ học phí), biểu đồ phân bố SV theo khoa, danh sách hoạt động gần nhất |
+| 2 | Quản lý Sinh viên | CRUD và quản lý hồ sơ SV | Bảng danh sách SV (MSSV, họ tên, lớp, ngành), bộ lọc theo khoa/ngành/lớp, ô tìm kiếm, modal thêm/sửa SV, nút import Excel |
+| 3 | Quản lý Học phần | CRUD học phần và CTĐT | Bảng danh sách HP (mã HP, tên, tín chỉ, loại, trạng thái), modal thêm/sửa HP, tab CTĐT theo ngành, nút sao chép CTĐT nhanh |
+| 4 | Quản lý Lớp HP | Điều hành lớp HP theo kỳ | Bảng danh sách lớp HP (mã lớp, GV, phòng, sĩ số, thời gian ĐK), panel thống kê vận hành, form sinh lớp & xếp lịch tự động, nút mở cổng ĐK hàng loạt, hẹn giờ mở ĐK, cảnh báo hệ thống (thiếu GV/phòng/sĩ số đầy) |
+| 5 | Quản lý Khoa | CRUD danh mục Khoa | Bảng danh sách khoa (mã, tên), modal thêm/sửa, nút xóa, ô tìm kiếm |
+| 6 | Quản lý Ngành | CRUD danh mục Ngành | Bảng danh sách ngành (tên, khoa), dropdown lọc theo khoa, modal thêm/sửa, nút xóa |
+| 7 | Quản lý Lớp SH | CRUD lớp sinh hoạt | Bảng danh sách lớp SH (tên lớp, ngành, sĩ số), modal thêm/sửa, nút xóa, ô tìm kiếm |
+| 8 | Điểm Học tập | Nhập và quản lý điểm HT | Bộ chọn lớp HP, bảng điểm (SV, CC, GK, CK — tự tính tổng/chữ/hệ 4), nút lưu, nút import Excel, nút export template |
+| 9 | Điểm Rèn luyện | Nhập và quản lý điểm RL | Bộ chọn lớp SH + HK, bảng điểm RL (SV, điểm, xếp loại), nút lưu, nút import Excel, nút export template |
+| 10 | Thời khóa biểu | CRUD và tối ưu TKB | Bảng danh sách TKB (lớp HP, thứ, tiết, phòng, GV), modal thêm/sửa, nút xóa, chức năng tối ưu TKB tự động |
+| 11 | Quản lý Users | CRUD tài khoản người dùng | Bảng danh sách user (username, email, vai trò, 2FA), modal thêm/sửa, nút xóa, ô tìm kiếm |
+| 12 | Tài liệu | Quản lý tài liệu học tập | Bảng danh sách tài liệu (tiêu đề, HP, người đăng, lượt tải), nút duyệt/xóa, ô tìm kiếm |
+| 13 | Học phí | Quản lý và xác nhận học phí | Bảng danh sách học phí (SV, HP, số tiền, trạng thái), nút xác nhận thanh toán, nút tính HP tự động theo tín chỉ, tab báo cáo |
+| 14 | Sao lưu dữ liệu | Sao lưu và phục hồi CSDL | Nút Export SQL (tải file backup), form Import SQL (upload file phục hồi), thông tin CSDL hiện tại |
+| 15 | Thông báo | Soạn và gửi thông báo | Form soạn thông báo (tiêu đề, nội dung, loại), bộ chọn đối tượng nhận (tất cả/khoa/lớp/cá nhân), danh sách TB đã gửi |
+| 16 | Quản lý Giảng viên | CRUD thông tin giảng viên | Bảng danh sách GV (mã GV, họ tên, khoa, học vị, chuyên ngành, email, SĐT), modal thêm/sửa, nút xóa, ô tìm kiếm |
+| 17 | Quản lý Phòng học | CRUD danh mục phòng học | Bảng danh sách phòng (tên phòng, loại phòng, sức chứa), modal thêm/sửa, nút xóa, ô tìm kiếm |
 
 ---
 
@@ -678,10 +632,10 @@ qnu-student-management/
 
 #### A. Kết quả về mặt chức năng
 
-- ✅ **Hoàn thành 52/52 chức năng** đã lên kế hoạch (100%), bao gồm:
-  - 8 chức năng bảo mật & xác thực
-  - 18 chức năng phía sinh viên
-  - 26 chức năng phía quản trị viên
+- ✅ **Hoàn thành 99/99 chức năng** đã lên kế hoạch (100%), bao gồm:
+  - 7 chức năng xác thực & tài khoản
+  - 34 chức năng phía sinh viên
+  - 58 chức năng phía quản trị viên
 - ✅ **35/35 test cases** đều pass thành công
 - ✅ Hệ thống hoạt động ổn định với **550+ sinh viên**, **107 học phần**, **20 giảng viên**, **18 phòng học**, **51 ngành**, **12 khoa**
 
