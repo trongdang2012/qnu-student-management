@@ -24,7 +24,7 @@
           <div class="form-row full">
             <div class="form-group">
               <label>Tiêu đề</label>
-              <input type="text" name="title" class="form-control" required value="<?= e($item['title']) ?>">
+              <input type="text" name="title" class="form-control" required value="<?= e($item['tieu_de'] ?? '') ?>">
             </div>
           </div>
           <div class="form-row full">
